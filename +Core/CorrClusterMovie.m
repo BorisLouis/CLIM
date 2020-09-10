@@ -16,10 +16,25 @@ classdef CorrClusterMovie < Core.Movie
                         
         end
         
-        function [frames] = loadFrames(obj,frames)
+        function [corrData] = loadFrames(obj,frames,driftCorr)
+            %simple method to load all requested frames and allow to take
+            %roi
             assert(length(frames)>=100,'Frames requested is lower than 100 please process at least 100 fr');
             fr = obj.checkFrame(frames,obj.raw.movInfo.maxFrame);
-            %simple method to load all requested frames
+          
+            
+            h = questdlg('Do you want to use a ROI?','Question to user','Yes','No', 'Yes');
+            frame = obj.getFrame(1);
+            if strcmp(h,'Yes')
+                figure
+                
+                imagesc(frame(:,:,1))
+                test = drawrectangle();
+                ROI  = round(test.Position);    
+            else
+                ROI = [];
+                
+            end
             h = waitbar(0,'Loading Frames');
             frames = zeros(obj.raw.movInfo.Length,obj.raw.movInfo.Width,length(fr));
             for i = fr(1):fr(end)
@@ -28,6 +43,38 @@ classdef CorrClusterMovie < Core.Movie
                 waitbar((i-fr(1))/(fr(end)-fr(1)),h,['Loading Frames ' num2str(i) '/' num2str(length(fr))]);
             end
             close(h);
+            
+            %
+            correlationInfo.corrSz = 100; %in px. Radius of the ROI used for correlation
+            %correlation function
+            correlationInfo.driftPeriod = 1; %in Frame, Number of frame that are averaged
+            %for driftCalculation ==> 1 mean that drift is calculated for each frame
+            scalingFactor = 1;%Used for interpolation in sub-pixel Drift correction 
+            %objects of interest
+
+            if driftCorr
+               
+                [corrData,~] = PreProcess.CorrelationDrift(frames,scalingFactor,correlationInfo);
+               
+            end
+            
+            if isempty(ROI)
+               ROI = [1 1 size(corrData{1},2),size(corrData{1},1)];
+            end
+            
+            %Fix ROI
+            if mod(ROI(3),2) ==0
+                ROI(3) = ROI(3)-1;
+            end
+            
+            if mod(ROI(4),2) ==0
+                ROI(4) = ROI(4)-1;
+            end
+            
+            dim = size(corrData);
+            %apply ROI
+            corrData = corrData(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:);
+       
         end
         
         function [corrMask] = getCorrelationMask(obj,data,corrInfo)
@@ -186,7 +233,7 @@ classdef CorrClusterMovie < Core.Movie
                         end
                         %check that the pixel that should be added to the
                         %list are indeed correlated to the current cluster
-                        [list2Add] = obj.enforceClusterConsistency(list2Add,...
+                        [list2Add] = Core.CorrClusterMovie.enforceClusterConsistency(list2Add,...
                             currCluster,distanceMap,indsCopy);
                         %add the new element to the list
                         currList  = [currList;list2Add];
@@ -232,9 +279,6 @@ classdef CorrClusterMovie < Core.Movie
            
             neighbor = combvec(iIdx,jIdx)';    
         end
-    end
-    methods(Access = 'private')
-        
         
         function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,distanceMap,indsCopy)
             %function to enforce consistency within the cluster by checking that
@@ -269,8 +313,12 @@ classdef CorrClusterMovie < Core.Movie
                 ind2Add = unique(ind2Add);
 
             end
-
         end
+    end
+    methods(Access = 'private')
+        
+        
+        
         
     end
         

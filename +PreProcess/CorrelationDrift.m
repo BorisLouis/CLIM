@@ -1,14 +1,5 @@
 function [correctedStack,Drift]=CorrelationDrift(im_In,scalingFactor,correlationInfo)
 
-cellData = iscell(im_In);
-if cellData
-   tmp = cell2mat(im_In);
-   im_In = reshape(tmp,size(im_In{1},1),size(im_In{1},2),length(im_In));
-   clear tmp
-else
-    
-end
-
 %maxDrift = correlationInfo.maxDrift;
 corrSz = correlationInfo.corrSz; 
 driftPeriod = correlationInfo.driftPeriod;
@@ -47,7 +38,7 @@ if scalingFactor>1
     im_In = imresize(im_In,scalingFactor);
 end
 
-correctedStack = cell(1,size(im_In,3));
+correctedStack = zeros(size(im_In));
 Drift=zeros(size(imCropped,3),2);
 
 for i=1:floor(size(imCropped,3)/driftPeriod)
@@ -66,7 +57,7 @@ for i=1:floor(size(imCropped,3)/driftPeriod)
 end
 
 for i=1:size(imCropped,3)
-    [correctedStack{i}] = PreProcess.correctImageDrift(im_In(:,:,i),...
+    [correctedStack(:,:,i)] = PreProcess.correctImageDrift(im_In(:,:,i),...
         -Drift(i,:));
 end
 
