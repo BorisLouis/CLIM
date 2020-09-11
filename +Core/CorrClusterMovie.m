@@ -45,7 +45,7 @@ classdef CorrClusterMovie < Core.Movie
             close(h);
             
             %
-            correlationInfo.corrSz = 100; %in px. Radius of the ROI used for correlation
+            correlationInfo.corrSz = 75; %in px. Radius of the ROI used for correlation
             %correlation function
             correlationInfo.driftPeriod = 1; %in Frame, Number of frame that are averaged
             %for driftCalculation ==> 1 mean that drift is calculated for each frame

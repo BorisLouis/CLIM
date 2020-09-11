@@ -9,9 +9,9 @@ file.path = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep\FilmBlinking\mov1';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';
-frame2Process = 1:5000;
+frame2Process = 1:100;
 corrInfo.r = 2; %radius for checking neighbor
-corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)
+corrInfo.thresh = 0.3;%correlation threshold (smaller is more correlation)
 driftCorr = true;
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
