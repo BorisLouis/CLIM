@@ -133,6 +133,9 @@ classdef CorrClusterMovie < Core.Movie
             %loop through pixels
             for i = 1:size(data2Cluster,1)
                 for j = 1:size(data2Cluster,2)
+                    if i>33 && j ==35
+                        disp('stop')
+                    end
                     %take a pixel
                     currentPxCoord = [i,j];
                     %find its neighbor
@@ -151,19 +154,21 @@ classdef CorrClusterMovie < Core.Movie
                     %if correlation between pixel is sufficent we keep
                     %track of those pixel as being correlated to the
                     %current pixel
+                    [neighborIdx] = sub2ind(size(corrRel),neighbor(:,1),neighbor(:,2));
+                    currPxIdx     = sub2ind(size(corrRel),currentPxCoord(:,1),currentPxCoord(:,2));
+                    corr(neighborIdx==currPxIdx) = [];
+                    neighborIdx(neighborIdx==currPxIdx) = [];
+                   
+                    
                     if all(corr>corrThreshold)
 
                     else
 
-                        idx = neighbor(corr<corrThreshold,:);
-                        mem = ismember(idx,currentPxCoord);
-                        id = sum(mem,2);
-                        idx(id==2,:) = [];
-
+                        idx = neighborIdx(corr<corrThreshold,:);
+                        
                         if ~isempty(idx)
                            %convert to indices for simplicity later
-                           corrRel{currentPxCoord(1),currentPxCoord(2)} =...
-                               sub2ind(size(corrRel),idx(:,1),idx(:,2));
+                           corrRel{currPxIdx} = idx;
                         end
                     end
                 end
@@ -205,8 +210,8 @@ classdef CorrClusterMovie < Core.Movie
                         % add the new pixel to the group and keep track of it
                         corrMask(currIndex) = group;
                         idx = find(isnan(treatedIdx(:,1)),1);
-                    %    [treatedIdx(idx,1),treatedIdx(idx,2)] = ind2sub(dim(1:2),currIndex);
                         treatedIdx(idx) = currIndex;
+                        
                         % remove it from the list
                         listCorrPx(inds==currIndex) = [];
                         inds(inds==currIndex) = [];
@@ -214,6 +219,9 @@ classdef CorrClusterMovie < Core.Movie
                         %update the currentlist to add the new data
                         currIndex = currList(1);
                         currList(1,:) = [];
+                        %Quick bug fix is to check if currIndex is in inds
+                        %and if not we just delete it?
+                        
                         %get list of element correlated to the current element
                         list2Add  = listCorrPx{inds==currIndex}; 
                         %remove already treated cases and cases already in the list

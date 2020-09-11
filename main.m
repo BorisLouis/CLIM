@@ -5,13 +5,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep\FilmBlinking\testData';
+file.path = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep\FilmBlinking\mov1';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';
-frame2Process = 1:2000;
+frame2Process = 1:5000;
 corrInfo.r = 2; %radius for checking neighbor
-corrInfo.thresh = 0.3;%correlation threshold (smaller is more correlation)
+corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)
 driftCorr = true;
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -37,3 +37,26 @@ close(vidFile)
 
 %% Data Processing
 [corrMask] = myMovie.getCorrelationMask(data,corrInfo);
+
+%% Plotting
+maxIm = max(data,[],3);
+
+figure
+hold on
+imagesc(maxIm)
+axis image
+colormap('hot')
+for i = 1:max(corrMask(:))
+    corrMaskCopy = corrMask;
+    
+    corrMaskCopy(corrMask~=i) = 0;
+    
+    contour = bwboundaries(corrMaskCopy);
+    
+    plot(contour{1}(:,2),contour{1}(:,1),'w','LineWidth',2)
+    
+    
+end
+axis ij
+
+
