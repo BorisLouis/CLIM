@@ -133,9 +133,6 @@ classdef CorrClusterMovie < Core.Movie
             %loop through pixels
             for i = 1:size(data2Cluster,1)
                 for j = 1:size(data2Cluster,2)
-                    if i>33 && j ==35
-                        disp('stop')
-                    end
                     %take a pixel
                     currentPxCoord = [i,j];
                     %find its neighbor
@@ -158,12 +155,10 @@ classdef CorrClusterMovie < Core.Movie
                     currPxIdx     = sub2ind(size(corrRel),currentPxCoord(:,1),currentPxCoord(:,2));
                     corr(neighborIdx==currPxIdx) = [];
                     neighborIdx(neighborIdx==currPxIdx) = [];
-                   
                     
                     if all(corr>corrThreshold)
 
                     else
-
                         idx = neighborIdx(corr<corrThreshold,:);
                         
                         if ~isempty(idx)
