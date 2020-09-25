@@ -87,7 +87,7 @@ classdef CorrClusterMovie < Core.Movie
             % #1 Normalize the data
             data2Cluster = data-min(data,[],3);
             data2Cluster = data2Cluster./max(data2Cluster,[],3);
-            
+              
             waitbar(0.1,h,'Getting correlation relationships');
             %#2 Get correlation relationship between pixels
             [corrRel]  = obj.getCorrRelation(data2Cluster,r,corrThreshold);

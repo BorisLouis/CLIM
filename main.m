@@ -39,6 +39,8 @@ close(vidFile)
 [corrMask] = myMovie.getCorrelationMask(data,corrInfo);
 
 
+
+
 %% Extract Intensity trace
 idx = 1;
 [row,col] = find(corrMask==idx);
