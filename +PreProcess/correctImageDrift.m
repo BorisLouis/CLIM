@@ -22,4 +22,6 @@ correctedImage(1:abs(DriftCorry),:,:)=[];
 correctedImage(size(im_In,1)+1:size(im_In,1)+abs(DriftCorry),:,:)=[];
 correctedImage(:,1:abs(DriftCorrx),:)=[];
 correctedImage(:,size(im_In,2)+1:size(im_In,2)+abs(DriftCorrx),:)=[];
+
+
 end

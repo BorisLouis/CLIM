@@ -47,7 +47,8 @@ classdef CorrClusterMovie < Core.Movie
             %
             correlationInfo.corrSz = 75; %in px. Radius of the ROI used for correlation
             %correlation function
-            correlationInfo.driftPeriod = 1; %in Frame, Number of frame that are averaged
+            correlationInfo.driftPeriod = 20; %in Frame, Number of frame that are averaged
+            correlationInfo.maxDrift = 20;
             %for driftCalculation ==> 1 mean that drift is calculated for each frame
             scalingFactor = 1;%Used for interpolation in sub-pixel Drift correction 
             %objects of interest
@@ -55,6 +56,8 @@ classdef CorrClusterMovie < Core.Movie
             if driftCorr
                
                 [corrData,~] = PreProcess.CorrelationDrift(frames,scalingFactor,correlationInfo);
+            else
+                corrData = frames;
                
             end
             
