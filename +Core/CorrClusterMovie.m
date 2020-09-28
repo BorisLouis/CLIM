@@ -152,6 +152,7 @@ classdef CorrClusterMovie < Core.Movie
         end
         
         function [corrMask] = getCorrelationMask(obj,data,corrInfo)
+            data = double(data);
             r = corrInfo.r;
             corrThreshold = corrInfo.thresh;
             h=waitbar(0,'Normalizing Data...');
@@ -191,9 +192,11 @@ classdef CorrClusterMovie < Core.Movie
             figure
             imagesc(corrMask)
             axis image
-            
+            waitbar(0.9,h,'Storing results');
             obj.corrMask = corrMask;
             obj.nCluster = max(corrMask(:));
+            
+            close(h);
             
         end
         
