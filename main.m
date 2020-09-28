@@ -26,21 +26,21 @@ myMovie.correctDrift;
 
 data = myMovie.loadFrames(frame2Process);
 
-vidFile = VideoWriter('rawMov.mp4','MPEG-4');
-vidFile.FrameRate = 100;
-open(vidFile);
-figure
-for i = 1:10:size(data,3)
-   imagesc(data(:,:,i));
-   colormap('hot')
-   caxis([0 max(data(:))]);
-   axis image
-   drawnow;
-   im = getframe;
-   writeVideo(vidFile,im);
-   clf
-end
-close(vidFile)
+% vidFile = VideoWriter('rawMov.mp4','MPEG-4');
+% vidFile.FrameRate = 100;
+% open(vidFile);
+% figure
+% for i = 1:10:size(data,3)
+%    imagesc(data(:,:,i));
+%    colormap('hot')
+%    caxis([0 max(data(:))]);
+%    axis image
+%    drawnow;
+%    im = getframe;
+%    writeVideo(vidFile,im);
+%    clf
+% end
+% close(vidFile)
 
 
 %% Data Processing

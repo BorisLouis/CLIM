@@ -123,14 +123,16 @@ classdef CorrClusterMovie < Core.Movie
                 ROI = [];
                 
             end
-            h = waitbar(0,'Loading Frames');
-            frames = zeros(obj.raw.movInfo.Length,obj.raw.movInfo.Width,length(fr));
-            for i = fr(1):fr(end)
-                
-                frames(:,:,i) = obj.getFrame(i);
-                waitbar((i-fr(1))/(fr(end)-fr(1)),h,['Loading Frames ' num2str(i) '/' num2str(length(fr))]);
-            end
-            close(h);
+            
+            frames = obj.getFrame(fr);
+             %  h = waitbar(0,'Loading Frames');
+             %  frames = zeros(obj.raw.movInfo.Length,obj.raw.movInfo.Width,length(fr));
+%             for i = fr(1):fr(end)
+%                 
+%                 frames(:,:,i) = obj.getFrame(i);
+%                 waitbar((i-fr(1))/(fr(end)-fr(1)),h,['Loading Frames ' num2str(i) '/' num2str(length(fr))]);
+%             end
+%             close(h);
                     
             if isempty(ROI)
                ROI = [1 1 size(frames,2),size(frames,1)];
