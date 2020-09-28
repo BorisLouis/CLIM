@@ -7,22 +7,110 @@ classdef CorrClusterMovie < Core.Movie
     properties (SetAccess = 'private')
         corrMask
         nCluster
+        driftCorr
     end
         
     methods
-        function obj = CorrClusterMovie(raw,info)
+        function obj = CorrClusterMovie(raw,info,driftCorr)
             
             obj = obj@Core.Movie(raw,info);
+            
+            if nargin>2
+                obj.driftCorr = driftCorr;
+            else
+                obj.driftCorr = true;
+            end
                         
         end
         
-        function [corrData] = loadFrames(obj,frames,driftCorr)
+        function correctDrift(obj)
+            if obj.driftCorr
+                disp('Correcting drift')
+                disp('Check if drift corrected data exist')
+                %#1 Check if drift was already corrected
+                [run] = obj.checkDrift;
+
+                if run 
+                    correlationInfo.corrSz = 75; %in px. Radius of the ROI used for correlation
+                    %correlation function
+                    correlationInfo.driftPeriod = 10; %in Frame, Number of frame that are averaged
+                    correlationInfo.maxDrift = 20;
+                    %for driftCalculation ==> 1 mean that drift is calculated for each frame
+                    scalingFactor = 1;%Used for interpolation in sub-pixel Drift correction 
+                    %objects of interest
+                    
+                    disp('Loading Data ...')
+                    h = waitbar(0,'Loading Frames');
+                    nFrame = obj.raw.movInfo.maxFrame;
+                    allFrames = zeros(obj.raw.movInfo.Length,obj.raw.movInfo.Width,nFrame);
+                    for i = 1:nFrame
+
+                        allFrames(:,:,i) = uint16(obj.getFrame(i));
+                        waitbar(i/(nFrame),h,...
+                            ['Loading Frames ' num2str(i) '/' num2str(nFrame)]);
+
+                    end
+                    close(h);
+                    disp('Correcting drift...')
+                    %fix Drift
+                    [corrData,~] = PreProcess.CorrelationDrift(allFrames,scalingFactor,correlationInfo);
+
+                    currentFolder = obj.raw.movInfo.Path;
+
+                    newDir = [currentFolder filesep 'DriftCorr'];
+                    mkdir(newDir);
+
+                    fileName = [newDir filesep 'corrData.mat'];
+                    corrData = uint16(corrData);
+                    disp('Saving corrected data')
+                    %dataStorage.nBTiff(fileName,uint16(corrData),16);
+                    save(fileName,'corrData','-v7.3');
+                else
+                    disp('Corrected data found ! ')
+                end
+            else
+                
+                
+                
+            end
+        end
+        
+        function [data] = getFrame(obj,idx)
+            switch nargin
+                case 1
+                    
+                    idx = 1:obj.raw.maxFrame(1);
+                
+                case 2
+
+                    [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
+                otherwise
+                    error('too many input arguments');
+            end
+            %if we drift corrected and if the data exist
+            if and(obj.driftCorr,~obj.checkDrift)
+                
+                path = [obj.raw.movInfo.Path filesep 'DriftCorr' filesep 'corrData.mat'];
+                assert(isfile(path),'No drift corrected data found, please run correctDrift first');
+                
+                dataObj = matfile(path);
+                [data] = dataObj.corrData(:,:,idx);
+                
+            else
+                
+                [data] = getFrame@Core.Movie(obj,idx);
+                
+            end
+            
+        end
+        
+          
+        function [corrData] = loadFrames(obj,frames)
             %simple method to load all requested frames and allow to take
             %roi
             assert(length(frames)>=100,'Frames requested is lower than 100 please process at least 100 fr');
             fr = obj.checkFrame(frames,obj.raw.movInfo.maxFrame);
-          
-            
+                
             h = questdlg('Do you want to use a ROI?','Question to user','Yes','No', 'Yes');
             frame = obj.getFrame(1);
             if strcmp(h,'Yes')
@@ -43,26 +131,9 @@ classdef CorrClusterMovie < Core.Movie
                 waitbar((i-fr(1))/(fr(end)-fr(1)),h,['Loading Frames ' num2str(i) '/' num2str(length(fr))]);
             end
             close(h);
-            
-            %
-            correlationInfo.corrSz = 75; %in px. Radius of the ROI used for correlation
-            %correlation function
-            correlationInfo.driftPeriod = 20; %in Frame, Number of frame that are averaged
-            correlationInfo.maxDrift = 20;
-            %for driftCalculation ==> 1 mean that drift is calculated for each frame
-            scalingFactor = 1;%Used for interpolation in sub-pixel Drift correction 
-            %objects of interest
-
-            if driftCorr
-               
-                [corrData,~] = PreProcess.CorrelationDrift(frames,scalingFactor,correlationInfo);
-            else
-                corrData = frames;
-               
-            end
-            
+                    
             if isempty(ROI)
-               ROI = [1 1 size(corrData{1},2),size(corrData{1},1)];
+               ROI = [1 1 size(frames,2),size(frames,1)];
             end
             
             %Fix ROI
@@ -73,10 +144,8 @@ classdef CorrClusterMovie < Core.Movie
             if mod(ROI(4),2) ==0
                 ROI(4) = ROI(4)-1;
             end
-            
-            dim = size(corrData);
             %apply ROI
-            corrData = corrData(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:);
+            corrData = frames(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:);
        
         end
         
@@ -322,6 +391,17 @@ classdef CorrClusterMovie < Core.Movie
         end
     end
     methods(Access = 'private')
+        function [run] = checkDrift(obj)
+            
+            path = [obj.raw.movInfo.Path filesep 'DriftCorr' filesep 'corrData.mat'];
+            %test if drif corrected data exist
+            test = isfile(path);
+            %if drift exist we dont want to run again and vice versa
+            run  = ~test;
+            
+            
+            
+        end
         
         
         

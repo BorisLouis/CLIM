@@ -14,9 +14,17 @@ corrInfo.r = 2; %radius for checking neighbor
 corrInfo.thresh = 0.2;%correlation threshold (smaller is more correlation)
 driftCorr = true;
 %% Loading data
-myMovie = Core.CorrClusterMovie(file,info);
+myMovie = Core.CorrClusterMovie(file,info,driftCorr);
 
-data = myMovie.loadFrames(frame2Process,driftCorr);
+
+myMovie.correctDrift;
+
+    
+%%
+
+
+
+data = myMovie.loadFrames(frame2Process);
 
 vidFile = VideoWriter('rawMov.mp4','MPEG-4');
 vidFile.FrameRate = 100;
