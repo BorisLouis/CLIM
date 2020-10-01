@@ -102,8 +102,7 @@ classdef CorrClusterMovie < Core.Movie
                 
             end
             
-        end
-        
+        end       
           
         function [corrData] = loadFrames(obj,frames)
             %simple method to load all requested frames and allow to take
@@ -192,11 +191,42 @@ classdef CorrClusterMovie < Core.Movie
             figure
             imagesc(corrMask)
             axis image
+            colormap('hot')
+            
             waitbar(0.9,h,'Storing results');
             obj.corrMask = corrMask;
             obj.nCluster = max(corrMask(:));
             
             close(h);
+            
+        end
+        
+        function plotContour(obj,data)
+            assert(~isempty(obj.corrMask),'Need to run getCorrelationMask before plotting contour');
+            maxIm = max(data,[],3);
+            corrM = obj.corrMask;
+            figure
+            hold on
+            imagesc(maxIm)
+            axis image
+            colormap('hot')
+
+            for i = 1:max(corrM(:))
+                corrMaskCopy = corrM;
+
+                corrMaskCopy(corrM~=i) = 0;
+
+                contour = bwboundaries(corrMaskCopy);
+
+                plot(contour{1}(:,2),contour{1}(:,1),'w','LineWidth',2)
+
+            end
+            axis ij
+        end
+        
+        function getIntensityTrace(obj)
+           %TODO code
+            
             
         end
         

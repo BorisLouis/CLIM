@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2020-Data\10 - Oct\Sudipta\nonBlinking Data\Enhancement';
+file.path = 'D:\Documents\Unif\PhD\2020-Data\10 - Oct\Sudipta\nonBlinking Data\movOD3';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';
@@ -21,8 +21,6 @@ myMovie.correctDrift;
 
     
 %%
-
-
 
 data = myMovie.loadFrames(frame2Process);
 
@@ -46,10 +44,10 @@ data = myMovie.loadFrames(frame2Process);
 %% Data Processing
 [corrMask] = myMovie.getCorrelationMask(data,corrInfo);
 
+%% Plotting
+myMovie.plotContour(data);
 
-
-
-%% Extract Intensity trace
+%% Extract intensity traces 
 idx = 1;
 [row,col] = find(corrMask==idx);
 trace = zeros(length(row),size(data,3));
@@ -57,28 +55,5 @@ for i = 1:length(row)
    
     trace(i,:) = data(row(i),col(i),:);
     
-    
 end
-
-%% Plotting
-maxIm = max(data,[],3);
-
-figure
-hold on
-imagesc(maxIm)
-axis image
-colormap('hot')
-for i = 1:max(corrMask(:))
-    corrMaskCopy = corrMask;
-    
-    corrMaskCopy(corrMask~=i) = 0;
-    
-    contour = bwboundaries(corrMaskCopy);
-    
-    plot(contour{1}(:,2),contour{1}(:,1),'w','LineWidth',2)
-    
-    
-end
-axis ij
-
 
