@@ -139,15 +139,15 @@ classdef CorrClusterMovie < Core.Movie
             end
             
             %Fix ROI
-            if mod(ROI(3),2) ==0
+            if mod(ROI(3),2) ~=0
                 ROI(3) = ROI(3)-1;
             end
             
-            if mod(ROI(4),2) ==0
+            if mod(ROI(4),2) ~=0
                 ROI(4) = ROI(4)-1;
             end
             %apply ROI
-            corrData = frames(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:);
+            corrData = frames(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1) + ROI(3)-1,:);
        
         end
         

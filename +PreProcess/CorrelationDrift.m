@@ -60,15 +60,25 @@ end
 
 function [lb, ub] = getCropPar(im,corrSz)
     %find center of data
-    BW = imbinarize(uint16(im));
-    cent = regionprops(BW,'centroid');
-    tmp = [cent.Centroid];
-    coord(:,1) = tmp(1:2:end);
-    coord(:,2) = tmp(2:2:end);
-    xIdx = round(mean(coord(:,1)));
-    yIdx = round(mean(coord(:,2)));
-
-
+%     BW = imbinarize(uint16(im));
+%     cent = regionprops(BW,'centroid');
+%     tmp = [cent.Centroid];
+%     coord(:,1) = tmp(1:2:end);
+%     coord(:,2) = tmp(2:2:end);
+%     xIdx = round(mean(coord(:,1)));
+%     yIdx = round(mean(coord(:,2)));
+%     
+    maxProjY = max(im,[],2);
+    maxProjX = max(im,[],1);
+    
+    maxProjY(maxProjY<1.2*min(maxProjY)) = 0;
+    maxProjX(maxProjX<1.2*min(maxProjX)) = 0;
+    
+    [~,locY] = findpeaks(maxProjY);
+    [~,locX] = findpeaks(maxProjX);
+    xIdx = round(mean(locX));
+    yIdx = round(mean(locY));
+   
     %Crop the image to save computing time in the correlation
     lb = [xIdx - corrSz + 1, yIdx - corrSz + 1];
     ub = [xIdx + corrSz - 1, yIdx + corrSz - 1];
