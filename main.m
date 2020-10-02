@@ -47,13 +47,11 @@ data = myMovie.loadFrames(frame2Process);
 %% Plotting
 myMovie.plotContour(data);
 
+%% Plot traces
+myMovie.plotTraces(data,3);
+
 %% Extract intensity traces 
-idx = 1;
-[row,col] = find(corrMask==idx);
-trace = zeros(length(row),size(data,3));
-for i = 1:length(row)
-   
-    trace(i,:) = data(row(i),col(i),:);
-    
-end
+[traces] = myMovie.getIntensityTrace(data);
+%%
+
 

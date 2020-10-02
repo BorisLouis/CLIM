@@ -224,10 +224,43 @@ classdef CorrClusterMovie < Core.Movie
             axis ij
         end
         
-        function getIntensityTrace(obj)
-           %TODO code
+        function plotTraces(obj,data,idx)
             
+            corrM = obj.corrMask;
+            [row,col] = find(corrM==idx);
+            trace = zeros(length(row),size(data,3));
+            figure 
+            hold on
+            for i = 1:length(row)
+
+                trace(i,:) = data(row(i),col(i),:);
+                plot(trace(i,:));
+            end
             
+        end
+        
+        function [traces,pos] = getIntensityTrace(obj,data)
+            corrM  = obj.corrMask;
+            traces = zeros(max(corrM(:)),size(data,3));
+            pos    = zeros(max(corrM(:)),2);
+            for i = 1 : max(corrM(:))
+                % get indices of traces 
+                [row,col] = find(corrM==i);
+                r = repmat(row,1,size(data,3));
+                r = reshape(r',size(data,3)*length(row),1);
+                c = repmat(col,1,size(data,3));
+                c = reshape(c',size(data,3)*length(col),1);
+                
+                f = repmat((1:1000)',length(col),1);
+                idx = sub2ind(size(data),r,c,f);
+                
+                tmpTrace = data(idx);
+                tmpTrace = reshape(tmpTrace,size(data,3),length(row));
+                
+                traces(i,:) = mean(tmpTrace,2);
+                pos(i,:)    = [mean(row), mean(col)];
+                
+            end
         end
         
     end
