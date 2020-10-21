@@ -1,5 +1,6 @@
 %% Simulate correlated data
 
+%% Simulation input
 sizeIm = 128;
 nFrames = 100;
 data = zeros(sizeIm,sizeIm,nFrames);
@@ -10,6 +11,8 @@ model.sigma_x = 3;
 model.sigma_y = 3;
 r = 2; %radius for checking correlation
 
+
+%% Simulations
 %coord=[56,56;72,72;56,72;72,56];
 %coord = [32,32;96,96;96,32;32,96];
 [X,Y] = meshgrid(1:sizeIm,1:sizeIm);
