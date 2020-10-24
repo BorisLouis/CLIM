@@ -25,10 +25,10 @@ close
 %% extract distribution from bkg
 
 bkg = data(posBkg(2):posBkg(2)+posBkg(4)-1,posBkg(1):posBkg(1)+posBkg(3)-1,:);
+edges = min(bkg(:))-0.5:1:max(bkg(:))+0.5;
+[N,edges] = histcounts(bkg(:),edges);
 
-[N,edges] = histcounts(bkg(:),1000);
-
-edges = edges(1:end-1) + mean(diff(edges));
+edges = edges(1:end-1) + mean(diff(edges))/2;
 
 figure
 bar(edges,N)
@@ -42,10 +42,10 @@ bkgData.Avg = mean(bkg(:));
 figure
 plot(bkgData.x,bkgData.y)
 
-% % %test Sampling ==========> OK !!!
-% nSamples = 20000;
+% %test Sampling ==========> OK !!!
+% % nSamples = 1e5;
 % %testData = zeros(1,nSamples);
-% 
+
 % testData = datasample(edges,nSamples,'weight',N);
 % % for i = 1:nSamples
 % % %     n = rand(1);
@@ -55,9 +55,9 @@ plot(bkgData.x,bkgData.y)
 % %     
 % %     
 % % end
-% 
-% [testN,testEdges] = histcounts(testData);
-% testEdges = testEdges(1:end-1) + mean(diff(testEdges));
+% testEdges = min(bkg(:))-0.5:1:max(bkg(:))+0.5;
+% [testN,testEdges] = histcounts(testData,testEdges);
+% testEdges = testEdges(1:end-1) + mean(diff(testEdges))/2;
 % figure
 % bar(edges,N/max(N))
 % hold on
@@ -71,11 +71,12 @@ posLas = round(h.Position);
 close
 
 %% Extract distibution from Laser
-las = data(posLas(2):posLas(2)+posLas(4)-1,posLas(1):posLas(1)+posLas(3)-1,:);
+las = squeeze(round(median(median(data(posLas(2):posLas(2)+posLas(4)-1,posLas(1):posLas(1)+posLas(3)-1,:),1),2)));
 
-[N,edges] = histcounts(las(:),1000);
+edges = min(las(:))-0.5:1:max(las(:))+0.5;
+[N,edges] = histcounts(las(:),edges);
 
-edges = edges(1:end-1) + mean(diff(edges));
+edges = edges(1:end-1) + mean(diff(edges))/2;
 
 figure
 bar(edges,N)
