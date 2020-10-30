@@ -148,7 +148,7 @@ classdef Movie < handle
             prompt = {'Enter the pixel size: ','FWHM (px):', 'Any comment about experiment?'};
             dlgTitle = 'Information about experimental parameters';
             numLines = 1;
-            defaultVal = {'95','3',''};
+            defaultVal = {'200','3',''};
             answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
             
             assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')

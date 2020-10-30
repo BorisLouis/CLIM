@@ -20,11 +20,10 @@ model.sigma_y = 1.5;
 
 simParam.baseCounts = 1e4;
 simParam.sdCounts = 0.25;
-simParam.baseProb = 0.1;%number between 0 and 0.5
-simParam.intMod = 2;
-simParam.sdIntMod  = 0.3;
-simParam.baseProb = 0.2;
-simParam.sdProb = 0.1;
+simParam.intMod = 2.0;
+simParam.sdIntMod  = 0.1;
+simParam.baseProb = 0.1;
+simParam.sdProb = 0.05;
 simType = 'blinking'; %'enhancement', 'bleaching', 'blinking'
 
 %% Simulated intensity profile depending on requested type
@@ -43,7 +42,6 @@ sampled = datasample(lasNoise,simParam.nFrames,'weight',laserFluct.weight);
 sampled = repmat(sampled,simParam.nParticles,1);
 
 intensity = intensity.*sampled;
-
 
 %% Simulation
 sizeIm = simParam.sizeIm;
@@ -73,7 +71,7 @@ data = data+uint16(noise);
 
 
 %% save data
-filename = [path2Save filesep 'mov_intMod_' num2str(simParam.intMod) '.tif'];
+filename = [path2Save filesep 'mov_' simType '_intMod_' num2str(simParam.intMod) '.tif'];
 count = 1;
 while isfile(filename)
     filename = [path2Save filesep 'mov_intMod_' num2str(simParam.intMod) '_' num2str(count),'.tif'];

@@ -7,24 +7,22 @@ classdef CorrClusterMovie < Core.Movie
     properties (SetAccess = 'private')
         corrMask
         nCluster
-        driftCorr
+   
     end
         
     methods
-        function obj = CorrClusterMovie(raw,info,driftCorr)
+        function obj = CorrClusterMovie(raw,info)
             
             obj = obj@Core.Movie(raw,info);
             
-            if nargin>2
-                obj.driftCorr = driftCorr;
-            else
-                obj.driftCorr = true;
+            if ~isfield(info,'driftCorr')
+                info.driftCorr = true;
             end
-                        
+            
         end
         
         function correctDrift(obj)
-            if obj.driftCorr
+            if obj.info.driftCorr
                 disp('Correcting drift')
                 disp('Check if drift corrected data exist')
                 %#1 Check if drift was already corrected
