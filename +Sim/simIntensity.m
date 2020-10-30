@@ -1,21 +1,23 @@
 function Intensity = simIntensity(simParam,simType)
     baseCounts = simParam.baseCounts;
     sdCounts = simParam.sdCounts;
-    blinkMod = simParam.intMod;
-    sdBlink  = simParam.sdIntMod;
+    intMod = simParam.intMod;
+    sdIntMod  = simParam.sdIntMod;
     baseProb = simParam.baseProb;
     sdProb   = simParam.sdProb;
     nParticles = simParam.nParticles;
     nFrames = simParam.nFrames;
     
     switch lower(simType)
+        
         case 'blinking'
-            I0 = baseCounts-sdCounts*baseCounts + rand(1,nParticles)*2*sdCounts*baseCounts;
-            I0 = I0';
-            blinkingF = blinkMod-sdBlink+rand(1,nParticles)*2*sdBlink;
+            
+            I0 = baseCounts-sdCounts*baseCounts + rand(nParticles,1)*2*sdCounts*baseCounts;
+            
+            blinkingF = intMod-sdIntMod+rand(nParticles,1)*2*sdIntMod;
             I1 = I0.*blinkingF;
             %give a switching probability to each particles with some distribution
-            switchProb = baseProb -sdProb + rand(1,nParticles)*2*sdProb;
+            switchProb = baseProb -sdProb + rand(nParticles,1)*2*sdProb;
 
             %throw dices to know if particles will switch or not
             Intensity = rand(nParticles,nFrames);
@@ -40,6 +42,38 @@ function Intensity = simIntensity(simParam,simType)
 
                prevIntensity = Intensity(:,i);
             end
+            
+        case 'enhancement'
+            
+            x  = 1:nFrames;
+            x  = repmat(x,nParticles,1);
+            x0 = 1 + round(rand(nParticles,1)*8);
+            I0 = baseCounts-sdCounts*baseCounts + rand(nParticles,1)*2*sdCounts*baseCounts;
+            %get intensity modifier and calculate I1 the final intensity
+            %level
+            intModifier = intMod-sdIntMod+rand(nParticles,1)*2*sdIntMod;
+            I1 = I0.*intModifier;
+            %get lifetime
+            tau = baseProb -sdProb + rand(nParticles,1)*2*sdProb;
+            tau = tau*nFrames;
+               
+            Intensity = I0 + (I1-I0).* (1 - exp(-((x-x0)./tau))); 
+            
+        case 'bleaching'
+            x  = 1:nFrames;
+            x  = repmat(x,nParticles,1);
+            x0 = 1 + round(rand(nParticles,1)*8);
+            I0 = baseCounts-sdCounts*baseCounts + rand(nParticles,1)*2*sdCounts*baseCounts;
+            
+            intModifier = intMod-sdIntMod+rand(nParticles,1)*2*sdIntMod;
+            %for bleaching we divide by the intensity modifier
+            I1 = I0./intModifier;
+            
+            tau = baseProb -sdProb + rand(nParticles,1)*2*sdProb;
+            tau = tau*nFrames;
+               
+            Intensity = I0 + (I1-I0).* (1 - exp(-((x-x0)./tau))); 
+            
         otherwise
             error('Simulation option requested does not exist or is not implemented yet');
     end
