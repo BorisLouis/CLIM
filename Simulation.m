@@ -13,14 +13,14 @@ camNoise   = camNoise.bkgData;
 simParam.sizeIm = 128;
 simParam.nFrames = 100;
 simParam.nParticles = 15;
-
+delta = 5;
 model.name = 'gaussian';
 model.sigma_x = 1.5;
 model.sigma_y = 1.5;
 
 simParam.baseCounts = 1e4;
 simParam.sdCounts = 0.25;
-simParam.intMod = 2.0;
+simParam.intMod = 1.25;
 simParam.sdIntMod  = 0.1;
 simParam.baseProb = 0.1;
 simParam.sdProb = 0.05;
@@ -49,8 +49,8 @@ nFrames = simParam.nFrames;
 [X,Y] = meshgrid(1:sizeIm,1:sizeIm);
 data = zeros(sizeIm,sizeIm,nFrames,'uint16');
 for i = 1:simParam.nParticles
-    x0 = randperm(sizeIm,1);
-    y0 = randperm(sizeIm,1);
+    x0 = randperm(sizeIm-2*delta,1)+delta;
+    y0 = randperm(sizeIm-2*delta,1)+delta;
     PSF = Sim.getPSF(X,Y,x0,y0,model);
     for j = 1:nFrames
        
@@ -74,7 +74,7 @@ data = data+uint16(noise);
 filename = [path2Save filesep 'mov_' simType '_intMod_' num2str(simParam.intMod) '.tif'];
 count = 1;
 while isfile(filename)
-    filename = [path2Save filesep 'mov_intMod_' num2str(simParam.intMod) '_' num2str(count),'.tif'];
+    filename = [path2Save filesep 'mov_' simType '_intMod_' num2str(simParam.intMod) '_' num2str(count),'.tif'];
     count=count+1;
 end
 

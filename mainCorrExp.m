@@ -4,7 +4,7 @@ close all;
 clc;
 %% User input
 
-file.path = 'D:\Documents\Unif\PhD\Papers\13 - IntensityCorrletation\Simulations\Blinking\Blink Amp 200';
+file.path = 'D:\Documents\Unif\PhD\Papers\13 - IntensityCorrletation\Simulations\Blinking\Blink Amp 125';
 file.ext  = '.tif';
 
 info.runMethod  = 'load';
@@ -21,8 +21,15 @@ myExperiment = Core.correlationExperiment(file,info);
 
 %% Retrieve the movie in the input folder
 
-myExperiment.retrieveMovies;
+myExperiment.retrieveMovies();
 
 %% Get correlation mask
 
-myExperiment.getCorrMask;
+myExperiment.getCorrMask();
+
+%% Save results
+fileName = [myExperiment.path filesep 'Experiment.mat'];
+
+save(fileName,'myExperiment');
+
+

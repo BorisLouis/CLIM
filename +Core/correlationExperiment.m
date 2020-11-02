@@ -3,7 +3,6 @@ classdef correlationExperiment < handle
     properties
         path
         ext
-        driftCorr
         corrMovies
         info
         corrMasks
@@ -120,7 +119,16 @@ classdef correlationExperiment < handle
             end
         end
         
-        
+        function s = saveobj(obj)
+            s.path = obj.path;
+            s.ext  = obj.ext;
+            s.corrMovies = obj.corrMovies;
+            s.info = obj.info;
+            s.corrMasks = obj.corrMasks;
+            s.nClusters = obh.nClusters;
+            
+        end
+             
     end
     
     

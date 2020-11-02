@@ -46,25 +46,30 @@ classdef Movie < handle
         end
         
         function set.raw(obj,raw)
-            %This function will be adapted later to be able to take any
-            %type of Movie (not only OME-TIFF).
-            assert(isstruct(raw),'raw is expected to be a structure');
-            assert(and(isfield(raw,'path'),isfield(raw,'ext')),'raw is expected to be a structure with 2 fields: path and ext');
-            assert(ischar(raw.path), 'Input path needs to be a char or string');
-            assert(isfolder(raw.path),'Input path should be a folder containing one dataset to analyze');
-            
-            %check extension is known
-            Core.Movie.checkExtension(raw.ext);
-            ext = lower(raw.ext);
-            %load info
-            [frameInfo, movInfo] = obj.loadInfo(raw);
-                       
-            obj.raw.movInfo   = movInfo;
-            obj.raw.frameInfo = frameInfo;
-            obj.raw.fullPath  = [movInfo.Path filesep frameInfo(1).File];
-            obj.raw.maxFrame  = movInfo.maxFrame;
-            obj.raw.ext       = ext;
-            
+            %if we are loading the object
+            if and(isstruct(raw),isfield(raw,'movInfo'))
+                obj.raw = raw;
+            %otherwise we do a thorough check 
+            else
+                %This function will be adapted later to be able to take any
+                %type of Movie (not only OME-TIFF).
+                assert(isstruct(raw),'raw is expected to be a structure');
+                assert(and(isfield(raw,'path'),isfield(raw,'ext')),'raw is expected to be a structure with 2 fields: path and ext');
+                assert(ischar(raw.path), 'Input path needs to be a char or string');
+                assert(isfolder(raw.path),'Input path should be a folder containing one dataset to analyze');
+
+                %check extension is known
+                Core.Movie.checkExtension(raw.ext);
+                ext = lower(raw.ext);
+                %load info
+                [frameInfo, movInfo] = obj.loadInfo(raw);
+
+                obj.raw.movInfo   = movInfo;
+                obj.raw.frameInfo = frameInfo;
+                obj.raw.fullPath  = [movInfo.Path filesep frameInfo(1).File];
+                obj.raw.maxFrame  = movInfo.maxFrame;
+                obj.raw.ext       = ext;
+            end
         end
                 
         function set.info(obj,inform)
