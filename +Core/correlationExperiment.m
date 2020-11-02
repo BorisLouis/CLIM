@@ -18,6 +18,18 @@ classdef correlationExperiment < handle
             %   Detailed explanation goes here
             obj.path = folder2Data.path;
             obj.ext  = folder2Data.ext;
+            
+            %check info present in info to make sure everything is provided
+            if ~isfield(info,'driftCorr')
+                info.driftCorr = true;
+                warning('No driftcorr info provided, correcting drift by default');
+            end
+            if ~isfield(info,'corrInfo')
+                info.corrInfo.r = 2;
+                info.corrInfo.thresh = 0.3;
+                warning('No correlation information provided, set r=2 and thresh= 0.3 as default value');
+                
+            end
             obj.info = info;
         end
         
@@ -29,10 +41,6 @@ classdef correlationExperiment < handle
             obj.path = path;
             
         end
-        
-        %TODO: code setter for info to make sure that all the info is
-        %provided
-        
         
         
         function retrieveMovies(obj)
@@ -87,14 +95,18 @@ classdef correlationExperiment < handle
             corrInfo = obj.info.corrInfo;
             for i = 1: nfields
                 
-                disp(['Retrieving data from tracking file ' num2str(i) ' / ' num2str(nfields) ' ...']);
+                disp(['Retrieving data from fluctuating file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 currentCorrMov = obj.corrMovies.(fieldsN{i});
                 
                 currentCorrMov.correctDrift;
                 
                 data = currentCorrMov.loadFrames(frame2Process);
                 
-                [corrMask] = myMovie.getCorrelationMask(data,corrInfo);
+                [corrMask] = currentCorrMov.getCorrelationMask(data,corrInfo);
+                
+                obj.corrMasks{i} = corrMask;
+                obj.nClusters{i} = max(corrMask(:));
+                
 
             end
         end

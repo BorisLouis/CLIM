@@ -12,7 +12,7 @@ frame2Process = 1:1000;
 corrInfo.r = 2; %radius for checking neighbor
 corrInfo.thresh = 0.3;%correlation threshold (smaller is more correlation)
 info.corrInfo = corrInfo;
-info.driftCorr = true;
+info.driftCorr = false;
 
 %% Create an experiment object
 myExperiment = Core.correlationExperiment(file,info);
