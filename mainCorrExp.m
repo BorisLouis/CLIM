@@ -8,7 +8,8 @@ file.path = 'D:\Documents\Unif\PhD\Papers\13 - IntensityCorrletation\Simulations
 file.ext  = '.tif';
 
 info.runMethod  = 'load';
-frame2Process = 1:1000;
+info.frame2Process = 1:1000;
+info.ROI = false;
 corrInfo.r = 2; %radius for checking neighbor
 corrInfo.thresh = 0.3;%correlation threshold (smaller is more correlation)
 info.corrInfo = corrInfo;

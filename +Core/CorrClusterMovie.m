@@ -86,7 +86,7 @@ classdef CorrClusterMovie < Core.Movie
                     error('too many input arguments');
             end
             %if we drift corrected and if the data exist
-            if and(obj.driftCorr,~obj.checkDrift)
+            if and(obj.info.driftCorr,~obj.checkDrift)
                 
                 path = [obj.raw.movInfo.Path filesep 'DriftCorr' filesep 'corrData.mat'];
                 assert(isfile(path),'No drift corrected data found, please run correctDrift first');
@@ -108,9 +108,9 @@ classdef CorrClusterMovie < Core.Movie
             assert(length(frames)>=100,'Frames requested is lower than 100 please process at least 100 fr');
             fr = obj.checkFrame(frames,obj.raw.movInfo.maxFrame);
                 
-            h = questdlg('Do you want to use a ROI?','Question to user','Yes','No', 'Yes');
+     
             frame = obj.getFrame(1);
-            if strcmp(h,'Yes')
+            if obj.info.ROI
                 figure
                 
                 imagesc(frame(:,:,1))

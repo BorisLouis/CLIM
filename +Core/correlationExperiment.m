@@ -24,12 +24,20 @@ classdef correlationExperiment < handle
                 info.driftCorr = true;
                 warning('No driftcorr info provided, correcting drift by default');
             end
+            
             if ~isfield(info,'corrInfo')
                 info.corrInfo.r = 2;
                 info.corrInfo.thresh = 0.3;
                 warning('No correlation information provided, set r=2 and thresh= 0.3 as default value');
                 
             end
+            
+            if ~isfield(info,'frame2Process')
+                info.frame2Process = 1:1000;
+                warning('No frame2Process information provided, set 1:1000 as default')
+            end
+            
+            
             obj.info = info;
         end
         
@@ -93,14 +101,15 @@ classdef correlationExperiment < handle
             %Extraction of Data
             nfields = numel(fieldsN);
             corrInfo = obj.info.corrInfo;
+            f2Process = obj.info.frame2Process;
             for i = 1: nfields
                 
                 disp(['Retrieving data from fluctuating file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 currentCorrMov = obj.corrMovies.(fieldsN{i});
                 
                 currentCorrMov.correctDrift;
-                
-                data = currentCorrMov.loadFrames(frame2Process);
+                frames = Core.Movie.checkFrame(f2Process, currentCorrMov.raw.movInfo.maxFrame);
+                data = currentCorrMov.loadFrames(frames);
                 
                 [corrMask] = currentCorrMov.getCorrelationMask(data,corrInfo);
                 

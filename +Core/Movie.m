@@ -391,7 +391,11 @@ classdef Movie < handle
             end
             
             assert(isvector(frames),'Frames should be a vector of integers');
-            assert(max(frames) <= maxFrame(1),'Request exceeds max frame');
+            if max(frames) > maxFrame(1)
+                frames(frames>maxFrame(1)) = [];
+                warning('Requested frames exceeds max frame in the movie, we removed extra indices');
+            end
+            
             assert(min(frames) >0, 'Indexing in matlab start from 1');
             
         end
