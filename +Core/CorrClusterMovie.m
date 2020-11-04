@@ -151,7 +151,7 @@ classdef CorrClusterMovie < Core.Movie
               
             waitbar(0.1,h,'Getting correlation relationships');
             %#2 Get correlation relationship between pixels
-            [corrRel]  = obj.getCorrRelation(data2Cluster,r,corrThreshold);
+            [corrRel]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
             
             waitbar(0.4,h,'Preparing data');
             %#3 reshap pixel relationship and get corresponding indices        
@@ -176,7 +176,7 @@ classdef CorrClusterMovie < Core.Movie
             waitbar(0.5,h,'Intensity fluctuation based clustering');
             %perform pseudo-clustering
             dim = size(data2Cluster);
-            [corrMask] = obj.corrClustering(listCorrPx,inds,distanceMap,dim);
+            [corrMask] = corrAnalysis.corrClustering(listCorrPx,inds,distanceMap,dim);
 
             figure
             imagesc(corrMask)
@@ -255,198 +255,7 @@ classdef CorrClusterMovie < Core.Movie
         
     end
     methods(Static)
-        function [corrRel] = getCorrRelation(data2Cluster,r,corrThreshold)
-            %function to find correlation relation between a each pixel of
-            %an image and its neighbor pixels
-            
-            corrRel  = cell(size(data2Cluster,1),size(data2Cluster,2));
-            %loop through pixels
-            for i = 1:size(data2Cluster,1)
-                for j = 1:size(data2Cluster,2)
-                    %take a pixel
-                    currentPxCoord = [i,j];
-                    %find its neighbor
-                    neighbor = Core.CorrClusterMovie.findNeighbor(currentPxCoord,size(data2Cluster),r);
-
-                    corr = zeros(size(neighbor,1),1);                 
-                    data1 = squeeze(data2Cluster(currentPxCoord(1),currentPxCoord(2),:));
-                    %calculate correlation 1-pearson coefficient ==> 0 is
-                    %correlated 2 is anti correated 1 is uncorrelated
-                    for k = 1:size(neighbor,1)
-                        data2 = squeeze(data2Cluster(neighbor(k,1),neighbor(k,2),:));
-                        tmpCorr = corrcoef(data1,data2);
-                        corr(k) = 1-tmpCorr(2,1);
-
-                    end
-                    %if correlation between pixel is sufficent we keep
-                    %track of those pixel as being correlated to the
-                    %current pixel
-                    [neighborIdx] = sub2ind(size(corrRel),neighbor(:,1),neighbor(:,2));
-                    currPxIdx     = sub2ind(size(corrRel),currentPxCoord(:,1),currentPxCoord(:,2));
-                    corr(neighborIdx==currPxIdx) = [];
-                    neighborIdx(neighborIdx==currPxIdx) = [];
-                    
-                    if all(corr>corrThreshold)
-
-                    else
-                        idx = neighborIdx(corr<corrThreshold,:);
-                        
-                        if ~isempty(idx)
-                           %convert to indices for simplicity later
-                           corrRel{currPxIdx} = idx;
-                        end
-                    end
-                end
-            end
-        end
         
-        
-        function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim)
-            %function actually does the clustering.
-            safeCount = 2*dim(1)*dim(2);
-            %initialize the variable
-            count = 1;
-            group = 1;
-            corrMask = zeros(dim(1),dim(2));
-            treatedIdx = NaN(length(inds),1);
-            indsCopy = inds;
-            %as long as the list of pixel that are correlated is not empty
-            %we keep going
-            while ~isempty(listCorrPx) 
-                %take the index of the first pixel to be treated
-                currIndex = inds(1);
-                %add to a new list the pixel that are correlated with the
-                %currently treated pixel
-                currList = listCorrPx{1};
-                %check that the list does not contain already treated
-                %pixels
-                currList(ismember(currList,treatedIdx,'row'),:) =[];
-                %if the list is empty then the pixel is "dead" and we
-                %remove it from the list
-                if isempty(currList)
-                    listCorrPx(1) = [];
-                    idx = find(isnan(treatedIdx(:,1)),1);
-                    treatedIdx(idx) = currIndex;
-                    inds(1) = [];
-                else
-                    %otherwise we treat all the pixel in the list in the
-                    %same way
-                    while ~isempty(currList)
-                        % add the new pixel to the group and keep track of it
-                        corrMask(currIndex) = group;
-                        idx = find(isnan(treatedIdx(:,1)),1);
-                        treatedIdx(idx) = currIndex;
-                        
-                        % remove it from the list
-                        listCorrPx(inds==currIndex) = [];
-                        inds(inds==currIndex) = [];
-
-                        %update the currentlist to add the new data
-                        currIndex = currList(1);
-                        currList(1,:) = [];
-                        %Quick bug fix is to check if currIndex is in inds
-                        %and if not we just delete it?
-                        
-                        %get list of element correlated to the current element
-                        list2Add  = listCorrPx{inds==currIndex}; 
-                        %remove already treated cases and cases already in the list
-                        list2Add(or(ismember(list2Add,treatedIdx,'row'),ismember(list2Add,currList,'row'))) = []; 
-
-                        %find pixel that are already inside the cluster to check
-                        %for correlation
-                        currCluster = find(corrMask==group);
-                        
-                        %take a random subset of 10 pixel from the
-                        %current cluster
-                        try
-                            r = randperm(length(currCluster,10));
-                            currCluster = currCluster(r);
-                        catch
-
-                        end
-                        %check that the pixel that should be added to the
-                        %list are indeed correlated to the current cluster
-                        [list2Add] = Core.CorrClusterMovie.enforceClusterConsistency(list2Add,...
-                            currCluster,distanceMap,indsCopy);
-                        %add the new element to the list
-                        currList  = [currList;list2Add];
-
-                        if isempty(currList)
-                            disp(['Found ' num2str(group) ' group(s).']);
-                        end
-
-                        count = count+1;
-                    end
-                    %mark the last case as treated:
-                    corrMask(currIndex) = group;
-                    idx = find(isnan(treatedIdx(:,1)),1);
-                    treatedIdx(idx) = currIndex;
-
-                    % remove it from the list
-                    listCorrPx(inds==currIndex) = [];
-                    inds(inds==currIndex) = [];
-
-                    %if exit the first while loop, the first group is complete, we need to
-                    %increment the group number as we are supposed to have treated all
-                    %cases.
-                    group = group+1;
-
-                end
-
-                count=count+1;
-
-                if count >= safeCount
-                    error('something went wrong')
-                end
-            end   
-        end
-        function [neighbor] = findNeighbor(idx,dim,r)
-            %function to find neighboring pixel in a given radius of a
-            %central pixel given by idx. The function also makes sure that
-            %we do not have indices outside the images.
-            iIdx = idx(1)-r:idx(1)+r;
-            jIdx = idx(2)-r:idx(2)+r;
-
-            iIdx = iIdx(iIdx>=1 & iIdx<=dim(1));
-            jIdx = jIdx(jIdx>=1 & jIdx<=dim(2));
-           
-            neighbor = combvec(iIdx,jIdx)';    
-        end
-        
-        function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,distanceMap,indsCopy)
-            %function to enforce consistency within the cluster by checking that
-            %to-be-added element are correlated with a random subset of the cluster
-            nInd = length(ind2Add);
-            nClust = length(currCluster);
-            newList = ind2Add;
-            if ~isempty(currCluster)
-                %reshape input to compare correlation
-                id2Add  = find(ismember(indsCopy,newList));
-                newList = repmat(id2Add,1,length(currCluster))';
-                newList = newList(:);
-                currCluster = find(ismember(indsCopy,currCluster));
-                currCluster = repmat(currCluster,nInd,1);
-
-                %combine input to extract value from distance map
-                subs = [newList,currCluster];    
-                inds = sub2ind(size(distanceMap),subs(:,1),subs(:,2));
-                corrVal = distanceMap(inds);
-                %reshape corrVal to test for each cluster
-                corrVal = reshape(corrVal,nClust,nInd);
-                %we are more relaxed since pixel far apart might be tested
-                corrTest = corrVal<0.5;
-                %we want new data point to be correlated to 80% of the subset from the
-                %existing group
-                idx2delete = sum(corrTest,1)./size(corrTest,1)<0.7;
-   
-                %delete the data not matching the requested threshold
-                ind2Add(idx2delete) = [];    
-                %we dont want any duplicate of index (although it should
-                %not happen)
-                ind2Add = unique(ind2Add);
-
-            end
-        end
     end
     methods(Access = 'private')
         function [run] = checkDrift(obj)
@@ -456,8 +265,6 @@ classdef CorrClusterMovie < Core.Movie
             test = isfile(path);
             %if drift exist we dont want to run again and vice versa
             run  = ~test;
-            
-            
             
         end
         
