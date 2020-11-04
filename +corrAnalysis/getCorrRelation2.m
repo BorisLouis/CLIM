@@ -1,8 +1,9 @@
-function [corrRel] = getCorrRelation(data2Cluster,r,corrThreshold)
+function [corrRel, corrSum] = getCorrRelation2(data2Cluster,r,corrThreshold)
     %function to find correlation relation between a each pixel of
     %an image and its neighbor pixels
 
     corrRel  = cell(size(data2Cluster,1),size(data2Cluster,2));
+    corrSum  = zeros(size(data2Cluster,1),size(data2Cluster,2));
     %loop through pixels
     for i = 1:size(data2Cluster,1)
         for j = 1:size(data2Cluster,2)
@@ -37,6 +38,7 @@ function [corrRel] = getCorrRelation(data2Cluster,r,corrThreshold)
                 if ~isempty(idx)
                    %convert to indices for simplicity later
                    corrRel{currPxIdx} = idx;
+                   corrSum(currPxIdx) =  mean(1-corr);
                 end
             end
         end
