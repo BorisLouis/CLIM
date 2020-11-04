@@ -5,7 +5,7 @@ clc;
 
 %% User input
 path = 'D:\Documents\Unif\PhD\Papers\13 - IntensityCorrletation\Simulations\test';
-
+nParticles = 15;
 %% Load Data
 
 folder2Analyze = dir(path);
@@ -17,6 +17,7 @@ nFolder = length(folder2Analyze);
 delta = 5;
 FWHM_pix = 4;
 chi2 = 24;
+allData = cell(1,nFolder);
 for i = 1:nFolder
    
     currPath = [folder2Analyze(i).folder filesep folder2Analyze(i).name filesep 'Experiment.mat'];
@@ -28,6 +29,10 @@ for i = 1:nFolder
     %get movies
     mov = fieldnames(currExp.corrMovies);
     
+    data = table(zeros(length(mov),1), zeros(length(mov),1), zeros(length(mov),1),...
+    zeros(length(mov),1),zeros(length(mov),1),zeros(length(mov),1),...
+    'VariableNames',{'noise','amp','SNRamp','SNR','nPart','detRat'});
+
     for j = 1:length(mov)
         currMov = currExp.corrMovies.(mov{j});
         frames = currMov.info.frame2Load;
@@ -58,11 +63,20 @@ for i = 1:nFolder
         
         Amp = maxState-minState;
         
-        SNR = Amp/noise;
+        SNRAmp = Amp/noise;
+        SNR    = mean(iTrace(:))/noise;
+        nPart  = size(iTrace,1);
+        detectionRatio = nPart/nParticles;
         
+        data(j).noise = noise;
+        data(j).amp = amp;
+        data(j).SNRamp = SNRamp;
+        data(j).SNR = SNR;
+        data(j).nPart = nPart;
+        data(j).detRat = detRat;
         
     end
     
-    
+    allData{i} = data;
     
 end
