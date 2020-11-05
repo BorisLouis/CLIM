@@ -1,27 +1,29 @@
-function [corrRel, corrSum] = getCorrRelation2(data2Cluster,r,corrThreshold)
+function [listCorrPx, corrProd] = getCorrRelation2(data,r,corrThreshold)
     %function to find correlation relation between a each pixel of
     %an image and its neighbor pixels
 
-    corrRel  = cell(size(data2Cluster,1),size(data2Cluster,2));
-    corrSum  = zeros(size(data2Cluster,1),size(data2Cluster,2));
+    corrRel  = cell(size(data,1),size(data,2));
+    corrProd  = zeros(size(data,1),size(data,2));
     %loop through pixels
-    for i = 1:size(data2Cluster,1)
-        for j = 1:size(data2Cluster,2)
+    for i = 1:size(data,1)
+        for j = 1:size(data,2)
             %take a pixel
             currentPxCoord = [i,j];
             %find its neighbor
-            neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data2Cluster),r);
-
-            corr = zeros(size(neighbor,1),1);                 
-            data1 = squeeze(data2Cluster(currentPxCoord(1),currentPxCoord(2),:));
+            neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data),r);
+              
             %calculate correlation 1-pearson coefficient ==> 0 is
             %correlated 2 is anti correated 1 is uncorrelated
+            
+            tmpTrace = zeros(size(neighbor,1),size(data,3));
             for k = 1:size(neighbor,1)
-                data2 = squeeze(data2Cluster(neighbor(k,1),neighbor(k,2),:));
-                tmpCorr = corrcoef(data1,data2);
-                corr(k) = 1-tmpCorr(2,1);
-
+                tmpTrace(k,:) = squeeze(data(neighbor(k,1),neighbor(k,2),:));
             end
+            corrMat = corrcoef(tmpTrace');
+            
+            idx = and(ismember(neighbor(:,1),currentPxCoord(1)),ismember(neighbor(:,2),currentPxCoord(2)));
+            corr = 1-corrMat(:,idx);
+           
             %if correlation between pixel is sufficent we keep
             %track of those pixel as being correlated to the
             %current pixel
@@ -29,18 +31,57 @@ function [corrRel, corrSum] = getCorrRelation2(data2Cluster,r,corrThreshold)
             currPxIdx     = sub2ind(size(corrRel),currentPxCoord(:,1),currentPxCoord(:,2));
             corr(neighborIdx==currPxIdx) = [];
             neighborIdx(neighborIdx==currPxIdx) = [];
-
+            
+            %calculate correlation metric 
+            corrProd(currPxIdx) =  abs(prod(unique(corrMat))/length(unique(corrMat)));
+            
             if all(corr>corrThreshold)
 
             else
                 idx = neighborIdx(corr<corrThreshold,:);
 
                 if ~isempty(idx)
-                   %convert to indices for simplicity later
-                   corrRel{currPxIdx} = idx;
-                   corrSum(currPxIdx) =  mean(1-corr);
+                    if length(idx)>1
+                       %test that pixel correlated to centre pixel are correlated
+                       %together
+                       corrIdx = find(corr<corrThreshold);
+                       %get all combination of 2
+                       idx2CorrMat = nchoosek(corrIdx,2);
+
+                       idx2CorrMat = sub2ind(size(corrMat),idx2CorrMat(:,1),idx2CorrMat(:,2));
+
+                       corrVal2Test = corrMat(idx2CorrMat);
+
+                       if all(corrVal2Test<corrThreshold) 
+                           %store indices to correlated pixels
+                           corrRel{currPxIdx} = idx;
+                       else
+                          disp('oups');
+                       end
+                   else
+                       corrRel{currPxIdx} = idx;
+                   end
+                
                 end
             end
         end
     end
+    %clean corrRel
+    listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+    
+    for i=1:length(listCorrPx)
+       if ~isempty(listCorrPx{i})
+           
+           idx2Test = listCorrPx{i};
+           
+           idx2Delete = cellfun(@isempty,listCorrPx(idx2Test));
+           
+           listCorrPx{i}(idx2Delete) = [];
+           
+       end
+        
+    end
+    
+    
+    
 end

@@ -63,7 +63,7 @@ function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim)
                 end
                 %check that the pixel that should be added to the
                 %list are indeed correlated to the current cluster
-                [list2Add] = Core.CorrClusterMovie.enforceClusterConsistency(list2Add,...
+                [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
                     currCluster,distanceMap,indsCopy);
                 %add the new element to the list
                 currList  = [currList;list2Add];

@@ -9,7 +9,7 @@ corrThreshold = 0.7;%smaller is more selective here (0 is perfect correlation)
 model.name = 'gaussian';
 model.sigma_x = 3;
 model.sigma_y = 3;
-r = 2; %radius for checking correlation
+r = 1; %radius for checking correlation
 
 
 %% Simulations
@@ -53,7 +53,32 @@ noise = randn(size(data));
 finalData = data + ones(size(data))*100 +noise*20;
 
 %% Clustering
-[corrRel,corrSum]  = corrAnalysis.getCorrRelation2(finalData,r,corrThreshold);
+[listCorrPx,corrSum]  = corrAnalysis.getCorrRelation2(finalData,r,corrThreshold);
+
+%%
+%listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+inds    = (1:length(listCorrPx))';
+
+%#4 Clean data by keeping only pixel that have correlation
+%relation
+idx2Delete = cellfun(@isempty,listCorrPx);
+listCorrPx(idx2Delete) =[];
+inds(idx2Delete) = [];
+
+%calculate distancemap
+[n,p] = ind2sub(size(finalData),inds);
+pxIntList = zeros(length(n),size(finalData,3));
+for i =1:length(n)
+
+    pxIntList(i,:) = finalData(n(i),p(i),:);
+
+end
+distanceMap = 1-corrcoef(pxIntList');
+
+%perform pseudo-clustering
+dim = size(finalData);
+[corrMask] = corrAnalysis.corrClustering(listCorrPx,inds,distanceMap,dim);
+
 
 
 %%

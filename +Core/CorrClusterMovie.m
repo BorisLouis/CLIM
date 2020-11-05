@@ -241,7 +241,7 @@ classdef CorrClusterMovie < Core.Movie
                 c = repmat(col,1,size(data,3));
                 c = reshape(c',size(data,3)*length(col),1);
                 
-                f = repmat((1:1000)',length(col),1);
+                f = repmat((1:size(data,3))',length(col),1);
                 idx = sub2ind(size(data),r,c,f);
                 
                 tmpTrace = data(idx);
