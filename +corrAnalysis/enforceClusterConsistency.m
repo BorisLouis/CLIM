@@ -1,4 +1,4 @@
-function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,distanceMap,indsCopy)
+function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,distanceMap,indsCopy,thresh)
     %function to enforce consistency within the cluster by checking that
     %to-be-added element are correlated with a random subset of the cluster
     nInd = length(ind2Add);
@@ -19,8 +19,8 @@ function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,distanceMap,i
         %reshape corrVal to test for each cluster
         corrVal = reshape(corrVal,nClust,nInd);
         %we are more relaxed since pixel far apart might be tested
-        corrTest = corrVal<0.5;
-        %we want new data point to be correlated to 80% of the subset from the
+        corrTest = corrVal<thresh;
+        %we want new data point to be correlated to 70% of the subset from the
         %existing group
         idx2delete = sum(corrTest,1)./size(corrTest,1)<0.7;
 
