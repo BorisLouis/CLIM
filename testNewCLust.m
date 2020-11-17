@@ -108,7 +108,8 @@ dim = size(finalData);
 %TODO: Code function to clean up the mask by testing significance of
 %correlation found(is it significantly higher than the correlation to other
 %cluster?)
-[cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,corrMask,corrThreshold);
+signThreshold = 0.8; %correlation of pixel to other cluster needs to be smaller than 0.8*correlation of current cluster
+[cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,corrMask,signThreshold);
 
 
 %% SR test
@@ -171,8 +172,9 @@ MLData = MLData./max(MLData,[],2);
 
 nClust = 10;
 clust = zeros(size(MLData,1),nClust);
+dist = cell(nClust,1);
 for i=1:nClust
-clust(:,i) = kmeans(MLData,i,'Distance','correlation','emptyaction','drop',...
+    [clust(:,i),~,~,dist{i}] = kmeans(MLData,i,'Distance','correlation','emptyaction','drop',...
         'replicate',10);
 end
 va = evalclusters(MLData,clust,'CalinskiHarabasz');
@@ -189,7 +191,7 @@ title('ML output')
 axis image
 colormap('jet')
 
-[cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,MLCorrMask,corrThreshold);
+[cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,MLCorrMask,signThreshold);
 
 subplot(1,2,2)
 imagesc(cleanCorrMask)
