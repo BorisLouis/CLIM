@@ -1,4 +1,4 @@
-function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim)
+function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
     %function actually does the clustering.
     safeCount = 2*dim(1)*dim(2);
     %initialize the variable
@@ -64,7 +64,7 @@ function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim)
                 %check that the pixel that should be added to the
                 %list are indeed correlated to the current cluster
                 [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
-                    currCluster,distanceMap,indsCopy);
+                    currCluster,distanceMap,indsCopy,thresh);
                 %add the new element to the list
                 currList  = [currList;list2Add];
 

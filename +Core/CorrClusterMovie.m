@@ -176,7 +176,7 @@ classdef CorrClusterMovie < Core.Movie
             waitbar(0.5,h,'Intensity fluctuation based clustering');
             %perform pseudo-clustering
             dim = size(data2Cluster);
-            [corrMask] = corrAnalysis.corrClustering(listCorrPx,inds,distanceMap,dim);
+            [corrMask] = corrAnalysis.corrClustering(listCorrPx,inds,distanceMap,dim,corrThreshold);
 
             figure
             imagesc(corrMask)
