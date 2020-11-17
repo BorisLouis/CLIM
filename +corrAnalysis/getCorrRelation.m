@@ -1,7 +1,7 @@
-function [corrRel] = getCorrRelation(data2Cluster,r,corrThreshold)
+function [listCorrPx] = getCorrRelation(data2Cluster,r,corrThreshold)
     %function to find correlation relation between a each pixel of
     %an image and its neighbor pixels
-
+    
     corrRel  = cell(size(data2Cluster,1),size(data2Cluster,2));
     %loop through pixels
     for i = 1:size(data2Cluster,1)
@@ -10,7 +10,7 @@ function [corrRel] = getCorrRelation(data2Cluster,r,corrThreshold)
             currentPxCoord = [i,j];
             %find its neighbor
             neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data2Cluster),r);
-
+            
             corr = zeros(size(neighbor,1),1);                 
             data1 = squeeze(data2Cluster(currentPxCoord(1),currentPxCoord(2),:));
             %calculate correlation 1-pearson coefficient ==> 0 is
@@ -41,4 +41,6 @@ function [corrRel] = getCorrRelation(data2Cluster,r,corrThreshold)
             end
         end
     end
+    
+    listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
 end

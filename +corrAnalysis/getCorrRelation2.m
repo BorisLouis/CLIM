@@ -34,38 +34,46 @@ function [listCorrPx, corrProd] = getCorrRelation2(data,r,corrThreshold)
             
             %calculate correlation metric 
             corrProd(currPxIdx) =  abs(prod(unique(corrMat))/length(unique(corrMat)));
-            
+            %if none are correlated enough, we do not do anything
             if all(corr>corrThreshold)
 
             else
                 idx = neighborIdx(corr<corrThreshold,:);
 
-                if ~isempty(idx)
-                    if length(idx)>1
-                       %test that pixel correlated to centre pixel are correlated
-                       %together
-                       corrIdx = find(corr<corrThreshold);
-                       %get all combination of 2
-                       idx2CorrMat = nchoosek(corrIdx,2);
+                if length(idx)>1
+                   %test that pixel correlated to centre pixel are correlated
+                   %together
+                   corrIdx = find(corr<corrThreshold);
+                   %get all combination of 2
+                   idx2CorrMat = nchoosek(corrIdx,2);
 
-                       idx2CorrMat = sub2ind(size(corrMat),idx2CorrMat(:,1),idx2CorrMat(:,2));
+                   idx2CorrMat = sub2ind(size(corrMat),idx2CorrMat(:,1),idx2CorrMat(:,2));
+                   %we convert corrMat to distance here
+                   corrVal2Test = 1-corrMat(idx2CorrMat);
 
-                       corrVal2Test = corrMat(idx2CorrMat);
+                   %find which pixel are not correlated to the others
+                   id = corrVal2Test<corrThreshold;
+                   idMat = idx2CorrMat(~id);
+                   [ii,jj] = ind2sub(size(corrMat),idMat);
+                   % Delete those indices
+                   ij = [ii;jj];
+                   id2Delete = hist(ij,unique(ij))>1;
+                   a = unique(ij);
+                   
+                   idx2Delete = ismember(corrIdx,a(id2Delete));
+                   idx(idx2Delete) = [];
 
-                       if all(corrVal2Test<corrThreshold) 
-                           %store indices to correlated pixels
-                           corrRel{currPxIdx} = idx;
-                       else
-                          disp('oups');
-                       end
-                   else
-                       corrRel{currPxIdx} = idx;
-                   end
+                   %store indices to correlated pixels
+                   corrRel{currPxIdx} = idx;
+                   
+               else
+                   corrRel{currPxIdx} = idx;
+               end
                 
-                end
             end
         end
     end
+    
     %clean corrRel
     listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
     
@@ -80,8 +88,5 @@ function [listCorrPx, corrProd] = getCorrRelation2(data,r,corrThreshold)
            
        end
         
-    end
-    
-    
-    
+    end   
 end
