@@ -2,10 +2,10 @@
 
 %% Simulation input
 sizeIm = 64;
-nFrames = 100;
+nFrames = 250;
 
 nParticles = 4;
-corrThreshold = 0.7;%smaller is more selective here (0 is perfect correlation)
+corrThreshold = 0.6;%smaller is more selective here (0 is perfect correlation) 0.7 is 0.3 pearson coefficient
 model.name = 'gaussian';
 model.sigma_x = 3;
 model.sigma_y = 3;
@@ -23,10 +23,10 @@ for i = 1:nParticles
     x0 = coord(i,1);
     y0 = coord(i,2);
     c  = 0;
-    BaseInt = 3e4;
+    BaseInt = 5e4;
     secondInt = 2*BaseInt;
     int = BaseInt;
-    for j = 1 : 100
+    for j = 1 : nFrames
         
         num = rand(1);
         if num > 0.7
@@ -50,10 +50,34 @@ end
 
 noise = randn(size(data));
 
-finalData = data + ones(size(data))*100 +noise*20;
+finalData = data + ones(size(data))*100 + noise*20;
+%% savedata as Movie
+%% save a movie as example
+vidFile = VideoWriter('rawMov.mp4','MPEG-4');
+vidFile.FrameRate = 10;
+open(vidFile);
+figure
+for i = 1:size(finalData,3)
+   imagesc(finalData(:,:,i));
+   colormap('hot')
+   caxis([0 max(finalData(:))]);
+   axis image
+   drawnow;
+   im = getframe;
+   writeVideo(vidFile,im);
+   clf
+end
+close(vidFile)
 
-%% Clustering
+
+%% get pixel correlation method 1
+[listCorrPx]  = corrAnalysis.getCorrRelation(finalData,r,corrThreshold);
+
+%% get pixel correlation method 2
 [listCorrPx,corrSum]  = corrAnalysis.getCorrRelation2(finalData,r,corrThreshold);
+
+%% get pixel correlation method 3
+[listCorrPx,corrSum3]  = corrAnalysis.getCorrRelation3(finalData,r,corrThreshold);
 
 %%
 %listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
@@ -77,48 +101,110 @@ distanceMap = 1-corrcoef(pxIntList');
 
 %perform pseudo-clustering
 dim = size(finalData);
-[corrMask] = corrAnalysis.corrClustering(listCorrPx,inds,distanceMap,dim);
+[corrMask] = corrAnalysis.corrClustering(listCorrPx,inds,distanceMap,dim,corrThreshold);
 
 
+%% clean up mask
+%TODO: Code function to clean up the mask by testing significance of
+%correlation found(is it significantly higher than the correlation to other
+%cluster?)
+[cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,corrMask,corrThreshold);
 
-%%
-listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+
+%% SR test
+BW = imbinarize(corrSum);
+BW = bwlabel(BW);
+
+%% ML test for corrmask
 inds    = (1:length(listCorrPx))';
 
+%#4 Clean data by keeping only pixel that have correlation
+%relation
 idx2Delete = cellfun(@isempty,listCorrPx);
-
 listCorrPx(idx2Delete) =[];
-
 inds(idx2Delete) = [];
 
-[n,p] = ind2sub(size(corrRel),inds);
+%calculate distancemap
+[n,p] = ind2sub(size(finalData),inds);
 pxIntList = zeros(length(n),size(finalData,3));
 for i =1:length(n)
-   
-    pxIntList(i,:) = finalData(n(i),p(i),:);
-    
-end
 
-% get distance map
-dist = pdist2([n,p],[n,p]);
-%normalize the distance scale
-dist = dist./max(dist(:));
+    pxIntList(i,:) = finalData(n(i),p(i),:);
+
+end
 distanceMap = 1-corrcoef(pxIntList');
 
-%#1 Try clustering the data together.
-testMask = zeros(size(finalData,1),size(finalData,2));
-T1 = clusterdata(distanceMap,4);
-for i = 1: length(T1)
-    testMask(inds(i)) = T1(i);
-    
+
+nClust = 10;
+clust = zeros(size(distanceMap,1),nClust);
+for i=1:nClust
+clust(:,i) = kmeans(distanceMap,i,'emptyaction','singleton',...
+        'replicate',5);
+end
+va = evalclusters(distanceMap,clust,'CalinskiHarabasz');
+
+MLCorrMask = zeros(size(corrMask));
+
+for i = 1:length(inds)
+    MLCorrMask(inds(i)) = clust(i,4);
 end
 
 figure
-imagesc(testMask);
+imagesc(MLCorrMask)
+axis image
+colormap('jet')
 
-% 
-% %#2 DBScan is very similar to what I implemented as pseudo clustering so it
-% %fails for similar reasons.
-% idx = dbscan(distanceMap,24,50,'Distance','precomputed');
-% unique(idx)
+[cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,MLCorrMask,corrThreshold);
+
+figure
+imagesc(cleanCorrMask)
+axis image
+colormap('jet')
+
+%% Try ML from Scratch
+MLData = reshape(finalData,[size(finalData,1)*size(finalData,2),size(finalData,3)]);
+
+%normalize data
+minData = min(MLData,[],2);
+MLData = MLData-minData;
+MLData = MLData./max(MLData,[],2);
+
+nClust = 10;
+clust = zeros(size(MLData,1),nClust);
+for i=1:nClust
+clust(:,i) = kmeans(MLData,i,'Distance','correlation','emptyaction','drop',...
+        'replicate',10);
+end
+va = evalclusters(MLData,clust,'CalinskiHarabasz');
+
+MLCorrMask = zeros(size(finalData,1),size(finalData,2));
+for i = 1:length(MLData)
+    MLCorrMask(i) = clust(i,5);
+end
+
+figure
+subplot(1,2,1)
+imagesc(MLCorrMask)
+title('ML output')
+axis image
+colormap('jet')
+
+[cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,MLCorrMask,corrThreshold);
+
+subplot(1,2,2)
+imagesc(cleanCorrMask)
+title('Cleaned ML output')
+axis image
+colormap('jet')
+
+%Ask Pavel if it is better to pre-process data so to handle noise or if he
+%thinks that pure ML approach can be done?
+
+%% Hierarchical clustering
+
+
+
+
+
+
 
