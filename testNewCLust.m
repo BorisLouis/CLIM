@@ -179,9 +179,18 @@ for i=1:nClust
 end
 va = evalclusters(MLData,clust,'CalinskiHarabasz');
 
+%clean based on distance
+distToClean = dist{4,1};
+distThresh = distToClean<0.6;
+idx2delete = sum(distThresh,2);
+idx2delete = idx2delete<1;
+
+clust(idx2delete,4) = 0;
+
+
 MLCorrMask = zeros(size(finalData,1),size(finalData,2));
 for i = 1:length(MLData)
-    MLCorrMask(i) = clust(i,5);
+    MLCorrMask(i) = clust(i,4);
 end
 
 figure
