@@ -5,6 +5,8 @@ classdef CorrClusterMovie < Core.Movie
     %any data inside. Methods allow to display and do stuff with the data.
     
     properties (SetAccess = 'private')
+        listCorrPx
+        indCorrPx
         corrMask
         nCluster
    
@@ -140,7 +142,7 @@ classdef CorrClusterMovie < Core.Movie
        
         end
         
-        function [corrMask] = getCorrelationMask(obj,data,corrInfo)
+        function [lCorrPx,indPx] = getPxCorrelation(obj,data,corrInfo)
             data = double(data);
             r = corrInfo.r;
             corrThreshold = corrInfo.thresh;
@@ -151,45 +153,73 @@ classdef CorrClusterMovie < Core.Movie
               
             waitbar(0.1,h,'Getting correlation relationships');
             %#2 Get correlation relationship between pixels
-            [corrRel]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
+            [lCorrPx]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
             
             waitbar(0.4,h,'Preparing data');
             %#3 reshap pixel relationship and get corresponding indices        
-            listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
-            inds    = (1:length(listCorrPx))';
+            
+            indPx    = (1:length(lCorrPx))';
             
             %#4 Clean data by keeping only pixel that have correlation
             %relation
-            idx2Delete = cellfun(@isempty,listCorrPx);
-            listCorrPx(idx2Delete) =[];
-            inds(idx2Delete) = [];
+            idx2Delete = cellfun(@isempty,lCorrPx);
+            lCorrPx(idx2Delete) =[];
+            indPx(idx2Delete) = [];
             
-            %calculate distancemap
-            [n,p] = ind2sub(size(corrRel),inds);
-            pxIntList = zeros(length(n),size(data2Cluster,3));
-            for i =1:length(n)
-
-                pxIntList(i,:) = data2Cluster(n(i),p(i),:);
-
-            end
-            distanceMap = 1-corrcoef(pxIntList');
-            waitbar(0.5,h,'Intensity fluctuation based clustering');
+            obj.listCorrPx = lCorrPx;
+            obj.indCorrPx = indPx;
+            
+        end
+        
+        
+        function [corrMask] = getCorrelationMask(obj,data,corrInfo)
+            corrThreshold = corrInfo.thresh;
+            lCorrPx = obj.listCorrPx;
+            inds    = obj.indCorrPx;
+            
+            %get distance map
+            [distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
+             
+            disp('========> Performing Pseudo-clustering <==========')
             %perform pseudo-clustering
             dim = size(data2Cluster);
-            [corrMask] = corrAnalysis.corrClustering(listCorrPx,inds,distanceMap,dim,corrThreshold);
-
+            [corrMask] = corrAnalysis.corrClustering(lCorrPx,inds,distanceMap,dim,corrThreshold);
+            
+            disp('========> DONE <==========')
+            
             figure
             imagesc(corrMask)
             axis image
             colormap('hot')
-            
-            waitbar(0.9,h,'Storing results');
+    
             obj.corrMask = corrMask;
             obj.nCluster = max(corrMask(:));
             
-            close(h);
+        end
+        
+        function [MLCorrMask] = getMLCorrelationMask(obj,data,MLOptions)
+            nClust = MLOptions.clust2Test;
+            
+            inds = obj.indCorrPx;
+                 
+            [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
+
+            [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,nClust);
+
+            clust2Use = clustEval.OptimalK;
+
+            [MLCorrMask]       = corrAnalysis.getMaskFromMLCluster(clust,inds,clust2Use,size(data(:,:,1)));
+
+            figure
+            imagesc(MLCorrMask)
+            axis image
+            colormap('jet')
             
         end
+        
+        
+        
+        
         
         function plotContour(obj,data)
             assert(~isempty(obj.corrMask),'Need to run getCorrelationMask before plotting contour');

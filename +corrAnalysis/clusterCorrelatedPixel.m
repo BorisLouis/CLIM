@@ -1,20 +1,34 @@
-function [clust,clustEval] = clusterCorrelatedPixel(distanceMap, clust2Test)
+function [clust,clustEval] = clusterCorrelatedPixel(distanceMap, varargin)
 
-    %TODO: Increase input so GPU or other parameter can be selected outside
-    %of the main function
+    %parse user input
+    narginchk(1,inf)
 
-    if length(clust2Test)<2
-        clust2Test = [1 clust2Test];
-    elseif length(clust2Test) == 2
-    else
-        error('unexpected format for cluster to test');
-    end
+    %Parse input and give default values
+    params = inputParser;
+    params.CaseSensitive = false;
+    params.addParameter('replicate', 5, @(x) isnumeric(x) && x>0);
+    params.addParameter('GPU', false, @(x) x == round(x) && or(x==1, x == 0));
+    params.addParameter('clust2Test', [1,10], @(x) isvector(x),length(x)==2);
+    
+    params.parse(varargin{:});
+
+    %Extract values from the inputParser
+    clust2Test =  params.Results.clust2Test;
+    replicate =  params.Results.replicate;
+    GPU = params.Results.GPU;   
+    
     
     clust = zeros(size(distanceMap,1),max(clust2Test));
-    for i=clust2Test(1):clust2Test(2)
-    clust(:,i) = kmeans(distanceMap,i,'emptyaction','singleton',...
-            'replicate',5);
+    
+    if GPU
+        distanceMap = gpuArray(distanceMap);
     end
+    
+    for i=clust2Test(1):clust2Test(2)
+    clust(:,i) = kmeans(distanceMap,i,'emptyaction','drop',...
+            'replicate',replicate);
+    end
+    
     clustEval = evalclusters(distanceMap,clust,'CalinskiHarabasz');
     
 end
