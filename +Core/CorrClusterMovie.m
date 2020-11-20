@@ -199,17 +199,23 @@ classdef CorrClusterMovie < Core.Movie
         
         function [MLCorrMask] = getMLCorrelationMask(obj,data,MLOptions)
             nClust = MLOptions.clust2Test;
+            GPU    = MLOptions.GPU;
+            replicate = MLOptions.replicate;
             
             inds = obj.indCorrPx;
                  
             [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
 
-            [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,nClust);
+            [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,...
+                'clust2Test',nClust,'GPU',GPU,'replicate',replicate);
 
             clust2Use = clustEval.OptimalK;
-
-            [MLCorrMask]       = corrAnalysis.getMaskFromMLCluster(clust,inds,clust2Use,size(data(:,:,1)));
-
+            
+            MLCorrMask = zeros(size(data(:,:,1)));
+            for i = 1:length(inds)
+                MLCorrMask(inds(i)) = clust(i,clust2Use);
+            end
+           
             figure
             imagesc(MLCorrMask)
             axis image
