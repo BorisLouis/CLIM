@@ -5,12 +5,12 @@ sizeIm = 64;
 nFrames = 250;
 
 nParticles = 4;
-corrThreshold = 0.6;%smaller is more selective here (0 is perfect correlation) 0.7 is 0.3 pearson coefficient
+corrThreshold = 0.7;%smaller is more selective here (0 is perfect correlation) 0.7 is 0.3 pearson coefficient
 model.name = 'gaussian';
 model.sigma_x = 3;
 model.sigma_y = 3;
 r = 1; %radius for checking correlation
-
+signThreshold = 0.8; %correlation of pixel to other cluster needs to be smaller than 0.8*correlation of current cluster
 
 %% Simulations
 data = zeros(sizeIm,sizeIm,nFrames);
@@ -53,21 +53,21 @@ noise = randn(size(data));
 finalData = data + ones(size(data))*100 + noise*20;
 %% savedata as Movie
 %% save a movie as example
-vidFile = VideoWriter('rawMov.mp4','MPEG-4');
-vidFile.FrameRate = 10;
-open(vidFile);
-figure
-for i = 1:size(finalData,3)
-   imagesc(finalData(:,:,i));
-   colormap('hot')
-   caxis([0 max(finalData(:))]);
-   axis image
-   drawnow;
-   im = getframe;
-   writeVideo(vidFile,im);
-   clf
-end
-close(vidFile)
+% vidFile = VideoWriter('rawMov.mp4','MPEG-4');
+% vidFile.FrameRate = 10;
+% open(vidFile);
+% figure
+% for i = 1:size(finalData,3)
+%    imagesc(finalData(:,:,i));
+%    colormap('hot')
+%    caxis([0 max(finalData(:))]);
+%    axis image
+%    drawnow;
+%    im = getframe;
+%    writeVideo(vidFile,im);
+%    clf
+% end
+% close(vidFile)
 
 
 %% get pixel correlation method 1
@@ -108,7 +108,7 @@ dim = size(finalData);
 %TODO: Code function to clean up the mask by testing significance of
 %correlation found(is it significantly higher than the correlation to other
 %cluster?)
-signThreshold = 0.8; %correlation of pixel to other cluster needs to be smaller than 0.8*correlation of current cluster
+
 [cleanCorrMask] = corrAnalysis.cleanCorrMask(finalData,corrMask,signThreshold);
 
 
@@ -117,38 +117,22 @@ BW = imbinarize(corrSum);
 BW = bwlabel(BW);
 
 %% ML test for corrmask
+%get linear indices for all pixel in the image
 inds    = (1:length(listCorrPx))';
-
 %#4 Clean data by keeping only pixel that have correlation
 %relation
 idx2Delete = cellfun(@isempty,listCorrPx);
 listCorrPx(idx2Delete) =[];
 inds(idx2Delete) = [];
 
-%calculate distancemap
-[n,p] = ind2sub(size(finalData),inds);
-pxIntList = zeros(length(n),size(finalData,3));
-for i =1:length(n)
+[distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,finalData);
 
-    pxIntList(i,:) = finalData(n(i),p(i),:);
+[clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,[1,10]);
 
-end
-distanceMap = 1-corrcoef(pxIntList');
+clust2Use = clustEval.OptimalK;
 
+[MLCorrMask]       = corrAnalysis.getMaskFromMLCluster(clust,inds,clust2Use,size(finalData(:,:,1)));
 
-nClust = 10;
-clust = zeros(size(distanceMap,1),nClust);
-for i=1:nClust
-clust(:,i) = kmeans(distanceMap,i,'emptyaction','singleton',...
-        'replicate',5);
-end
-va = evalclusters(distanceMap,clust,'CalinskiHarabasz');
-
-MLCorrMask = zeros(size(corrMask));
-
-for i = 1:length(inds)
-    MLCorrMask(inds(i)) = clust(i,4);
-end
 
 figure
 imagesc(MLCorrMask)
@@ -181,7 +165,7 @@ va = evalclusters(MLData,clust,'CalinskiHarabasz');
 
 %clean based on distance
 distToClean = dist{4,1};
-distThresh = distToClean<0.6;
+distThresh = distToClean<corrThreshold;
 idx2delete = sum(distThresh,2);
 idx2delete = idx2delete<1;
 
