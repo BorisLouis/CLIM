@@ -50,12 +50,16 @@ data = myMovie.loadFrames(frame2Process);
 
 
 %% ML Data Processing
-MLOptions.clust2Test = [max(corrMask)-20:max(corrMask+20)];
+MLOptions.clust2Test = [2,20];
 MLOptions.GPU = true;
-MLOptions.replicate =10;
+MLOptions.replicate = 5;
 
 [MLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
 
+
+%% clean mask
+
+[cleanMask] = corrAnalysis.cleanCorrMask(data,myMovie.corrMask,0.8);
 %% Plotting
 myMovie.plotContour(data);
 

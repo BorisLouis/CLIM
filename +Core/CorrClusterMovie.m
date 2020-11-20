@@ -211,8 +211,8 @@ classdef CorrClusterMovie < Core.Movie
 
             [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,...
                 'clust2Test',nClust,'GPU',GPU,'replicate',replicate);
-
-            clust2Use = clustEval.OptimalK;
+            idx = max(clust,[],1);
+            clust2Use = idx == clustEval.OptimalK;
             
             MLCorrMask = zeros(size(data(:,:,1)));
             for i = 1:length(inds)

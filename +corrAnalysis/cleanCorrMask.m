@@ -10,7 +10,7 @@ function [cleanCorrMask] = cleanCorrMask(data, corrMask, signThresh)
        mBW = repmat(BW,1,1,nFrames);
        trace = data(mBW);
        traces = reshape(trace',sum(BW(:)),nFrames);
-       allTraces{1,i} = traces; 
+       allTraces{1,i} = double(traces); 
        allTraces{2,i} = mean(traces,1);
        
        meanTraces(i,:) = allTraces{2,i};

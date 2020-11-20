@@ -8,7 +8,7 @@ function [clust,clustEval] = clusterCorrelatedPixel(distanceMap, varargin)
     params.CaseSensitive = false;
     params.addParameter('replicate', 5, @(x) isnumeric(x) && x>0);
     params.addParameter('GPU', false, @(x) x == round(x) && or(x==1, x == 0));
-    params.addParameter('clust2Test', [1,10], @(x) isvector(x),length(x)==2);
+    params.addParameter('clust2Test', [1,10], @(x) isvector(x) && length(x)==2);
     
     params.parse(varargin{:});
 
@@ -17,18 +17,22 @@ function [clust,clustEval] = clusterCorrelatedPixel(distanceMap, varargin)
     replicate =  params.Results.replicate;
     GPU = params.Results.GPU;   
     
-    
-    clust = zeros(size(distanceMap,1),max(clust2Test));
+    nClust = length(clust2Test(1):clust2Test(2));
+    clust = zeros(size(distanceMap,1),nClust);
     
     if GPU
         distanceMap = gpuArray(distanceMap);
+        clust = gpuArray(clust);
     end
-    
+    idx = 1;
     for i=clust2Test(1):clust2Test(2)
-    clust(:,i) = kmeans(distanceMap,i,'emptyaction','drop',...
+        
+        clust(:,idx) = kmeans(distanceMap,i,'emptyaction','drop',...
             'replicate',replicate);
+        idx=idx+1;
     end
-    
+    distanceMap = gather(distanceMap);
+    clust = gather(clust);
     clustEval = evalclusters(distanceMap,clust,'CalinskiHarabasz');
-    
+   
 end
