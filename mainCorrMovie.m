@@ -59,7 +59,32 @@ MLOptions.replicate = 5;
 
 %% clean mask
 
-[cleanMask] = corrAnalysis.cleanCorrMask(data,myMovie.corrMask,0.8);
+[cleanMask] = corrAnalysis.cleanCorrMask(data,myMovie.corrMask,0.9);
+
+cleanMask = imfill(cleanMask,'holes');
+
+
+
+
+
+%% Test Hierarchical clustering
+[distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
+
+testHClust = linkage(distanceMap);
+
+
+
+%%
+figure
+dendrogram(testHClust)
+
+%%
+
+
+
+
+
+
 %% Plotting
 myMovie.plotContour(data);
 
