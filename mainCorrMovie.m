@@ -14,7 +14,7 @@ info.ROI = true;
 
 frame2Process = 1:3000;
 corrInfo.r = 2; %radius for checking neighbor
-corrInfo.thresh = 0.3;%correlation threshold (smaller is more correlation)
+corrInfo.thresh = 0.6;%correlation threshold (smaller is more correlation)
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -43,8 +43,18 @@ data = myMovie.loadFrames(frame2Process);
 % close(vidFile)
 
 
-%% Data Processing
+%% 
+[listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
+
 [corrMask] = myMovie.getCorrelationMask(data,corrInfo);
+
+
+%% ML Data Processing
+MLOptions.clust2Test = [max(corrMask)-20:max(corrMask+20)];
+MLOptions.GPU = true;
+MLOptions.replicate =10;
+
+[MLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
 
 %% Plotting
 myMovie.plotContour(data);

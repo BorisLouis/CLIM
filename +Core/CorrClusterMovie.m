@@ -9,7 +9,7 @@ classdef CorrClusterMovie < Core.Movie
         indCorrPx
         corrMask
         nCluster
-   
+        method
     end
         
     methods
@@ -169,10 +169,12 @@ classdef CorrClusterMovie < Core.Movie
             obj.listCorrPx = lCorrPx;
             obj.indCorrPx = indPx;
             
-        end
-        
+        end        
         
         function [corrMask] = getCorrelationMask(obj,data,corrInfo)
+            assert(~isempty(obj.listCorrPx),'correlation relation between pixel not found, please run getPxCorrelation first');
+            assert(~isempty(obj.indCorrPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
+            
             corrThreshold = corrInfo.thresh;
             lCorrPx = obj.listCorrPx;
             inds    = obj.indCorrPx;
@@ -182,7 +184,7 @@ classdef CorrClusterMovie < Core.Movie
              
             disp('========> Performing Pseudo-clustering <==========')
             %perform pseudo-clustering
-            dim = size(data2Cluster);
+            dim = size(data);
             [corrMask] = corrAnalysis.corrClustering(lCorrPx,inds,distanceMap,dim,corrThreshold);
             
             disp('========> DONE <==========')
@@ -194,6 +196,7 @@ classdef CorrClusterMovie < Core.Movie
     
             obj.corrMask = corrMask;
             obj.nCluster = max(corrMask(:));
+            obj.method   = 'pseudoClust';
             
         end
         
@@ -221,12 +224,12 @@ classdef CorrClusterMovie < Core.Movie
             axis image
             colormap('jet')
             
+            obj.corrMask = MLCorrMask;
+            obj.nCluster = max(MLCorrMask(:));
+            obj.method   = 'kmeanClust';
         end
         
-        
-        
-        
-        
+               
         function plotContour(obj,data)
             assert(~isempty(obj.corrMask),'Need to run getCorrelationMask before plotting contour');
             maxIm = max(data,[],3);
