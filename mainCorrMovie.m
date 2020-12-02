@@ -50,11 +50,17 @@ data = myMovie.loadFrames(frame2Process);
 
 
 %% ML Data Processing
-MLOptions.clust2Test = [2,20];
+MLOptions.clust2Test = [2,10];
 MLOptions.GPU = true;
 MLOptions.replicate = 5;
+MLOptions.dist = false; %use dist between point as well as correlation
 
 [MLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
+
+%% check mask
+
+myMovie.checkMask(data,1);
+
 
 
 %% clean mask
@@ -62,7 +68,13 @@ MLOptions.replicate = 5;
 [cleanMask] = corrAnalysis.cleanCorrMask(data,myMovie.corrMask,0.9);
 
 cleanMask = imfill(cleanMask,'holes');
+se =strel('disk',1);
+cleanMask = imclose(cleanMask,se);
 
+figure
+imagesc(cleanMask)
+colormap('jet')
+axis image
 
 
 

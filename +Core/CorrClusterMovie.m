@@ -204,11 +204,30 @@ classdef CorrClusterMovie < Core.Movie
             nClust = MLOptions.clust2Test;
             GPU    = MLOptions.GPU;
             replicate = MLOptions.replicate;
+            dist = MLOptions.dist;
             
             inds = obj.indCorrPx;
                  
             [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
-
+            
+            if dist
+                %get xy coordinates of the pixels
+                [y,x] = ind2sub(size(data),inds);
+                vec = [y x];
+                %calculate the distance matrix between points
+                pDistance = pdist(vec);
+                pDistance = squareform(pDistance);
+                
+                %Normalize distance so it does not overtake the correlation
+                pDistance = pDistance-min(pDistance(:));
+                pDistance = pDistance./max(pDistance(:));
+                
+                %combine correlation and spatial information in a single
+                %metric
+                distanceMap = distanceMap + pDistance;
+                 
+            end
+                         
             [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,...
                 'clust2Test',nClust,'GPU',GPU,'replicate',replicate);
             idx = max(clust,[],1);
@@ -227,6 +246,81 @@ classdef CorrClusterMovie < Core.Movie
             obj.corrMask = MLCorrMask;
             obj.nCluster = max(MLCorrMask(:));
             obj.method   = 'kmeanClust';
+        end
+        
+        
+        function checkMask(obj,data,clust)
+            mask = obj.corrMask;
+            data = double(data);
+            %get the requested cluster
+            subMask = mask ==clust;
+            subMask = bwareaopen(subMask,8);
+            subMask = imfill(subMask,8,'holes');
+            
+            labSubMask = bwlabel(subMask);
+            
+            idx = max(labSubMask(:));
+            
+            disp(['Found ' num2str(idx) ' spatially speparated clusters with the number ' num2str(clust)]);
+            
+            meanTraces = zeros(idx,size(data,3));
+            for i = 1:idx
+                % get indices of traces 
+                [row,col] = find(labSubMask==i);
+                r = repmat(row,1,size(data,3));
+                r = reshape(r',size(data,3)*length(row),1);
+                c = repmat(col,1,size(data,3));
+                c = reshape(c',size(data,3)*length(col),1);
+                
+                f = repmat((1:size(data,3))',length(col),1);
+                idx = sub2ind(size(data),r,c,f);
+                
+                %get the data
+                tmpTrace = data(idx);
+                tmpTrace = reshape(tmpTrace,size(data,3),length(row));
+                
+                %check correlation
+                tmpCorr = corrcoef(double(tmpTrace));
+                                              
+                disp(['The min correlation in the cluster is ' num2str(min(tmpCorr(:)))]);
+                disp(['The max correlation in the cluster is ' num2str(max(tmpCorr(tmpCorr<1)))]);
+                disp(['The median correlation in the cluster is ' num2str(median(tmpCorr(tmpCorr<1)))])
+                
+                meanTraces(i,:) = mean(tmpTrace,2);
+                
+                id = randperm(size(tmpTrace,2),5);
+                
+                trace2Show = tmpTrace(:,id);
+                figure
+                hold on
+                for j = 1 : length(id)
+                   
+                    plot(trace2Show(:,j)./mean(trace2Show(:,j),1));
+                    
+                end
+                plot(meanTraces(i,:)./mean(meanTraces(i,:),2),'linewidth',2,'color',[0.4 0.4 0.4]);
+                xlabel('Frames')
+                ylabel('Norm. Intensity')
+                axis square
+                box on
+                title(['Cluster ' num2str(clust) '.' num2str(i) ' examplary traces and avg']);
+                
+            end
+            
+            meanCorr = corrcoef(meanTraces');
+            uniCorr = unique(meanCorr);
+            disp(['The spatially separated clusters are correlated together with: ' num2str(uniCorr(uniCorr<1)')]);
+            
+            figure
+            hold on
+            for i = 1:size(meanTraces,1)
+                plot(meanTraces(i,:)./mean(meanTraces(i,:)))
+            end
+            xlabel('Frames')
+            ylabel('Norm. Intensity')
+            title('comp. cluster with same number')
+            
+            
         end
         
                

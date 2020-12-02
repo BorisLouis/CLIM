@@ -24,13 +24,16 @@ function [clust,clustEval] = clusterCorrelatedPixel(distanceMap, varargin)
         distanceMap = gpuArray(distanceMap);
         clust = gpuArray(clust);
     end
+    
     idx = 1;
     for i=clust2Test(1):clust2Test(2)
         
         clust(:,idx) = kmeans(distanceMap,i,'emptyaction','drop',...
             'replicate',replicate);
         idx=idx+1;
+        
     end
+    
     distanceMap = gather(distanceMap);
     clust = gather(clust);
     clustEval = evalclusters(distanceMap,clust,'CalinskiHarabasz');

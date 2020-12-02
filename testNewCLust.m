@@ -145,6 +145,21 @@ figure
 imagesc(cleanCorrMask)
 axis image
 colormap('jet')
+%% Try Hierarchical clustering
+inds    = (1:length(listCorrPx))';
+%#4 Clean data by keeping only pixel that have correlation
+%relation
+idx2Delete = cellfun(@isempty,listCorrPx);
+inds(idx2Delete) = [];
+
+[distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
+y = squareform(distanceMap);
+testHClust = linkage(distanceMap);
+
+figure
+dendrogram(testHClust)
+
+
 
 %% Try ML from Scratch
 MLData = reshape(finalData,[size(finalData,1)*size(finalData,2),size(finalData,3)]);
@@ -195,7 +210,6 @@ colormap('jet')
 %Ask Pavel if it is better to pre-process data so to handle noise or if he
 %thinks that pure ML approach can be done?
 
-%% Hierarchical clustering
 
 
 
