@@ -52,16 +52,18 @@ data = myMovie.loadFrames(frame2Process);
 %% ML Data Processing
 MLOptions.clust2Test = [2,10];
 MLOptions.GPU = true;
-MLOptions.replicate = 5;
+MLOptions.replicate = 10;
 MLOptions.dist = false; %use dist between point as well as correlation
 
 [MLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
 
 %% check mask
 
-myMovie.checkMask(data,1);
+[meanTraces] = myMovie.checkMask(data,2);
 
+%% clean ML Mask
 
+[cleanMask, hierarchical] = corrAnalysis.cleanMLCorrMask(data,MLCorrMask,0.4);
 
 %% clean mask
 

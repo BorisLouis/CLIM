@@ -249,7 +249,7 @@ classdef CorrClusterMovie < Core.Movie
         end
         
         
-        function checkMask(obj,data,clust)
+        function [meanTraces] = checkMask(obj,data,clust)
             mask = obj.corrMask;
             data = double(data);
             %get the requested cluster
