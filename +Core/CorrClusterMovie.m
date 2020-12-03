@@ -249,6 +249,83 @@ classdef CorrClusterMovie < Core.Movie
         end
         
         
+        function [HierarchicalMask] = getHierarchicalMask(obj,data,MLOptions)
+            nClust = MLOptions.clust2Test;
+            GPU    = MLOptions.GPU;
+            replicate = MLOptions.replicate;
+                    
+            inds = obj.indCorrPx;
+                 
+            [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
+            
+            [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,...
+                'clust2Test',nClust,'GPU',GPU,'replicate',replicate);
+            idx = max(clust,[],1);
+            clust2Use = idx == clustEval.OptimalK;
+            
+            MLCorrMask = zeros(size(data(:,:,1)));
+            for i = 1:length(inds)
+                MLCorrMask(inds(i)) = clust(i,clust2Use);
+            end
+            
+            hierarchical = corrAnalysis.spaceSplitCluster(MLCorrMask);
+            
+            %Get list of individual cluster
+            [uCellList,~,~] = misc.uniquecell(hierarchical);
+            %redefine parameters
+            nClust = 2:clust2Use;
+            replicate = 3;
+                    
+            
+            while ~isempty(uCellList)
+                %if it is empty then we 
+                if isempty(uCellList{1})
+                    uCellList(1) = [];
+                    
+                else
+                    currClust = uCellList(1);
+                    %get the list of pixel which belongs to the current
+                    %cluster
+                    hier2String = cellfun(@(x) num2str(x(:)'),hierarchical,'UniformOutput',false);
+                    currClust2String = cellfun(@(x) num2str(x(:)'),currClust,'UniformOutput',false);
+                    inds = contains(hier2String,currClust2String);
+                    
+                    inds = find(inds);
+                    %if cluster is really small we leave it as is
+                    if length(inds)<10
+                        
+                        uCellList(1) = [];
+                        
+                    else
+                        [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
+            
+                        [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,...
+                            'clust2Test',nClust,'GPU',GPU,'replicate',replicate);
+                        idx = max(clust,[],1);
+                        clust2Use = idx == clustEval.OptimalK;
+
+                        MLCorrMask = zeros(size(data(:,:,1)));
+                        for i = 1:length(inds)
+                            MLCorrMask(inds(i)) = clust(i,clust2Use);
+                        end
+                        
+                        
+                        
+                        
+                    end
+                    
+                    
+                    
+                    
+                    
+                end
+                
+            
+            end
+            
+        end
+        
+        
         function [meanTraces] = checkMask(obj,data,clust)
             mask = obj.corrMask;
             data = double(data);

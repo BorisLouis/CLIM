@@ -57,6 +57,12 @@ MLOptions.dist = false; %use dist between point as well as correlation
 
 [MLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
 
+
+%%
+[hierarchical] = myMovie.getHierarchicalMask(data,MLOptions);
+
+
+
 %% check mask
 
 [meanTraces] = myMovie.checkMask(data,2);
