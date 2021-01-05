@@ -273,7 +273,7 @@ classdef CorrClusterMovie < Core.Movie
             %Get list of individual cluster
             [uCellList,~,~] = misc.uniquecell(hierarchical);
             %redefine parameters
-            nClust = 2:clust2Use;
+            nClust = 2:clustEval.OptimalK;
             replicate = 3;
                     
             
@@ -292,7 +292,7 @@ classdef CorrClusterMovie < Core.Movie
                     
                     inds = find(inds);
                     %if cluster is really small we leave it as is
-                    if length(inds)<10
+                    if length(inds)<20
                         
                         uCellList(1) = [];
                         
@@ -308,9 +308,10 @@ classdef CorrClusterMovie < Core.Movie
                         for i = 1:length(inds)
                             MLCorrMask(inds(i)) = clust(i,clust2Use);
                         end
-                        
-                        
-                        
+                        error('not implementedYET');
+                        %check if new cluster is better
+                        [checkRes] = corrAnalysis.checkSubClust(MLCorrMask,data,stopCriteria);
+
                         
                     end
                     
