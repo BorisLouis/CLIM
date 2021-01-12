@@ -143,6 +143,9 @@ classdef CorrClusterMovie < Core.Movie
         end
         
         function [lCorrPx,indPx] = getPxCorrelation(obj,data,corrInfo)
+            %This function scan the image to find pixel that are correlated
+            %to other pixel that are close in space (typically check only
+            %neighboring pixels
             data = double(data);
             r = corrInfo.r;
             corrThreshold = corrInfo.thresh;
@@ -172,6 +175,10 @@ classdef CorrClusterMovie < Core.Movie
         end        
         
         function [corrMask] = getCorrelationMask(obj,data,corrInfo)
+            %Function that get correlation mask by navigating through the
+            %pixel correlation map and linking one by one pixel that are
+            %correlated together hence creating a map of group of pixel
+            %that are correlated
             assert(~isempty(obj.listCorrPx),'correlation relation between pixel not found, please run getPxCorrelation first');
             assert(~isempty(obj.indCorrPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
             
@@ -201,6 +208,9 @@ classdef CorrClusterMovie < Core.Movie
         end
         
         function [MLCorrMask] = getMLCorrelationMask(obj,data,MLOptions)
+            %This function use Kmean clustering to associate pixel that are
+            %correlated together into groups of pixel that are correlated
+            %together. The output is a map of these groups
             nClust = MLOptions.clust2Test;
             GPU    = MLOptions.GPU;
             replicate = MLOptions.replicate;
@@ -250,6 +260,10 @@ classdef CorrClusterMovie < Core.Movie
         
         
         function [HierarchicalMask] = getHierarchicalMask(obj,data,MLOptions)
+            % This function aims at running kmean clustering several time
+            % in a row to get subcluster and subsub cluster to get a more
+            % detail picture about the correlation within the movie.
+            
             nClust = MLOptions.clust2Test;
             GPU    = MLOptions.GPU;
             replicate = MLOptions.replicate;
