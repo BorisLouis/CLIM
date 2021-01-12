@@ -269,28 +269,35 @@ classdef CorrClusterMovie < Core.Movie
             replicate = MLOptions.replicate;
                     
             inds = obj.indCorrPx;
-                 
+            %get distance map
             [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
             
+            %Use clustering a first time to have the initial division 
             [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,...
                 'clust2Test',nClust,'GPU',GPU,'replicate',replicate);
             idx = max(clust,[],1);
             clust2Use = idx == clustEval.OptimalK;
             
+            %Generate mask based on the optimal number of cluster found in
+            %the previous step
             MLCorrMask = zeros(size(data(:,:,1)));
             for i = 1:length(inds)
                 MLCorrMask(inds(i)) = clust(i,clust2Use);
             end
             
+            %Split cluster into hierarchical tree based on spatial
+            %differences (cluster that are associated to the same cluster
+            %but separated spatially are further split)
             hierarchical = corrAnalysis.spaceSplitCluster(MLCorrMask);
             
             %Get list of individual cluster
             [uCellList,~,~] = misc.uniquecell(hierarchical);
             %redefine parameters
-            nClust = 2:clustEval.OptimalK;
+            nClust = [2, clustEval.OptimalK];
             replicate = 3;
                     
-            
+            %Now we loop through the current cluster and check the one that
+            %still needs to be split
             while ~isempty(uCellList)
                 %if it is empty then we 
                 if isempty(uCellList{1})
@@ -322,10 +329,16 @@ classdef CorrClusterMovie < Core.Movie
                         for i = 1:length(inds)
                             MLCorrMask(inds(i)) = clust(i,clust2Use);
                         end
-                        error('not implementedYET');
+                       % error('not implementedYET');
                         %check if new cluster is better
                         [checkRes] = corrAnalysis.checkSubClust(MLCorrMask,data,stopCriteria);
-
+                        
+                        if checkRes
+                            
+                        else
+                            
+                        end
+                        
                         
                     end
                     

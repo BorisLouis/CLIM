@@ -1,4 +1,4 @@
-function [checkRes] = checkSubClust(MLCorrMask,data,stopCriteria)
+function [checkRes] = checkSubClust(MLCorrMask,data)
     
     nSubClust = max(MLCorrMask(:));
     %calculate main cluster distanceMap
@@ -6,26 +6,37 @@ function [checkRes] = checkSubClust(MLCorrMask,data,stopCriteria)
     mainInds = find(mainClust);
     mainDistMap = corrAnalysis.getDistanceMapFromPxList(mainInds,data);
     
-    variance = zeros(nSubClust,1);
-    stopMetric = variance;
     
-    variance(1) = var(mainDistMap);
-    stopMetric(1) = sqrt(sum(mainClust(:)))/variance(1);
+    %Criteria 1 ==> CV needs to decrease (smaller STD and/or larger mean)
+    stdev = zeros(nSubClust+1,1);
+    CV = stdev;
+    stdev(1) = std(mainDistMap(:));
+    CV(1) = stdev(1)/(1-mean(mainDistMap(:)));
     
     for i = 1:nSubClust
-        tmpClust = MLCorrMask == i;
+        %Loop through the sub cluster
+        tmpClust = double(MLCorrMask == i);        
         tmpInds = find(tmpClust);
+        %get the distance map
         tmpDistMap = corrAnalysis.getDistanceMapFromPxList(tmpInds,data);
-
-        variance(i+1) = var(tmpDistMap);
-        stopMatric(i+1) = sqrt(sum(tmpClust(:)))/variance(i+1);
+        
+        %Calculate the coefficient of variation
+        stdev(i+1) = std(tmpDistMap(:));
+        CV(i+1) = stdev(i+1)/(1-mean(tmpDistMap(:)));
         
         
     end
+    %Here we check if the coefficient of variation improves for all sub
+    %cluster
     
+    if all(CV(2:3) < CV(1))
+        
+        checkRes = true;
     
-    %test
+    else
+        
+        checkRes = false;
+        
+    end
     
-
-
 end
