@@ -8,6 +8,7 @@ classdef CorrClusterMovie < Core.Movie
         listCorrPx
         indCorrPx
         corrMask
+        hierarchicalMask
         nCluster
         method
     end
@@ -290,6 +291,15 @@ classdef CorrClusterMovie < Core.Movie
             %but separated spatially are further split)
             hierarchical = corrAnalysis.spaceSplitCluster(MLCorrMask);
             
+            inds = find(MLCorrMask>0);
+            
+           
+            for i = 1:length(inds)
+
+                hierarchical{inds(i)} = [ MLCorrMask(inds(i)), hierarchical{inds(i)},];
+
+            end
+
             %Get list of individual cluster
             [uCellList,~,~] = misc.uniquecell(hierarchical);
             %redefine parameters
@@ -309,7 +319,7 @@ classdef CorrClusterMovie < Core.Movie
                     %cluster
                     hier2String = cellfun(@(x) num2str(x(:)'),hierarchical,'UniformOutput',false);
                     currClust2String = cellfun(@(x) num2str(x(:)'),currClust,'UniformOutput',false);
-                    inds = contains(hier2String,currClust2String);
+                    inds = strcmp(hier2String,currClust2String);
                     
                     inds = find(inds);
                     %if cluster is really small we leave it as is
@@ -331,28 +341,93 @@ classdef CorrClusterMovie < Core.Movie
                         end
                        % error('not implementedYET');
                         %check if new cluster is better
-                        [checkRes] = corrAnalysis.checkSubClust(MLCorrMask,data,stopCriteria);
+                        [checkRes] = corrAnalysis.checkSubClust(MLCorrMask,data);
                         
                         if checkRes
+                            %here we save the clustering 
+                            %get the main cluster
+                            mainCluster = hierarchical(inds);
+                            
+                            %split the current cluster based on space
+                            splitCorrMask = corrAnalysis.spaceSplitCluster(MLCorrMask);
+                            splitCorrMask = splitCorrMask(inds);
+                            
+                            tmpCluster = cell(size(mainCluster));
+                            for i = 1:length(mainCluster)
+                                
+                                tmpCluster{i} = [mainCluster{i}, splitCorrMask{i}];
+                                
+                            end
+                            
+%                             tmpCluster  = [cell2mat(mainCluster),cell2mat(splitCorrMask(inds))];
+%                             tmpCluster = num2cell(tmpCluster,2);
+                            
+                            %save the new cluster in the hierarchy
+                            hierarchical(inds) = tmpCluster;
+                            %remove current cluster from the check list                            
+                            uCellList(1) = [];
+                            
+                            %add new cluster to the check list
+                            clust2str = cellfun(@(x) num2str(x(:)'),tmpCluster,'UniformOutput',false);
+                            [~,ia,ic] = unique(clust2str);
+                          
+                            cells2Add = tmpCluster(ia);
+                            
+                            uCellList = [uCellList; cells2Add];
                             
                         else
-                            
+                            %here we just indicate the current cluster has
+                            %been treated
+                            uCellList(1) = [];
                         end
                         
-                        
                     end
-                    
-                    
-                    
-                    
                     
                 end
                 
             
             end
+            HierarchicalMask = hierarchical;
+            obj.hierarchicalMask = hierarchical;
             
         end
         
+        
+        function showHierarchicalMask(obj)
+            assert(~isempty(obj.hierarchicalMask), 'Need to run hierarchical clustering first ! ')
+            corrM = obj.hierarchicalMask;
+            len = cellfun(@length,corrM);
+            maxLen = max(len(:));
+            exponent = fliplr(1:maxLen);
+            base = ones(1,maxLen)*10;
+            
+            multiplier = base.^exponent;
+            
+            
+            corrMap = zeros(size(corrM));
+            for i = 1:size(corrM,1)
+               for j=1:size(corrM,2)
+                   
+                   currElem = corrM{i,j};
+                   
+                   if isempty(currElem)
+                      
+                   else
+                       len2Use = length(currElem);
+                       
+                       m2Use = multiplier(1:len2Use);
+                       
+                       corrMap(i,j) = sum(currElem.*m2Use);
+                       
+                   end                   
+               end
+            end
+            
+            figure
+            imagesc(corrMap)
+            colormap('jet')        
+            
+        end
         
         function [meanTraces] = checkMask(obj,data,clust)
             mask = obj.corrMask;

@@ -1,4 +1,7 @@
 function [hierarchical] = spaceSplitCluster(corrMask)
+    %Split cluster that have the same number but are spatially separated
+    %into two different subclusters.
+    
     hierarchical = cell(size(corrMask));
     for i = 1:max(corrMask(:))
          
@@ -7,18 +10,24 @@ function [hierarchical] = spaceSplitCluster(corrMask)
         currMask = bwlabel(subMask);
 
         idx = max(currMask(:));
-
-        for j = 1:idx
-            subMask = currMask==j;
-            %store the cleaned mask
-            corrMask(corrMask==i) =0;
-            corrMask(subMask>0) = i;
-            %Keep track of clusters hierarchy
-            nElem = ones(length(subMask(subMask>0)),1);
-            idxMat = [nElem*i,nElem*j];
-           
-            hierarchical(subMask>0) = mat2cell(idxMat,nElem);
+        if idx == 1
+            %there is no cluster separated spatially, no need to split
+            hierarchical(subMask>0) = [];
+                        
+        else
+            %we loop through the different separated cluster to give them
+            %an additional index
             
-        end   
+            for j = 1:idx
+                subMask = currMask==j;
+                
+                %Keep track of clusters hierarchy
+                idxMat = [ones(length(subMask(subMask>0)),1)*j];
+
+                hierarchical(subMask>0) = num2cell(idxMat);
+
+            end  
+        end
+            
     end
 end

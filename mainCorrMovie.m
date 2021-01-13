@@ -62,6 +62,8 @@ MLOptions.dist = false; %use dist between point as well as correlation
 [hierarchical] = myMovie.getHierarchicalMask(data,MLOptions);
 
 
+%% 
+myMovie.showHierarchicalMask;
 
 %% check mask
 
