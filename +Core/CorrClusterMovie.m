@@ -258,8 +258,7 @@ classdef CorrClusterMovie < Core.Movie
             obj.nCluster = max(MLCorrMask(:));
             obj.method   = 'kmeanClust';
         end
-        
-        
+                
         function [HierarchicalMask] = getHierarchicalMask(obj,data,MLOptions)
             % This function aims at running kmean clustering several time
             % in a row to get subcluster and subsub cluster to get a more
@@ -351,11 +350,11 @@ classdef CorrClusterMovie < Core.Movie
                             %split the current cluster based on space
                             splitCorrMask = corrAnalysis.spaceSplitCluster(MLCorrMask);
                             splitCorrMask = splitCorrMask(inds);
-                            
+                            newClust = MLCorrMask(inds);
                             tmpCluster = cell(size(mainCluster));
                             for i = 1:length(mainCluster)
                                 
-                                tmpCluster{i} = [mainCluster{i}, splitCorrMask{i}];
+                                tmpCluster{i} = [mainCluster{i}, newClust(i), splitCorrMask{i}];
                                 
                             end
                             
@@ -391,8 +390,7 @@ classdef CorrClusterMovie < Core.Movie
             obj.hierarchicalMask = hierarchical;
             
         end
-        
-        
+              
         function showHierarchicalMask(obj)
             assert(~isempty(obj.hierarchicalMask), 'Need to run hierarchical clustering first ! ')
             corrM = obj.hierarchicalMask;
@@ -502,8 +500,7 @@ classdef CorrClusterMovie < Core.Movie
             
             
         end
-        
-               
+              
         function plotContour(obj,data)
             assert(~isempty(obj.corrMask),'Need to run getCorrelationMask before plotting contour');
             maxIm = max(data,[],3);

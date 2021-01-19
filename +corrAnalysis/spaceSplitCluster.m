@@ -11,8 +11,9 @@ function [hierarchical] = spaceSplitCluster(corrMask)
 
         idx = max(currMask(:));
         if idx == 1
+            emptyCell = cell(size(subMask));
             %there is no cluster separated spatially, no need to split
-            hierarchical(subMask>0) = [];
+            hierarchical(subMask>0) = emptyCell(subMask>0);
                         
         else
             %we loop through the different separated cluster to give them
