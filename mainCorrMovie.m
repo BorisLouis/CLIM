@@ -43,10 +43,18 @@ data = myMovie.loadFrames(frame2Process);
 % close(vidFile)
 
 
-%% 
+%% Get pixels correlation
 [listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
 
 [corrMask] = myMovie.getCorrelationMask(data,corrInfo);
+
+
+
+%% Correlation clustering
+
+[corrMask] = myMovie.getCorrClustMask(data,corrInfo);
+
+
 
 
 %% ML Data Processing
@@ -89,16 +97,15 @@ axis image
 
 
 
-%% Test Hierarchical clustering
-[distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
+%% Correlation CLustering
 
-testHClust = linkage(distanceMap);
+listCorrPx = myMovie.listCorrPx;
+inds = myMovie.indCorrPx;
 
+distMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
+%get binary distance map (1 is correlated 0 in not correlated)
+binaryDistMap = distMap<1-corrInfo.thresh;
 
-
-%%
-figure
-dendrogram(testHClust)
 
 %%
 

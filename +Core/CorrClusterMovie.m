@@ -208,6 +208,30 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
+        function [corrMask] = getCorrClustMask(obj,data,corrInfo)    
+            %Function that prepare the input for and call corrClusterV2
+            %which is a correlation clustering function which is largely
+            %based on Bansal2004 and Becker2005.
+            
+            assert(~isempty(obj.listCorrPx),'correlation relation between pixel not found, please run getPxCorrelation first');
+            assert(~isempty(obj.indCorrPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
+            
+            corrThreshold = corrInfo.thresh;
+            lCorrPx = obj.listCorrPx;
+            inds    = obj.indCorrPx;
+            
+            %get distance map
+            [distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
+            
+            %binary distance map
+            BWDistMap = distanceMap<corrThreshold;
+            dim = size(data);
+            disp('========> Performing correlation clustering <==========')
+            [corrMask] = corrAnalysis.corrClusteringV2(dim,inds,BWDistMap);
+            
+            
+        end
+        
         function [MLCorrMask] = getMLCorrelationMask(obj,data,MLOptions)
             %This function use Kmean clustering to associate pixel that are
             %correlated together into groups of pixel that are correlated
