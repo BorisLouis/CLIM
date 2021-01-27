@@ -27,8 +27,13 @@ function [corrMask] = corrClusteringV2(dim,inds,distanceMap)
             positives = distanceMap(currentIdx,:)==1;
             positivesInCluster = and(positives,idx);
             positivesOutOfCluster = and(positives,~idx);
-            if or(~(sum(positivesInCluster) >= (1-3*delta)*sum(idx)),...
-                    ~(sum(positivesOutOfCluster) <= 3*delta*sum(idx)))
+            
+            %need to understand why 3 delta bad and 7 delta good, something
+            %is off as a point can be both 3 delta bad and 7 delta good.
+            deltaCriterion1 = or(~(sum(positivesInCluster) >= (1-3*delta)*sum(idx)),...
+                    ~(sum(positivesOutOfCluster) <= 3*delta*sum(idx)));
+            %TODO make criterion based on correlation level
+            if deltaCriterion1
                 
                 %remove the point from the cluster
                 currentCluster(currentCluster==inds(currentIdx)) = [];
@@ -47,13 +52,14 @@ function [corrMask] = corrClusteringV2(dim,inds,distanceMap)
             positivesInCluster = and(positives,idxB);
             positivesOutOfCluster = and(positives,~idxB);
             
-            if and((sum(positivesInCluster) >= (1-7*delta)*sum(idx)),...
-                    (sum(positivesOutOfCluster) <= 7*delta*sum(idx)))
+            deltaCriterion2 = and((sum(positivesInCluster) >= (1-7*delta)*sum(idx)),...
+                    (sum(positivesOutOfCluster) <= 7*delta*sum(idx))); 
+            
+            if deltaCriterion2
                 
                 %remove the point from the cluster
                 currentCluster = [currentCluster; Y(i)];
-                
-                
+
             end
             
         end

@@ -224,10 +224,9 @@ classdef CorrClusterMovie < Core.Movie
             [distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
             
             %binary distance map
-            BWDistMap = distanceMap<corrThreshold;
             dim = size(data);
             disp('========> Performing correlation clustering <==========')
-            [corrMask] = corrAnalysis.corrClusteringV2(dim,inds,BWDistMap);
+            [corrMask] = corrAnalysis.corrClusteringV3(dim,inds,distanceMap,corrThreshold);
             
             
         end
