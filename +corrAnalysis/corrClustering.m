@@ -1,4 +1,4 @@
-function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
+function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
     %function actually does the clustering.
     safeCount = 2*dim(1)*dim(2);
     %initialize the variable
@@ -7,6 +7,8 @@ function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
     corrMask = zeros(dim(1),dim(2));
     treatedIdx = NaN(length(inds),1);
     indsCopy = inds;
+    indsPxIdx = 1:length(inds);
+    clusters{group} = [];
     %as long as the list of pixel that are correlated is not empty
     %we keep going
     while ~isempty(listCorrPx) 
@@ -31,6 +33,8 @@ function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
             while ~isempty(currList)
                 % add the new pixel to the group and keep track of it
                 corrMask(currIndex) = group;
+                clusters{group} = [clusters{group}; currIndex, find(indsCopy==currIndex)]; 
+            
                 idx = find(isnan(treatedIdx(:,1)),1);
                 treatedIdx(idx) = currIndex;
 
@@ -87,7 +91,7 @@ function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
             %increment the group number as we are supposed to have treated all
             %cases.
             group = group+1;
-
+            clusters{group} = [];
         end
 
         count=count+1;
@@ -95,5 +99,8 @@ function [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
         if count >= safeCount
             error('something went wrong')
         end
-    end   
+    end
+    
+    [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap);
+    
 end

@@ -175,7 +175,7 @@ classdef CorrClusterMovie < Core.Movie
             
         end        
         
-        function [corrMask] = getCorrelationMask(obj,data,corrInfo)
+        function [corrMask,cleanedCorrMask] = getCorrelationMask(obj,data,corrInfo)
             %Function that get correlation mask by navigating through the
             %pixel correlation map and linking one by one pixel that are
             %correlated together hence creating a map of group of pixel
@@ -193,14 +193,19 @@ classdef CorrClusterMovie < Core.Movie
             disp('========> Performing Pseudo-clustering <==========')
             %perform pseudo-clustering
             dim = size(data);
-            [corrMask] = corrAnalysis.corrClustering(lCorrPx,inds,distanceMap,dim,corrThreshold);
+            [corrMask,cleanedCorrMask] = corrAnalysis.corrClustering(lCorrPx,inds,distanceMap,dim,corrThreshold);
             
             disp('========> DONE <==========')
             
             figure
+            subplot(1,2,1)
             imagesc(corrMask)
             axis image
             colormap('hot')
+            subplot(1,2,2)
+            imagesc(cleanedCorrMask)
+            axis image
+            colormap('hot');
     
             obj.corrMask = corrMask;
             obj.nCluster = max(corrMask(:));

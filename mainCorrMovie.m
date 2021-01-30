@@ -46,7 +46,7 @@ data = myMovie.loadFrames(frame2Process);
 %% Get pixels correlation
 [listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
 
-[corrMask] = myMovie.getCorrelationMask(data,corrInfo);
+[corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
 
 
 
