@@ -1,4 +1,4 @@
-function [newCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap)
+function [cleanCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap)
 
     nCluster = max(corrMask(:));
   
@@ -67,4 +67,20 @@ function [newCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap)
             newCorrMask(tmpMask>0) = i;
             
         end
+        
+        %clear up 'holes' in the numbers
+        nClusters = max(newCorrMask);
+        cleanCorrMask = zeros(size(corrMask));
+        for i = 1:nClusters
+
+            BWCopy = newCorrMask==i;
+            
+            if ~isempty(BWCopy)
+                cleanCorrMask(BWCopy) = max(cleanCorrMask(:))+1;
+            end
+        end
+
+        
+        
+        
 end

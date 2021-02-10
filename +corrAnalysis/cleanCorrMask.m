@@ -37,10 +37,7 @@ function [cleanCorrMask] = cleanCorrMask(data, corrMask, signThresh)
         idx2Del = ismember(data(:,:,1),trace2Del);
         
         corrMask(idx2Del) = 0;
-        
-        %need to figure out the link between the order of the trace and
-        %corrMask so we can delete the correct indices
-        
+               
         
     end
     

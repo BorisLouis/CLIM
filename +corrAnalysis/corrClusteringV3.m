@@ -1,4 +1,4 @@
-function [corrMask] = corrClusteringV3(dim,inds,distanceMap,corrThreshold)
+function [corrMask,cleanedCorrMask] = corrClusteringV3(dim,inds,distanceMap,corrThreshold)
     
     corrMask = zeros(dim(1),dim(2));
     clustCell = cell(1,100);
@@ -41,7 +41,7 @@ function [corrMask] = corrClusteringV3(dim,inds,distanceMap,corrThreshold)
         
     end
     
-    [corrMask] = corrAnalysis.clusterCleanUp(corrMask,clustCell,distanceMap);
+    [cleanedCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clustCell,distanceMap);
     
     
 end

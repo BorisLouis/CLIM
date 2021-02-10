@@ -213,7 +213,7 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
-        function [corrMask] = getCorrClustMask(obj,data,corrInfo)    
+        function [corrMask,cleanedCorrMask] = getCorrClustMask(obj,data,corrInfo)    
             %Function that prepare the input for and call corrClusterV2
             %which is a correlation clustering function which is largely
             %based on Bansal2004 and Becker2005.
@@ -231,8 +231,23 @@ classdef CorrClusterMovie < Core.Movie
             %binary distance map
             dim = size(data);
             disp('========> Performing correlation clustering <==========')
-            [corrMask] = corrAnalysis.corrClusteringV3(dim,inds,distanceMap,corrThreshold);
+            [corrMask,cleanedCorrMask] = corrAnalysis.corrClusteringV3(dim,inds,distanceMap,corrThreshold);
             
+            disp('========> DONE <==========')
+            
+            figure
+            subplot(1,2,1)
+            imagesc(corrMask)
+            axis image
+            colormap('hot')
+            subplot(1,2,2)
+            imagesc(cleanedCorrMask)
+            axis image
+            colormap('hot');
+    
+            obj.corrMask = corrMask;
+            obj.nCluster = max(corrMask(:));
+            obj.method   = 'corrClust';
             
         end
         

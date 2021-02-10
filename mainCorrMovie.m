@@ -48,13 +48,28 @@ data = myMovie.loadFrames(frame2Process);
 
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
 
+%compare the two clusters
+[relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
+
+
 
 
 %% Correlation clustering
 
-[corrMask] = myMovie.getCorrClustMask(data,corrInfo);
+[corrMask,cleanedCorrMask] = myMovie.getCorrClustMask(data,corrInfo);
+
+%Evaluate clusters individually
+[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data);
+[clustEval2,relNum2] = corrAnalysis.evalClusters(cleanedCorrMask,data);
 
 
+%compare cluster
+relData{1} = relNum1;
+relData{2} = relNum2;
+label{1}   = 'MethodCorrClust';
+label{2}   = 'MethodCorrClust - cleaned';
+
+corrAnalysis.compareClusters(relData,label);
 
 
 
@@ -125,4 +140,19 @@ myMovie.plotTraces(data,3);
 [traces] = myMovie.getIntensityTrace(data);
 %%
 
+function [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,method)
+    %Evaluate clusters individually
+    [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data);
+    [clustEval2,relNum2] = corrAnalysis.evalClusters(cleanedCorrMask,data);
 
+
+    %compare cluster
+    relData{1} = relNum1;
+    relData{2} = relNum2;
+    label{1}   = ['Method' method];
+    label{2}   = ['Method',method,'- cleaned'];
+
+    corrAnalysis.compareClusters(relData,label);
+
+
+end
