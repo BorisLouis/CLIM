@@ -69,7 +69,7 @@ function [cleanCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap)
         end
         
         %clear up 'holes' in the numbers
-        nClusters = max(newCorrMask);
+        nClusters = max(newCorrMask(:));
         cleanCorrMask = zeros(size(corrMask));
         for i = 1:nClusters
 
