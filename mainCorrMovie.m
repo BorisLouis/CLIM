@@ -58,18 +58,8 @@ data = myMovie.loadFrames(frame2Process);
 
 [corrMask,cleanedCorrMask] = myMovie.getCorrClustMask(data,corrInfo);
 
-%Evaluate clusters individually
-[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data);
-[clustEval2,relNum2] = corrAnalysis.evalClusters(cleanedCorrMask,data);
-
-
-%compare cluster
-relData{1} = relNum1;
-relData{2} = relNum2;
-label{1}   = 'MethodCorrClust';
-label{2}   = 'MethodCorrClust - cleaned';
-
-corrAnalysis.compareClusters(relData,label);
+%compare the two clusters
+[relNum3,relNum4] = compare2Cluster(corrMask,cleanedCorrMask,data,'corrClust');
 
 
 
@@ -79,11 +69,15 @@ MLOptions.GPU = true;
 MLOptions.replicate = 10;
 MLOptions.dist = false; %use dist between point as well as correlation
 
-[MLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
+[MLCorrMask,cleanedMLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
+
+[relNum5,relNum6] = compare2Cluster(MLCorrMask,cleanedMLCorrMask,data,'KMClust');
 
 
-%%
-[hierarchical] = myMovie.getHierarchicalMask(data,MLOptions);
+%% Hierarchical Clustering
+[hierMask,corrMask,cleanedHierMask,cleanedCorrMask] = myMovie.getHierarchicalMask(data,MLOptions);
+
+[relNum7,relNum8] = compare2Cluster(corrMask,cleanedCorrMask,data,'HierClust');
 
 
 %% 

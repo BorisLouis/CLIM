@@ -29,7 +29,7 @@ function [checkRes] = checkSubClust(MLCorrMask,data)
     %Here we check if the coefficient of variation improves for all sub
     %cluster
     
-    if all(CV(2:3) < CV(1))
+    if all(CV(2:end) < 0.8*CV(1))
         
         checkRes = true;
     

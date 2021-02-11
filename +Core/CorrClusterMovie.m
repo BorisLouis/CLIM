@@ -201,11 +201,11 @@ classdef CorrClusterMovie < Core.Movie
             subplot(1,2,1)
             imagesc(corrMask)
             axis image
-            colormap('hot')
+            colormap('jet')
             subplot(1,2,2)
             imagesc(cleanedCorrMask)
             axis image
-            colormap('hot');
+            colormap('jet');
     
             obj.corrMask = corrMask;
             obj.nCluster = max(corrMask(:));
@@ -239,11 +239,11 @@ classdef CorrClusterMovie < Core.Movie
             subplot(1,2,1)
             imagesc(corrMask)
             axis image
-            colormap('hot')
+            colormap('jet')
             subplot(1,2,2)
             imagesc(cleanedCorrMask)
             axis image
-            colormap('hot');
+            colormap('jet');
     
             obj.corrMask = corrMask;
             obj.nCluster = max(corrMask(:));
@@ -251,7 +251,7 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
-        function [MLCorrMask] = getMLCorrelationMask(obj,data,MLOptions)
+        function [MLCorrMask,cleanedMLCorrMask] = getMLCorrelationMask(obj,data,MLOptions)
             %This function use Kmean clustering to associate pixel that are
             %correlated together into groups of pixel that are correlated
             %together. The output is a map of these groups
@@ -291,18 +291,36 @@ classdef CorrClusterMovie < Core.Movie
             for i = 1:length(inds)
                 MLCorrMask(inds(i)) = clust(i,clust2Use);
             end
+            
+            nClusters = max(MLCorrMask(:));
+            clusters = cell(nClusters,1);
+            for i = 1:nClusters
+                idx =  find(MLCorrMask== i);
+                idxInds = find(ismember(inds,idx));
+                clusters{i} =  [idx idxInds];
+                
+            end
+            
+            
+            cleanedMLCorrMask = corrAnalysis.clusterCleanUp(MLCorrMask,clusters,distanceMap);
            
             figure
+            subplot(1,2,1)
             imagesc(MLCorrMask)
             axis image
             colormap('jet')
+            subplot(1,2,2)
+            imagesc(cleanedMLCorrMask)
+            axis image
+            colormap('jet');
+    
             
             obj.corrMask = MLCorrMask;
             obj.nCluster = max(MLCorrMask(:));
             obj.method   = 'kmeanClust';
         end
                 
-        function [HierarchicalMask] = getHierarchicalMask(obj,data,MLOptions)
+        function [hierMask,corrMask,cleanedHierMask,cleanedCorrMask] = getHierarchicalMask(obj,data,MLOptions)
             % This function aims at running kmean clustering several time
             % in a row to get subcluster and subsub cluster to get a more
             % detail picture about the correlation within the movie.
@@ -370,9 +388,9 @@ classdef CorrClusterMovie < Core.Movie
                         uCellList(1) = [];
                         
                     else
-                        [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
+                        [tmpDistanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
             
-                        [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(distanceMap,...
+                        [clust,clustEval]  = corrAnalysis.clusterCorrelatedPixel(tmpDistanceMap,...
                             'clust2Test',nClust,'GPU',GPU,'replicate',replicate);
                         idx = max(clust,[],1);
                         clust2Use = idx == clustEval.OptimalK;
@@ -429,9 +447,60 @@ classdef CorrClusterMovie < Core.Movie
                 
             
             end
-            HierarchicalMask = hierarchical;
+            hierMask = hierarchical;
             obj.hierarchicalMask = hierarchical;
             
+            %Extract deepest clusters in the tree (max number of clusters)
+            inds = obj.indCorrPx;
+            %get all different cluster
+            [clust,~,~] = misc.uniquecell(hierarchical);
+            corrMask = zeros(size(hierarchical));
+            count = 1;
+            for i = 1:length(clust)
+               currClust = clust{i};
+               
+               if ~isempty(currClust)
+                   %turn the cluster code in string for search
+                   hier2String = cellfun(@(x) num2str(x(:)'),hierarchical,'UniformOutput',false);
+                   %turn desired cluster in string
+                   currClust2String = cellfun(@(x) num2str(x(:)'),{currClust},'UniformOutput',false);
+                   % find the desired cluster withing the hierarchical
+                   % cluster
+                   idx = strcmp(hier2String,currClust2String);
+                   idx = find(idx);
+                   idxInds = find(ismember(inds,idx));
+                   %store that cluster as a single number for plotting
+                   corrMask(idx) = count;                   
+                   
+                   clusters{count} = [idx idxInds];
+                   
+                   clustID(count,:) = {currClust, count};
+                   count = count+1;
+
+               end
+            end
+            
+            [cleanedCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap);
+            
+            cleanedHierMask = cell(size(hierMask));
+            
+            for i = 1:max(cleanedCorrMask(:))
+                
+                idx = cleanedCorrMask == i;
+                cleanedHierMask(idx) = {clustID{i,1}};
+                
+            end
+            
+            figure
+            subplot(1,2,1)
+            imagesc(corrMask)
+            axis image
+            colormap('jet')
+            subplot(1,2,2)
+            imagesc(cleanedCorrMask)
+            axis image
+            colormap('jet');
+                
         end
               
         function showHierarchicalMask(obj)
@@ -552,7 +621,7 @@ classdef CorrClusterMovie < Core.Movie
             hold on
             imagesc(maxIm)
             axis image
-            colormap('hot')
+            colormap('jet')
 
             for i = 1:max(corrM(:))
                 corrMaskCopy = corrM;
