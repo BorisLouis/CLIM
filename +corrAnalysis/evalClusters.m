@@ -9,8 +9,9 @@ function [clustEval,relNum] = evalClusters(mask,data)
         nClusters = max(mask(:));
         
         clustEval = table(zeros(nClusters,1),zeros(nClusters,1),zeros(nClusters,1),...
-            zeros(nClusters,1), zeros(nClusters,1),'VariableNames',...
-            {'meanCorr','medCorr','minCorr','maxCorr','nPixels'});
+            zeros(nClusters,1), zeros(nClusters,1),zeros(nClusters,1),...
+            zeros(nClusters,1),'VariableNames',...
+            {'meanCorr','medCorr','std','varCoeff','minCorr','maxCorr','nPixels'});
         
         for i = 1 :nClusters
            
@@ -31,19 +32,24 @@ function [clustEval,relNum] = evalClusters(mask,data)
             
             %calculate some simple stats on the cluster
             clustEval.meanCorr(i) = mean(corrMat(corrMat<1));
-            clustEval.medCorr(i) = median(corrMat(corrMat<1));
+            clustEval.medCorr(i)  = median(corrMat(corrMat<1));
+            clustEval.std(i)      = std(corrMat(corrMat<1));
+            clustEval.varCoeff(i) = clustEval.std(i)/clustEval.meanCorr(i);
             clustEval.minCorr(i) = min(corrMat(corrMat<1));
             clustEval.maxCorr(i) = max(corrMat(corrMat<1));
+           
             clustEval.nPixels(i) = length(currInds);
-            
             
             end            
         end
         
         relNum.meanCorr = wmean(clustEval.meanCorr,clustEval.nPixels);
         relNum.medCorr  = wmean(clustEval.medCorr,clustEval.nPixels);
+        relNum.std      = wmean(clustEval.std,clustEval.nPixels);
+        relNum.varCoeff = wmean(clustEval.varCoeff,clustEval.nPixels);
         relNum.minCorr  = wmean(clustEval.minCorr,clustEval.nPixels);
         relNum.maxCorr  = wmean(clustEval.maxCorr,clustEval.nPixels);
+        
         relNum.nClusters = nClusters;
         
         

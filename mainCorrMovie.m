@@ -14,7 +14,7 @@ info.ROI = true;
 
 frame2Process = 1:3000;
 corrInfo.r = 2; %radius for checking neighbor
-corrInfo.thresh = 0.6;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
+corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -64,7 +64,7 @@ data = myMovie.loadFrames(frame2Process);
 
 
 %% ML Data Processing
-MLOptions.clust2Test = [2,10];
+MLOptions.clust2Test = [30 31];
 MLOptions.GPU = true;
 MLOptions.replicate = 10;
 MLOptions.dist = false; %use dist between point as well as correlation
@@ -106,19 +106,18 @@ axis image
 
 
 
+%% test ML Cluster;
+MLOptions.clust2Test = 2;
+MLOptions.GPU = true;
+MLOptions.replicate = 1;
+MLOptions.deltaClust = 1;
 
-%% Correlation CLustering
+profile on
+distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
+[evalClust] = corrAnalysis.testNumberOfMLCluster(distanceMap,inds,data,...
+    'clust2Test',2,'GPU',true,'replicate',1,'deltaClust',1);
 
-listCorrPx = myMovie.listCorrPx;
-inds = myMovie.indCorrPx;
-
-distMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
-%get binary distance map (1 is correlated 0 in not correlated)
-binaryDistMap = distMap<1-corrInfo.thresh;
-
-
-%%
-
+profile('viewer')
 
 
 
