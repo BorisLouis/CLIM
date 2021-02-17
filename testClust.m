@@ -1,26 +1,28 @@
 %% Simulate correlated data
 
 %% Simulation input
-sizeIm = 128;
+sizeIm = 64;
 nFrames = 100;
 data = zeros(sizeIm,sizeIm,nFrames);
-nParticles = 30;
+nParticles = 2;
 corrThreshold = 0.3;%smaller is more selective here (0 is perfect correlation)
 model.name = 'gaussian';
-model.sigma_x = 3;
-model.sigma_y = 3;
+model.sigma_x = 5;
+model.sigma_y = 5;
 r = 2; %radius for checking correlation
 
 
 %% Simulations
 %coord=[56,56;72,72;56,72;72,56];
-%coord = [32,32;96,96;96,32;32,96];
+coord = [16,32;48,32];
 [X,Y] = meshgrid(1:sizeIm,1:sizeIm);
-coord = zeros(nParticles,2);
+%coord = zeros(nParticles,2);
 for i = 1:nParticles
     
-    x0 = randperm(sizeIm,1);
-    y0 = randperm(sizeIm,1);
+    x0 = coord(i,1);
+     y0 = coord(i,2);
+%     x0 = randperm(sizeIm,1);
+%     y0 = randperm(sizeIm,1);
     c  = 0;
     BaseInt = 500 + i * 100;
     secondInt = 2*BaseInt;
@@ -84,7 +86,7 @@ data2Cluster = data2Cluster./max(data2Cluster,[],3);
 %correlation. ==>https://www.statisticssolutions.com/pearsons-correlation-coefficient/
 
 %pre-process the data to find pixel with correlation relation
-[corrRel]  = getCorrRelation(data2Cluster,r,corrThreshold);
+[corrRel]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
 listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
 inds    = (1:length(listCorrPx))';
 
@@ -130,6 +132,7 @@ distanceMap = 1-corrcoef(pxIntList');
 
 %% Pseudo clustering ==> Generate correlation mask
 dim = size(data2Cluster);
+distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data2Cluster);
 [corrMask] = corrClustering(listCorrPx,inds,distanceMap,dim);
 
 figure

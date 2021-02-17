@@ -91,7 +91,7 @@ function [cleanCorrMask] = clusterCleanUp2(corrMask,clusters,distanceMap)
         cleanCorrMask = zeros(size(corrMask));
         for i = 1:nClusters
 
-            BWCopy = newCorrMask==i;
+            BWCopy = newCorrMask==nClusters - (i-1);
             
             if ~isempty(BWCopy)
                 cleanCorrMask(BWCopy) = max(cleanCorrMask(:))+1;
