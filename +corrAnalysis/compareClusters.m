@@ -5,7 +5,7 @@ function compareClusters(relData,labels)
     assert(ischar(labels{1}),'label is expected to be a cell containing a string');
         
     nFields = numel(fieldnames(relData{1}));
-    data2Plot = zeros(nFields,length(relData));
+    data2Plot = zeros(5,length(relData));
     
     figure
     hold on

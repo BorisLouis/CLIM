@@ -22,8 +22,11 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
     clust = zeros(size(distanceMap,1),nClust);
     
     if GPU
-        distanceMap = gpuArray(distanceMap);
-        clust = gpuArray(clust);
+        try
+            distanceMap = gpuArray(distanceMap);
+            clust = gpuArray(clust);
+        catch
+        end
     end
     
     DCV = 1;
@@ -35,13 +38,11 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
     nClustTested = zeros(1,100);
     while DCV > 0
         nClustTested(counter) = clust2Test;
-        if counter >100
+        if counter >200
             break;
         end
         clust = kmeans(distanceMap,clust2Test,'emptyaction','drop',...
             'replicate',replicate);
-        
-        clust2Test = clust2Test+deltaClust;
         
         MLCorrMask = zeros(size(data(:,:,1)));
         for i = 1:length(inds)
@@ -62,6 +63,8 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
         
         %update counter
         counter = counter+1;
+        clust2Test = clust2Test+deltaClust;
+        
         
     end
     

@@ -5,14 +5,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep\FilmBlinking\mov1';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\02 - Feb\18 - ML Test\data\Mov2';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';
 info.driftCorr = true;
 info.ROI = true;
 
-frame2Process = 1:3000;
+frame2Process = 1:6000;
 corrInfo.r = 2; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
@@ -47,7 +47,7 @@ data = myMovie.loadFrames(frame2Process);
 [listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
 
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
-
+%%
 %compare the two clusters
 [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
 
@@ -110,12 +110,12 @@ axis image
 MLOptions.clust2Test = 2;
 MLOptions.GPU = true;
 MLOptions.replicate = 1;
-MLOptions.deltaClust = 1;
+MLOptions.deltaClust = 5;
 
 profile on
 distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
 [evalClust] = corrAnalysis.testNumberOfMLCluster(distanceMap,inds,data,...
-    'clust2Test',2,'GPU',true,'replicate',1,'deltaClust',1);
+    'clust2Test',2,'GPU',true,'replicate',1,'deltaClust',3);
 
 profile('viewer')
 
