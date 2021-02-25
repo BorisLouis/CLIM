@@ -1,4 +1,4 @@
-function [listCorrPx] = getCorrRelation(data2Cluster,r,corrThreshold)
+function [listCorrPx,sumCorrPx] = getCorrRelation(data2Cluster,r,corrThreshold)
     %function to find correlation relation between a each pixel of
     %an image and its neighbor pixels
     
@@ -43,4 +43,5 @@ function [listCorrPx] = getCorrRelation(data2Cluster,r,corrThreshold)
     end
     
     listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+    sumCorrPx  = cellfun(@sum,listCorrPx);
 end
