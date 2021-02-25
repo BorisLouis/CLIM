@@ -1,32 +1,35 @@
-function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,inds,distanceMap,dim,thresh)
+function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,thresh)
     %function actually does the clustering.
-    safeCount = 2*dim(1)*dim(2);
+    safeCount = 2*size(data,1)*size(data,2);
     %initialize the variable
     count = 1;
     group = 1;
-    corrMask = zeros(dim(1),dim(2));
+    corrMask = zeros(size(data,1),size(data,2));
     treatedIdx = NaN(length(inds),1);
     indsCopy = inds;
-    indsPxIdx = 1:length(inds);
     clusters{group} = [];
     %as long as the list of pixel that are correlated is not empty
     %we keep going
     while ~isempty(listCorrPx) 
+        %get Index of most correlated pixel
+        [~,idx] = max(sumPx);
         %take the index of the first pixel to be treated
-        currIndex = inds(1);
+        currIndex = inds(idx);
         %add to a new list the pixel that are correlated with the
         %currently treated pixel
-        currList = listCorrPx{1};
+        currList = listCorrPx{idx};
         %check that the list does not contain already treated
         %pixels
         currList(ismember(currList,treatedIdx,'row'),:) =[];
         %if the list is empty then the pixel is "dead" and we
         %remove it from the list
         if isempty(currList)
-            listCorrPx(1) = [];
+            listCorrPx(idx) = [];
+            inds(idx) = [];
+            sumPx(idx) = [];
             idx = find(isnan(treatedIdx(:,1)),1);
             treatedIdx(idx) = currIndex;
-            inds(1) = [];
+            
         else
             %otherwise we treat all the pixel in the list in the
             %same way
@@ -40,14 +43,13 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,inds,distanceMap,d
 
                 % remove it from the list
                 listCorrPx(inds==currIndex) = [];
+                sumPx(inds==currIndex)= [];
                 inds(inds==currIndex) = [];
-
+               
                 %update the currentlist to add the new data
                 currIndex = currList(1);
                 currList(1,:) = [];
-                %Quick bug fix is to check if currIndex is in inds
-                %and if not we just delete it?
-
+                
                 %get list of element correlated to the current element
                 list2Add  = listCorrPx{inds==currIndex}; 
                 %remove already treated cases and cases already in the list
@@ -68,7 +70,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,inds,distanceMap,d
                 %check that the pixel that should be added to the
                 %list are indeed correlated to the current cluster
                 [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
-                    currCluster,distanceMap,indsCopy,thresh);
+                    currCluster,data,indsCopy,thresh);
                 %add the new element to the list
                 currList  = [currList;list2Add];
 
@@ -85,7 +87,9 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,inds,distanceMap,d
 
             % remove it from the list
             listCorrPx(inds==currIndex) = [];
+            sumPx(inds==currIndex) =[];
             inds(inds==currIndex) = [];
+            
 
             %if exit the first while loop, the first group is complete, we need to
             %increment the group number as we are supposed to have treated all

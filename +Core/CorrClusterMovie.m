@@ -7,6 +7,7 @@ classdef CorrClusterMovie < Core.Movie
     properties (SetAccess = 'private')
         listCorrPx
         indCorrPx
+        sumCorrPx
         corrMask
         hierarchicalMask
         nCluster
@@ -157,7 +158,7 @@ classdef CorrClusterMovie < Core.Movie
               
             waitbar(0.1,h,'Getting correlation relationships');
             %#2 Get correlation relationship between pixels
-            [lCorrPx]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
+            [lCorrPx,sCorrPx]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
             
             waitbar(0.4,h,'Preparing data');
             %#3 reshap pixel relationship and get corresponding indices        
@@ -169,8 +170,10 @@ classdef CorrClusterMovie < Core.Movie
             idx2Delete = cellfun(@isempty,lCorrPx);
             lCorrPx(idx2Delete) =[];
             indPx(idx2Delete) = [];
+            sCorrPx(idx2Delete) = [];
             
             obj.listCorrPx = lCorrPx;
+            obj.sumCorrPx = sCorrPx;
             obj.indCorrPx = indPx;
             
         end        
@@ -186,14 +189,14 @@ classdef CorrClusterMovie < Core.Movie
             corrThreshold = corrInfo.thresh;
             lCorrPx = obj.listCorrPx;
             inds    = obj.indCorrPx;
+            sumPx   = obj.sumCorrPx;
             
             %get distance map
-            [distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
+            %[distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
              
             disp('========> Performing Pseudo-clustering <==========')
             %perform pseudo-clustering
-            dim = size(data);
-            [corrMask,cleanedCorrMask] = corrAnalysis.corrClustering(lCorrPx,inds,distanceMap,dim,corrThreshold);
+            [corrMask,cleanedCorrMask] = corrAnalysis.corrClustering(lCorrPx,sumPx,inds,data,corrThreshold);
             
             disp('========> DONE <==========')
             
@@ -300,7 +303,6 @@ classdef CorrClusterMovie < Core.Movie
                 clusters{i} =  [idx idxInds];
                 
             end
-            
             
             cleanedMLCorrMask = corrAnalysis.clusterCleanUp(MLCorrMask,clusters,distanceMap);
            
