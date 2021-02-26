@@ -45,9 +45,9 @@ data = myMovie.loadFrames(frame2Process);
 
 %% Get pixels correlation
 [listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
-%%
+%
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
-%%
+%
 %compare the two clusters
 [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
 

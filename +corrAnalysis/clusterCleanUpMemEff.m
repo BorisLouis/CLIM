@@ -1,4 +1,4 @@
-function [cleanCorrMask] = clusterCleanUp2(corrMask,clusters,data)
+function [cleanCorrMask] = clusterCleanUpMemEff(corrMask,clusters,data)
     threshold = 0.6;
     nCluster = max(corrMask(:));
     

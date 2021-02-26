@@ -1,7 +1,14 @@
-function [cleanCorrMask,clusters] = clusterCleanUp(corrMask,clusters,distanceMap)
-
+function [cleanCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap)
+    threshold = 0.6;
     nCluster = max(corrMask(:));
-  
+    
+    sizes = cellfun(@size,clusters,'UniformOutput',false);
+    sizes = cell2mat(sizes');
+    
+    [~,idx] = sort(sizes(:,1));
+    
+    clusters = clusters(idx);
+    
     for i = 1:nCluster
         currCluster = clusters{i};
         nPx = size(currCluster,1);
@@ -18,22 +25,33 @@ function [cleanCorrMask,clusters] = clusterCleanUp(corrMask,clusters,distanceMap
             %get mean correlation to cluster
             corr2OtherClusters = zeros(1,nCluster);
             for k = 1:nCluster
-               cluster2Test = clusters{k}(:,2);
-               nPx2 = size(cluster2Test,1);
-               pxVecTest = repmat(idx2Px,nPx2,1);
-               idx2Test   = sub2ind(size(distanceMap),pxVecTest,cluster2Test);
-               corr2OtherClusters(k) = mean(distanceMap(idx2Test));  
+               if ~isempty(clusters{k})
+                   cluster2Test = clusters{k}(:,2);
+                   nPx2 = size(cluster2Test,1);
+                   pxVecTest = repmat(idx2Px,nPx2,1);
+                   idx2Test   = sub2ind(size(distanceMap),pxVecTest,cluster2Test);
+
+                   subDistMap = distanceMap(idx2Test);
+
+                   corr2OtherClusters(k) = mean(nonzeros(subDistMap));
+               else
+                   corr2OtherClusters(k) = 10;
+               end
             end
             
             %check if pixel was better correlated to other cluster
             checkRes = correlation2Cluster>=min(corr2OtherClusters);
             
-            if checkRes
-                %add pixel to be moved to the list
-                [~,idx] = min(corr2OtherClusters);
-                
-                px2Move{n} = [currentPx, idx2Px, idx];
-                n = n+1;
+            if or(checkRes,nPx==1)
+                if nPx == 1 && min(corr2OtherClusters)> threshold
+                    clusters{i} =[];
+                else
+                    %add pixel to be moved to the list
+                    [~,idx] = min(corr2OtherClusters);
+
+                    px2Move{n} = [currentPx, idx2Px, idx];
+                    n = n+1;
+                end
             else
                 
             end
@@ -73,7 +91,7 @@ function [cleanCorrMask,clusters] = clusterCleanUp(corrMask,clusters,distanceMap
         cleanCorrMask = zeros(size(corrMask));
         for i = 1:nClusters
 
-            BWCopy = newCorrMask==i;
+            BWCopy = newCorrMask==nClusters - (i-1);
             
             if ~isempty(BWCopy)
                 cleanCorrMask(BWCopy) = max(cleanCorrMask(:))+1;

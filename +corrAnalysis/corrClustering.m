@@ -89,7 +89,6 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
             listCorrPx(inds==currIndex) = [];
             sumPx(inds==currIndex) =[];
             inds(inds==currIndex) = [];
-            
 
             %if exit the first while loop, the first group is complete, we need to
             %increment the group number as we are supposed to have treated all
@@ -106,16 +105,21 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
     end
     
     clusters(cellfun(@isempty,clusters)) = [];
-    %test loop clean up
     
-    [cleanCorrMask] = corrAnalysis.clusterCleanUp2(corrMask,clusters,data);
+    %fast cleanUp
+    try
+        distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
+        
+    catch
+        
+        distanceMap = [];
+        warning('Too many pixels to generate distance map, using slower but more memory efficient route');
+    end
     
-%     for i = 1:10
-%         [cleanCorrMask,clusters] = corrAnalysis.clusterCleanUp(cleanCorrMask,clusters,distanceMap);
-%         
-%     end
-    
-    
-    %[cleanCorrMask] = corrAnalysis.clusterCleanUp2(corrMask,clusters,distanceMap);
-    
+    if isempty(distanceMap)
+        [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap);
+    else
+        [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data);
+    end
+            
 end
