@@ -1,4 +1,4 @@
-function [cleanCorrMask] = clusterCleanUp2(corrMask,clusters,distanceMap)
+function [cleanCorrMask] = clusterCleanUp2(corrMask,clusters,data)
     threshold = 0.6;
     nCluster = max(corrMask(:));
     
@@ -12,37 +12,42 @@ function [cleanCorrMask] = clusterCleanUp2(corrMask,clusters,distanceMap)
     for i = 1:nCluster
         currCluster = clusters{i};
         nPx = size(currCluster,1);
-        px2Move = cell(100,1);
+        px2Move = cell(size(currCluster,1),1);
+        
+        %get distance map for currently treated cluster
+        currId = currCluster(:,1);
+        currDistMap = corrAnalysis.getDistanceMapFromPxList(currId,data);
+        
         n = 1;
         for j = 1:nPx
             currentPx = currCluster(j,1);
             idx2Px    = currCluster(j,2);
-            pxVec = repmat(idx2Px,nPx,1);
-            % get mean correlation to cluster
-            idx   = sub2ind(size(distanceMap),pxVec,currCluster(:,2));
-            correlation2Cluster = mean(distanceMap(idx));
+%   
+            correlation2Cluster = mean(nonzeros(currDistMap(currId==currentPx,:)));
             
             %get mean correlation to cluster
             corr2OtherClusters = zeros(1,nCluster);
             for k = 1:nCluster
                if ~isempty(clusters{k})
-                   cluster2Test = clusters{k}(:,2);
-                   nPx2 = size(cluster2Test,1);
-                   pxVecTest = repmat(idx2Px,nPx2,1);
-                   idx2Test   = sub2ind(size(distanceMap),pxVecTest,cluster2Test);
-
-                   subDistMap = distanceMap(idx2Test);
-
-                   corr2OtherClusters(k) = mean(nonzeros(subDistMap));
+                   cluster2Test = clusters{k}(:,1);
+                   cluster2Test = [cluster2Test;currentPx];
+                   subDistMap   = corrAnalysis.getDistanceMapFromPxList(cluster2Test,data);
+%             
+                   corr2OtherClusters(k) = mean(nonzeros(subDistMap(end,:)));
+                   
                else
+                   
                    corr2OtherClusters(k) = 10;
+                   
                end
             end
             
             %check if pixel was better correlated to other cluster
-            checkRes = correlation2Cluster>=min(corr2OtherClusters);
+            checkRes = correlation2Cluster> min(corr2OtherClusters);
             
             if or(checkRes,nPx==1)
+                %if single pixel we check if another cluster is decently
+                %correlated to it (compare with initial threshold)
                 if nPx == 1 && min(corr2OtherClusters)> threshold
                     clusters{i} =[];
                 else
@@ -97,8 +102,5 @@ function [cleanCorrMask] = clusterCleanUp2(corrMask,clusters,distanceMap)
                 cleanCorrMask(BWCopy) = max(cleanCorrMask(:))+1;
             end
         end
-
-        
-        
         
 end

@@ -108,7 +108,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
     clusters(cellfun(@isempty,clusters)) = [];
     %test loop clean up
     
-    [cleanCorrMask] = corrAnalysis.clusterCleanUp2(corrMask,clusters,distanceMap);
+    [cleanCorrMask] = corrAnalysis.clusterCleanUp2(corrMask,clusters,data);
     
 %     for i = 1:10
 %         [cleanCorrMask,clusters] = corrAnalysis.clusterCleanUp(cleanCorrMask,clusters,distanceMap);
