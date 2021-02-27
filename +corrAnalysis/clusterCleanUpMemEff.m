@@ -1,5 +1,4 @@
-function [cleanCorrMask] = clusterCleanUpMemEff(corrMask,clusters,data)
-    threshold = 0.6;
+function [cleanCorrMask] = clusterCleanUpMemEff(corrMask,clusters,data,threshold)
     nCluster = max(corrMask(:));
     
     sizes = cellfun(@size,clusters,'UniformOutput',false);

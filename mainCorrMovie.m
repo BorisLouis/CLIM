@@ -10,7 +10,7 @@ file.ext  = '.spe';
 
 info.runMethod  = 'load';
 info.driftCorr = true;
-info.ROI = true;
+info.ROI = false;
 
 frame2Process = 1:6000;
 corrInfo.r = 2; %radius for checking neighbor

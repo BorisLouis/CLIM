@@ -1,5 +1,4 @@
-function [cleanCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap)
-    threshold = 0.6;
+function [cleanCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap,threshold)
     nCluster = max(corrMask(:));
     
     sizes = cellfun(@size,clusters,'UniformOutput',false);
@@ -19,7 +18,11 @@ function [cleanCorrMask] = clusterCleanUp(corrMask,clusters,distanceMap)
             idx2Px    = currCluster(j,2);
             pxVec = repmat(idx2Px,nPx,1);
             % get mean correlation to cluster
+            try
             idx   = sub2ind(size(distanceMap),pxVec,currCluster(:,2));
+            catch
+                disp('outch')
+            end
             correlation2Cluster = mean(distanceMap(idx));
             
             %get mean correlation to cluster

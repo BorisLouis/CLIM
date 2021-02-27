@@ -108,7 +108,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
     
     %fast cleanUp
     try
-        distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
+        distanceMap = corrAnalysis.getDistanceMapFromPxList(indsCopy,data);
         
     catch
         
@@ -117,9 +117,11 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
     end
     
     if isempty(distanceMap)
-        [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap);
+         [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data,thresh);
+        
     else
-        [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data);
+        [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap,thresh);
+       
     end
             
 end
