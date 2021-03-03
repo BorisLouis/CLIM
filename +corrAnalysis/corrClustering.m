@@ -54,25 +54,31 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
                 list2Add  = listCorrPx{inds==currIndex}; 
                 %remove already treated cases and cases already in the list
                 list2Add(or(ismember(list2Add,treatedIdx,'row'),ismember(list2Add,currList,'row'))) = []; 
+                
+                if isempty(list2Add)
+                    
+                else
+                    %find pixel that are already inside the cluster to check
+                    %for correlation
+                    currCluster = find(corrMask==group);
 
-                %find pixel that are already inside the cluster to check
-                %for correlation
-                currCluster = find(corrMask==group);
+                    %take a random subset of 10 pixel from the
+                    %current cluster
+                    try
+                        r = randperm(length(currCluster),10);
+                        currCluster = currCluster(r);
+                    catch
 
-                %take a random subset of 10 pixel from the
-                %current cluster
-                try
-                    r = randperm(length(currCluster,10));
-                    currCluster = currCluster(r);
-                catch
-
+                    end
+                    %check that the pixel that should be added to the
+                    %list are indeed correlated to the current cluster
+                    [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
+                        currCluster,data,thresh);
+                    
+                    %add the new element to the list
+                    currList  = [currList;list2Add];
+                    
                 end
-                %check that the pixel that should be added to the
-                %list are indeed correlated to the current cluster
-                [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
-                    currCluster,data,indsCopy,thresh);
-                %add the new element to the list
-                currList  = [currList;list2Add];
 
                 if isempty(currList)
                     disp(['Found ' num2str(group) ' group(s).']);

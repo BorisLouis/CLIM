@@ -5,12 +5,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\02 - Feb\18 - ML Test\data\Mov2';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\02 - Feb\18 - ML Test\data\Mov5';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';
 info.driftCorr = true;
-info.ROI = false;
+info.ROI = true;
 
 frame2Process = 1:6000;
 corrInfo.r = 2; %radius for checking neighbor
@@ -46,8 +46,10 @@ data = myMovie.loadFrames(frame2Process);
 %% Get pixels correlation
 [listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
 %
+profile('on')
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
 %
+profile('viewer')
 %compare the two clusters
 [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
 

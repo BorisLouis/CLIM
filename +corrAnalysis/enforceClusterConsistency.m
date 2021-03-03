@@ -1,4 +1,4 @@
-function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,data,indsCopy,thresh)
+function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,data,thresh)
     %function to enforce consistency within the cluster by checking that
     %to-be-added element are correlated with a random subset of the cluster
     nInd = length(ind2Add);
