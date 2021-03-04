@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\02 - Feb\18 - ML Test\data\Mov5';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\02 - Feb\18 - ML Test\data\Mov2';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';
@@ -26,113 +26,27 @@ myMovie.correctDrift;
 
 data = myMovie.loadFrames(frame2Process);
 
-% vidFile = VideoWriter('rawMov.mp4','MPEG-4');
-% vidFile.FrameRate = 100;
-% open(vidFile);
-% figure
-% for i = 1:10:size(data,3)
-%    imagesc(data(:,:,i));
-%    colormap('hot')
-%    caxis([0 max(data(:))]);
-%    axis image
-%    drawnow;
-%    im = getframe;
-%    writeVideo(vidFile,im);
-%    clf
-% end
-% close(vidFile)
-
-
 %% Get pixels correlation
 [listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
 %
-profile('on')
+
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
 %
-profile('viewer')
+
 %compare the two clusters
 [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
 
-
-
-
-%% Correlation clustering
-
-[corrMask,cleanedCorrMask] = myMovie.getCorrClustMask(data,corrInfo);
-
-%compare the two clusters
-[relNum3,relNum4] = compare2Cluster(corrMask,cleanedCorrMask,data,'corrClust');
-
-
-
-%% ML Data Processing
-MLOptions.clust2Test = [30 31];
-MLOptions.GPU = true;
-MLOptions.replicate = 10;
-MLOptions.dist = false; %use dist between point as well as correlation
-
-[MLCorrMask,cleanedMLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
-
-[relNum5,relNum6] = compare2Cluster(MLCorrMask,cleanedMLCorrMask,data,'KMClust');
-
-
-%% Hierarchical Clustering
-[hierMask,corrMask,cleanedHierMask,cleanedCorrMask] = myMovie.getHierarchicalMask(data,MLOptions);
-
-[relNum7,relNum8] = compare2Cluster(corrMask,cleanedCorrMask,data,'HierClust');
-
-
-%% 
-myMovie.showHierarchicalMask;
-
-%% check mask
-
-[meanTraces] = myMovie.checkMask(data,2);
-
-%% clean ML Mask
-
-[cleanMask, hierarchical] = corrAnalysis.cleanMLCorrMask(data,MLCorrMask,0.4);
-
-%% clean mask
-
-[cleanMask] = corrAnalysis.cleanCorrMask(data,myMovie.corrMask,0.9);
-
-cleanMask = imfill(cleanMask,'holes');
-se =strel('disk',1);
-cleanMask = imclose(cleanMask,se);
-
-figure
-imagesc(cleanMask)
-colormap('jet')
-axis image
-
-
-
-%% test ML Cluster;
-MLOptions.clust2Test = 2;
-MLOptions.GPU = true;
-MLOptions.replicate = 1;
-MLOptions.deltaClust = 5;
-
-profile on
-distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
-[evalClust] = corrAnalysis.testNumberOfMLCluster(distanceMap,inds,data,...
-    'clust2Test',2,'GPU',true,'replicate',1,'deltaClust',3);
-
-profile('viewer')
-
-
-
-
-
 %% Plotting
-myMovie.plotContour(data);
+myMovie.plotContour(data,'raw');
 
 %% Plot traces
-myMovie.plotTraces(data,3);
+myMovie.plotClusterTraces(data,3);
+
 
 %% Extract intensity traces 
-[traces] = myMovie.getIntensityTrace(data);
+[traces] = myMovie.getAllTraces(data);
+
+
 %%
 
 function [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,method)
