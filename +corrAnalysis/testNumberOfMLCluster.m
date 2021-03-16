@@ -37,10 +37,10 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
     stds = zeros(1,100);
     nClustTested = zeros(1,100);
     while DCV > 0
-        nClustTested(counter) = clust2Test;
         if counter >200
             break;
         end
+        nClustTested(counter) = clust2Test;
         clust = kmeans(distanceMap,clust2Test,'emptyaction','drop',...
             'replicate',replicate);
         

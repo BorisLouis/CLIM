@@ -1,4 +1,4 @@
-classdef CorrClusterMovie < Core.Movie
+classdef devCorrClusterMovie < Core.Movie
     %General definition of a movie (master class from which many other
     %movie type will inherit
     %The Movie hold information and path to the movie but does not store
@@ -12,7 +12,7 @@ classdef CorrClusterMovie < Core.Movie
     end
         
     methods
-        function obj = CorrClusterMovie(raw,info)
+        function obj = devCorrClusterMovie(raw,info)
             
             obj = obj@Core.Movie(raw,info);
             
@@ -223,13 +223,12 @@ classdef CorrClusterMovie < Core.Movie
             
             if or(run,strcmpi(obj.info.runMethod,'run'))
                 
-                assert(~isempty(obj.listCorrPx),'correlation relation between pixel not found, please run getPxCorrelation first');
-                assert(~isempty(obj.indCorrPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
-
+                assert(~isempty(obj.pxData),'correlation relation between pixel not found, please run getPxCorrelation first');
+               
                 corrThreshold = corrInfo.thresh;
-                lCorrPx = obj.listCorrPx;
-                inds    = obj.indCorrPx;
-                sumPx   = obj.sumCorrPx;
+                lCorrPx = obj.pxData.listCorrPx;
+                inds    = obj.pxData.indCorrPx;
+                sumPx   = obj.pxData.sumCorrPx;
 
                 %get distance map
                 %[distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
@@ -333,7 +332,7 @@ classdef CorrClusterMovie < Core.Movie
             replicate = MLOptions.replicate;
             dist = MLOptions.dist;
             
-            inds = obj.indCorrPx;
+            inds = obj.pxData.indCorrPx;
                  
             [distanceMap]      = corrAnalysis.getDistanceMapFromPxList(inds,data);
             
@@ -374,7 +373,7 @@ classdef CorrClusterMovie < Core.Movie
                 
             end
             
-            cleanedMLCorrMask = corrAnalysis.clusterCleanUp(MLCorrMask,clusters,distanceMap);
+            cleanedMLCorrMask = corrAnalysis.clusterCleanUp(MLCorrMask,clusters(:)',distanceMap);
            
             figure
             subplot(1,2,1)
@@ -388,9 +387,7 @@ classdef CorrClusterMovie < Core.Movie
     
             
             obj.corrMask = MLCorrMask;
-            obj.nCluster = max(MLCorrMask(:));
-            obj.method   = 'kmeanClust';
-            
+      
              %save Data 
             cMask.raw = MLCorrMask;
             cMask.rawNCluster = max(MLCorrMask(:));

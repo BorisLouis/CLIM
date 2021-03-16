@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\02 - Feb\18 - ML Test\data\Mov2';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\03 - Mar\15 - Comparison ML Pseudo-Clustering';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';

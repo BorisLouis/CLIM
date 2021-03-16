@@ -5,10 +5,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\02 - Feb\18 - ML Test\data\Mov5';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\03 - Mar\15 - Comparison ML Pseudo-Clustering';
 file.ext  = '.spe';
 
-info.runMethod  = 'load';
+info.runMethod  = 'run';
 info.driftCorr = true;
 info.ROI = true;
 
@@ -17,7 +17,7 @@ corrInfo.r = 2; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
 %% Loading data
-myMovie = Core.CorrClusterMovie(file,info);
+myMovie = Core.devCorrClusterMovie(file,info);
 
 myMovie.correctDrift;
 
@@ -44,12 +44,14 @@ data = myMovie.loadFrames(frame2Process);
 
 
 %% Get pixels correlation
+tic
 [listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
 %
-
+toc
+tic
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
 %
-
+toc
 %compare the two clusters
 [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
 
@@ -66,7 +68,7 @@ data = myMovie.loadFrames(frame2Process);
 
 
 %% ML Data Processing
-MLOptions.clust2Test = [30 31];
+MLOptions.clust2Test = [2 31];
 MLOptions.GPU = true;
 MLOptions.replicate = 10;
 MLOptions.dist = false; %use dist between point as well as correlation
@@ -114,15 +116,28 @@ MLOptions.GPU = true;
 MLOptions.replicate = 1;
 MLOptions.deltaClust = 5;
 
-profile on
+%profile on
+tic
 distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
 [evalClust] = corrAnalysis.testNumberOfMLCluster(distanceMap,inds,data,...
     'clust2Test',2,'GPU',true,'replicate',1,'deltaClust',3);
+toc
+%profile('viewer')
 
-profile('viewer')
 
+%% pick best number of cluster
 
+bestClust = [50 50];
+tic
+MLOptions.clust2Test = [bestClust];
+MLOptions.GPU = true;
+MLOptions.replicate = 5;
+MLOptions.dist = false; %use dist between point as well as correlation
 
+[MLCorrMask,cleanedMLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
+
+[relNum5,relNum6] = compare2Cluster(MLCorrMask,cleanedMLCorrMask,data,'KMClust');
+toc
 
 
 %% Plotting
