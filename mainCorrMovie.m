@@ -5,12 +5,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\03 - Mar\15 - Comparison ML Pseudo-Clustering';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\03 - Mar\24 - test Background issue\Mov2';
 file.ext  = '.spe';
 
-info.runMethod  = 'load';
+info.runMethod  = 'run';
 info.driftCorr = true;
-info.ROI = true;
+info.ROI = false;
 
 frame2Process = 1:6000;
 corrInfo.r = 2; %radius for checking neighbor
@@ -40,12 +40,16 @@ data = myMovie.loadFrames(frame2Process);
 myMovie.plotContour(data,'raw');
 
 %% Plot traces
-myMovie.plotClusterTraces(data,3);
+myMovie.plotClusterTraces(data,4);
 
 
 %% Extract intensity traces 
 [traces] = myMovie.getAllTraces(data);
 
+
+%% get image from corrmask
+color= 'jet';
+[corrMaskIM] = myMovie.getImageFromMask(corrMask,color);
 
 %%
 

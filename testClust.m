@@ -1,10 +1,10 @@
 %% Simulate correlated data
 
 %% Simulation input
-sizeIm = 64;
-nFrames = 100;
-data = zeros(sizeIm,sizeIm,nFrames);
-nParticles = 2;
+sizeIm = [512 512];
+nFrames = 300;
+data = zeros(sizeIm(2),sizeIm(1),nFrames);
+nParticles = 100;
 corrThreshold = 0.3;%smaller is more selective here (0 is perfect correlation)
 model.name = 'gaussian';
 model.sigma_x = 5;
@@ -14,20 +14,20 @@ r = 2; %radius for checking correlation
 
 %% Simulations
 %coord=[56,56;72,72;56,72;72,56];
-coord = [16,32;48,32];
-[X,Y] = meshgrid(1:sizeIm,1:sizeIm);
+% coord = [16,32;48,32];
+[X,Y] = meshgrid(1:sizeIm(1),1:sizeIm(2));
 %coord = zeros(nParticles,2);
 for i = 1:nParticles
     
-    x0 = coord(i,1);
-     y0 = coord(i,2);
-%     x0 = randperm(sizeIm,1);
-%     y0 = randperm(sizeIm,1);
+%     x0 = coord(i,1);
+%     y0 = coord(i,2);
+    x0 = randperm(sizeIm(1),1);
+    y0 = randperm(sizeIm(2),1);
     c  = 0;
     BaseInt = 500 + i * 100;
     secondInt = 2*BaseInt;
     int = BaseInt;
-    for j = 1 : 100
+    for j = 1 : nFrames
         
         num = rand(1);
         if num > 0.7
@@ -53,6 +53,43 @@ noise = randn(size(data));
 
 finalData = data + ones(size(data))*100 +noise*20;
 
+
+
+
+%%
+frameRate = 10;
+filename = 'cover.gif';
+% Capture the plot as an image 
+h = figure('Position',[10 10 768 768]);
+for i = 1:size(finalData,3)
+      imagesc(finalData(:,:,i));
+      colormap('hot')
+      caxis([0 max(finalData(:))]);
+      
+      axis tight
+      set(gca,'XColor', 'none','YColor','none')
+      a = gca;
+      a.XTickLabel = [];
+      a.YTickLabel = [];
+      
+      drawnow;
+      frame = getframe(h); 
+      im = frame2im(frame); 
+      [imind,cm] = rgb2ind(im,256); 
+      
+      % Write to the GIF File 
+      
+      if i == 1
+
+          imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+
+      else
+
+          imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+
+      end
+end
+
 %% save a movie as example
 vidFile = VideoWriter('rawMov.mp4','MPEG-4');
 vidFile.FrameRate = 10;
@@ -63,8 +100,10 @@ for i = 1:size(finalData,3)
    colormap('hot')
    caxis([0 max(finalData(:))]);
    axis image
+   set(gca,'XColor', 'none','YColor','none')
    drawnow;
    im = getframe;
+   
    writeVideo(vidFile,im);
    clf
 end

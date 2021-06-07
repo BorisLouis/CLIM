@@ -438,6 +438,55 @@ classdef CorrClusterMovie < Core.Movie
                       
         end
         
+        function [RGBIM] = getImageFromMask(obj,Mask,color)
+            
+            colors = colormap(color);
+            
+            if strcmp(color,'hot')
+                colors = [0,0,0; colors];
+            end
+            
+            RGBIM = zeros(size(Mask,1),size(Mask,2),3);
+            
+            [row,col] = find(Mask==0);
+            r = repmat(row,1,size(RGBIM,3));
+            r = reshape(r',size(RGBIM,3)*length(row),1);
+            c = repmat(col,1,size(RGBIM,3));
+            c = reshape(c',size(RGBIM,3)*length(col),1);
+
+            f = repmat((1:size(RGBIM,3))',length(col),1);
+            idx = sub2ind(size(RGBIM),r,c,f);
+            %color background
+            
+            RGBIM(idx) = repmat(colors(1,:)',length(row),1);
+            %for the 'real' data use everything above 25% of the range so
+            %the background is more constrasted.
+            idx2Use = round(0.25*length(colors));
+            cropColors = colors(idx2Use:end,:);
+            for i = 1:max(Mask(:))
+                [row,col] = find(Mask==i);
+                r = repmat(row,1,size(RGBIM,3));
+                r = reshape(r',size(RGBIM,3)*length(row),1);
+                c = repmat(col,1,size(RGBIM,3));
+                c = reshape(c',size(RGBIM,3)*length(col),1);
+
+                f = repmat((1:size(RGBIM,3))',length(col),1);
+                idx = sub2ind(size(RGBIM),r,c,f);
+                
+                idx2Use = randi(size(cropColors,1));
+                
+                RGBIM(idx) = repmat(cropColors(idx2Use,:)',length(row),1);
+                
+                
+            end
+            
+            figure
+            imagesc(RGBIM)
+            
+            
+            
+        end
+        
     end
     methods(Static)
         
