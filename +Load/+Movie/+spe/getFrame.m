@@ -17,7 +17,7 @@
 
 function Im = getFrame(filePath,frames)
     assert(ischar(filePath),'Error, wrong path Names');
-    assert(min(size(frames)) ==1, 'Frames to import should be a vector');
+    
     
     fid = fopen(filePath,'r'); 
 
@@ -39,7 +39,7 @@ function Im = getFrame(filePath,frames)
             nF = frames(end);
             nI = frames(1);
     end
-    
+    assert(min(size(frames)) ==1, 'Frames to import should be a vector');
     assert(max(frames)<=Zdim,'Requested number of frame exceeds the file');
     
     switch DataType

@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\03 - Mar\24 - test Background issue\Mov2';
+file.path = 'F:\Boris - Lund\2021\05 - Mai\28.5.21\small grain no pores\Place1\OD4';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -14,7 +14,7 @@ info.ROI = false;
 
 frame2Process = 1:6000;
 corrInfo.r = 2; %radius for checking neighbor
-corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
+corrInfo.thresh = 0.3;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -37,7 +37,8 @@ data = myMovie.loadFrames(frame2Process);
 [relNum1,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
 
 %% Plotting
-myMovie.plotContour(data,'raw');
+myMovie.plotContour(data,'raw');%raw or clean depending on which we want to use
+
 
 %% Plot traces
 myMovie.plotClusterTraces(data,4);
