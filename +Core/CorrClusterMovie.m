@@ -169,7 +169,7 @@ classdef CorrClusterMovie < Core.Movie
 
                 waitbar(0.1,h,'Getting correlation relationships');
                 %#2 Get correlation relationship between pixels
-                [lCorrPx,sCorrPx]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
+                [lCorrPx,sCorrPx,corrMap]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
 
                 waitbar(0.4,h,'Preparing data');
                 %#3 reshap pixel relationship and get corresponding indices        
@@ -186,11 +186,13 @@ classdef CorrClusterMovie < Core.Movie
                 obj.pxData.listCorrPx = lCorrPx;
                 obj.pxData.sumCorrPx = sCorrPx;
                 obj.pxData.indCorrPx = indPx;
-
+                obj.pxData.corrMap   = corrMap;
+                
                 %save Data 
                 pixData.listCorrPx = lCorrPx;
                 pixData.sumCorrPx  = sCorrPx;
                 pixData.indCorrPx  = indPx;
+                pixData.corrMap    = corrMap;
 
                 fileName = [obj.pathRes filesep 'pxData.mat'];
                 save(fileName,'pixData');
