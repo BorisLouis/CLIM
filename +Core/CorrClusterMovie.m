@@ -5,7 +5,7 @@ classdef CorrClusterMovie < Core.Movie
     %any data inside. Methods allow to display and do stuff with the data.
     
     properties (SetAccess = 'private')
-        pxData
+        corrRelation
         corrMask       
         pathRes
         
@@ -155,7 +155,7 @@ classdef CorrClusterMovie < Core.Movie
             %neighboring pixels
             
             %check if previous data was found
-            [run] = obj.checkPxData;
+            [run] = obj.checkcorrRelation;
             
             if or(run,strcmpi(obj.info.runMethod,'run'))
             
@@ -169,44 +169,24 @@ classdef CorrClusterMovie < Core.Movie
 
                 waitbar(0.1,h,'Getting correlation relationships');
                 %#2 Get correlation relationship between pixels
-                [lCorrPx,sCorrPx]  = corrAnalysis.getCorrRelation(data2Cluster,r,corrThreshold);
+                [corrR]  = corrAnalysis.getCorrRelation(data2Cluster,r);
 
                 waitbar(0.4,h,'Preparing data');
-                %#3 reshap pixel relationship and get corresponding indices        
-
-                indPx    = (1:length(lCorrPx))';
-
-                %#4 Clean data by keeping only pixel that have correlation
-                %relation
-                idx2Delete = cellfun(@isempty,lCorrPx);
-                lCorrPx(idx2Delete) =[];
-                indPx(idx2Delete) = [];
-                sCorrPx(idx2Delete) = [];
-
-                obj.pxData.listCorrPx = lCorrPx;
-                obj.pxData.sumCorrPx = sCorrPx;
-                obj.pxData.indCorrPx = indPx;
-
-                %save Data 
-                pixData.listCorrPx = lCorrPx;
-                pixData.sumCorrPx  = sCorrPx;
-                pixData.indCorrPx  = indPx;
-
-                fileName = [obj.pathRes filesep 'pxData.mat'];
-                save(fileName,'pixData');
+  
+                obj.corrRelation = corrR;
+                fileName = [obj.pathRes filesep 'corrRelation.mat'];
+                save(fileName,'corrR');
                 
             else
                 
                 disp('found processed data, loading from there');
-                fileName = [obj.pathRes filesep 'pxData.mat'];
+                fileName = [obj.pathRes filesep 'corrRelation.mat'];
                 tmp = load(fileName);
                 
-                obj.pxData.listCorrPx = tmp.pixData.listCorrPx;
-                obj.pxData.sumCorrPx = tmp.pixData.sumCorrPx;
-                obj.pxData.indCorrPx = tmp.pixData.indCorrPx;
+                obj.corrRelation = tmp.corrR;
                 
-                lCorrPx = tmp.pixData.listCorrPx;
-                indPx = tmp.pixData.indCorrPx;
+                lCorrPx = tmp.corrR.listCorrPx;
+                indPx = tmp.corrR.indCorrPx;
                 disp('Loading DONE');
             end
             
@@ -217,19 +197,19 @@ classdef CorrClusterMovie < Core.Movie
             %pixel correlation map and linking one by one pixel that are
             %correlated together hence creating a map of group of pixel
             %that are correlated
-            
+            error('Not implemented');
             %check if previous data was found
             [run] = obj.checkCorrMask;
             
             if or(run,strcmpi(obj.info.runMethod,'run'))
-                assert(~isempty(obj.pxData),'correlation relation between pixel not found, please run getPxCorrelation first');
-                assert(~isempty(obj.pxData.listCorrPx),'correlation relation between pixel not found, please run getPxCorrelation first');
-                assert(~isempty(obj.pxData.indCorrPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
+                assert(~isempty(obj.corrRelation),'correlation relation between pixel not found, please run getPxCorrelation first');
+                assert(~isempty(obj.corrRelation.listCorrPx),'correlation relation between pixel not found, please run getPxCorrelation first');
+                assert(~isempty(obj.corrRelation.indCorrPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
 
                 corrThreshold = corrInfo.thresh;
-                listCorrPx = obj.pxData.listCorrPx;
-                inds    = obj.pxData.indCorrPx;
-                sumPx   = obj.pxData.sumCorrPx;
+                listCorrPx = obj.corrRelation.listCorrPx;
+                inds    = obj.corrRelation.indCorrPx;
+                sumPx   = obj.corrRelation.sumCorrPx;
 
                 %get distance map
                 %[distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
@@ -502,9 +482,9 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
-        function [run] = checkPxData(obj)
+        function [run] = checkcorrRelation(obj)
            
-            path = [obj.pathRes filesep 'pxData.mat'];
+            path = [obj.pathRes filesep 'corrRelation.mat'];
             %test if file exist
             test = isfile(path);
             

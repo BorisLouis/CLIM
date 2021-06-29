@@ -1,4 +1,4 @@
-function [listCorrPx,sumCorrPx] = getCorrRelation(data2Cluster,r,startThreshold)
+function [corrRelation] = getCorrRelation(data2Cluster,r)
     %function to find correlation relation between a each pixel of
     %an image and its neighbor pixels
     
@@ -48,10 +48,11 @@ function [listCorrPx,sumCorrPx] = getCorrRelation(data2Cluster,r,startThreshold)
     %here we test the thresholds
     disp('stop');
     disp('Searching for optimal threshold');
-    totArea = size(corrRel,1)*size(corrRel,2);
+  
     area = zeros(1,30);
     meanCorr = zeros(1,30);
     threshold = zeros(1,30);
+    startThreshold = 1;
     for i = 1:50
        
        
@@ -69,19 +70,38 @@ function [listCorrPx,sumCorrPx] = getCorrRelation(data2Cluster,r,startThreshold)
        
     end
     
-    while(true)
-       %Test threhsold
-       
-        
-        
-        
-    end
+    %find minimal threshold
+    ipt = findchangepts(diff(area));
+    %We take the a little bit after the change point to make sure the bckg
+    %is fully killed
+    minThresh = threshold(ipt(1)+2);
     
+    %extract the part of the data after background removal
+    idx2Thresh = threshold<=minThresh;    
+    minArea = area(idx2Thresh);
+    [~,idx] = min(diff(smooth(minArea)));
+    %get the corresponding threshold, the part with bkg was not removed,
+    %intentionally because the minimum represent the moment where the area
+    %change the most, we want to stop scanning the threshold before that
+    %acceleration.
+    maxThresh = threshold(1+idx);
     
+    tRange = [minThresh maxThresh];
     
+    %reshape and store data.
+    corrRelation.listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+    corrRelation.listCorrVal = reshape(corrVal,size(corrRel,1)*size(corrRel,2),1);
+    corrRelation.sumCorrPx  = cellfun(@sum,corrRelation.listCorrPx);
+    corrRelation.tRange = tRange;
     
+    corrRelation.indPx    = (1:length(corrRelation.listCorrPx))';
+
+    %#4 Clean data by keeping only pixel that have correlation
+    %relation
+    idx2Delete = cellfun(@isempty,corrRelation.listCorrPx);
+    corrRelation.listCorrPx(idx2Delete) =[];
+    corrRelation.indPx(idx2Delete) = [];
+    corrRelation.sumCorrPx(idx2Delete) = [];  
     
-    %reshape
-    listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
-    sumCorrPx  = cellfun(@sum,listCorrPx);
+    disp('======> DONE <=======');
 end
