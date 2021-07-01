@@ -86,12 +86,12 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
     %acceleration.
     maxThresh = threshold(1+idx);
     
-    tRange = [minThresh maxThresh];
+    tRange = [0.85 maxThresh];
     
     %get index of pixels that are not at least correlated to their neighbor 
     %with min thresh
     
-    [idx2Delete] = cellfun(@(x) ~any(x<minThresh),corrVal);
+    [idx2Delete] = cellfun(@(x) ~any(x<tRange(1)),corrVal);
     SE = strel('disk',3);
     idx2Delete = imclose(idx2Delete,SE);
         

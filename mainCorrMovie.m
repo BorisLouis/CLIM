@@ -5,8 +5,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\06 - June\BlinkingEx\4Cluster';
-file.ext  = '.tif';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\06 - June\BlinkingEx\OD4-old';
+file.ext  = '.spe';
 
 info.runMethod  = 'load';
 info.driftCorr = true;

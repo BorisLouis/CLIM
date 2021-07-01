@@ -18,7 +18,7 @@ classdef CorrStatus < handle
         
         function deletePxFromList(obj,idx2Delete)
             assert(length(idx2Delete) == length(obj.listPx),'list of index to delete needs to be the same size as the list to be deleted from');
-            obj.treatedPx = [obj.treatedPx obj.inds(idx2Delete)];
+            obj.treatedPx = unique([obj.treatedPx; obj.inds(idx2Delete)]);
             obj.listPx(idx2Delete) = [];
             obj.listVal(idx2Delete) = [];
             obj.sumPx(idx2Delete) = [];
