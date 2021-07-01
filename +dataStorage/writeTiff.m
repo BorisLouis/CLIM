@@ -31,5 +31,6 @@ function [tifObject] = writeTiff(tifObject,mov,bit)
         setTag(tifObject,'SamplesPerPixel',1)
         setTag(tifObject,'PlanarConfiguration',Tiff.PlanarConfiguration.Chunky)
         tifObject.write(mov(:,:,i))
-    end    
+    end
+    tifObject.close;
 end

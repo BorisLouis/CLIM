@@ -88,20 +88,29 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
     
     tRange = [minThresh maxThresh];
     
+    %get index of pixels that are not at least correlated to their neighbor 
+    %with min thresh
+    
+    [idx2Delete] = cellfun(@(x) ~any(x<minThresh),corrVal);
+    SE = strel('disk',3);
+    idx2Delete = imclose(idx2Delete,SE);
+        
+    idx2Delete = reshape(idx2Delete,size(corrRel,1)*size(corrRel,2),1);
     %reshape and store data.
-    corrRelation.listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
-    corrRelation.listCorrVal = reshape(corrVal,size(corrRel,1)*size(corrRel,2),1);
-    corrRelation.sumCorrPx  = cellfun(@sum,corrRelation.listCorrPx);
+    corrRelation.listPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+    corrRelation.listVal = reshape(corrVal,size(corrRel,1)*size(corrRel,2),1);
+    corrRelation.sumPx  = cellfun(@sum,corrRelation.listVal);
     corrRelation.tRange = tRange;
     
-    corrRelation.indPx    = (1:length(corrRelation.listCorrPx))';
-
+    corrRelation.indPx    = (1:length(corrRelation.listPx))';
+        
     %#4 Clean data by keeping only pixel that have correlation
-    %relation
-    idx2Delete = cellfun(@isempty,corrRelation.listCorrPx);
-    corrRelation.listCorrPx(idx2Delete) =[];
+    %relation idx2Delete is now calculated above (~line94)
+    %idx2Delete = cellfun(@isempty,corrRelation.listCorrPx);
+    corrRelation.listPx(idx2Delete) =[];
+    corrRelation.listVal(idx2Delete) = [];
     corrRelation.indPx(idx2Delete) = [];
-    corrRelation.sumCorrPx(idx2Delete) = [];  
+    corrRelation.sumPx(idx2Delete) = [];  
     
     disp('======> DONE <=======');
 end

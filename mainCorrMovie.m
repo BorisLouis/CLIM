@@ -5,14 +5,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'F:\Boris - Lund\2021\05 - Mai\28.5.21\small grain no pores\Place1\OD4';
-file.ext  = '.spe';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\06 - June\BlinkingEx\4Cluster';
+file.ext  = '.tif';
 
-info.runMethod  = 'run';
+info.runMethod  = 'load';
 info.driftCorr = true;
 info.ROI = false;
 
-frame2Process = 1:6000;
+frame2Process = 1:300;
 corrInfo.r = 2; %radius for checking neighbor
 corrInfo.thresh = 0.3;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
@@ -27,7 +27,7 @@ myMovie.correctDrift;
 data = myMovie.loadFrames(frame2Process);
 
 %% Get pixels correlation
-[listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
+[corrR] = myMovie.getPxCorrelation(data,corrInfo);
 %
 
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);

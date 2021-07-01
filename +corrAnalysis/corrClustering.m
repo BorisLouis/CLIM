@@ -12,7 +12,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
     %we keep going
     while ~isempty(listCorrPx) 
         %get Index of most correlated pixel
-        [~,idx] = max(sumPx);
+        [~,idx] = min(sumPx);
         %take the index of the first pixel to be treated
         currIndex = inds(idx);
         %add to a new list the pixel that are correlated with the
@@ -111,23 +111,23 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
     end
     
     clusters(cellfun(@isempty,clusters)) = [];
-    
+    cleanCorrMask = [];
     %fast cleanUp
-    try
-        distanceMap = corrAnalysis.getDistanceMapFromPxList(indsCopy,data);
-        
-    catch
-        
-        distanceMap = [];
-        warning('Too many pixels to generate distance map, using slower but more memory efficient route');
-    end
-    
-    if isempty(distanceMap)
-         [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data,thresh);
-        
-    else
-        [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap,thresh);
-       
-    end
+%     try
+%         distanceMap = corrAnalysis.getDistanceMapFromPxList(indsCopy,data);
+%         
+%     catch
+%         
+%         distanceMap = [];
+%         warning('Too many pixels to generate distance map, using slower but more memory efficient route');
+%     end
+%     
+%     if isempty(distanceMap)
+%          [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data,thresh);
+%         
+%     else
+%         [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap,thresh);
+%        
+%     end
             
 end

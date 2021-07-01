@@ -1,10 +1,10 @@
 %% Simulate correlated data
 
 %% Simulation input
-sizeIm = [512 512];
+sizeIm = [128 128];
 nFrames = 300;
 data = zeros(sizeIm(2),sizeIm(1),nFrames);
-nParticles = 100;
+nParticles = 4;
 corrThreshold = 0.3;%smaller is more selective here (0 is perfect correlation)
 model.name = 'gaussian';
 model.sigma_x = 5;
@@ -13,16 +13,16 @@ r = 2; %radius for checking correlation
 
 
 %% Simulations
-%coord=[56,56;72,72;56,72;72,56];
+coord=[56,56;72,72;56,72;72,56];
 % coord = [16,32;48,32];
 [X,Y] = meshgrid(1:sizeIm(1),1:sizeIm(2));
 %coord = zeros(nParticles,2);
 for i = 1:nParticles
     
-%     x0 = coord(i,1);
-%     y0 = coord(i,2);
-    x0 = randperm(sizeIm(1),1);
-    y0 = randperm(sizeIm(2),1);
+    x0 = coord(i,1);
+    y0 = coord(i,2);
+%    x0 = randperm(sizeIm(1),1);
+ %   y0 = randperm(sizeIm(2),1);
     c  = 0;
     BaseInt = 500 + i * 100;
     secondInt = 2*BaseInt;
@@ -52,6 +52,18 @@ end
 noise = randn(size(data));
 
 finalData = data + ones(size(data))*100 +noise*20;
+
+
+%% Save as tif
+
+filename = ['clusters4Ex.tif'];
+
+TiffObj = Tiff(filename,'w');
+
+dataStorage.writeTiff(TiffObj,uint16(finalData),16);
+
+
+
 
 
 

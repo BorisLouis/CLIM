@@ -34,7 +34,7 @@ classdef CorrClusterMovie < Core.Movie
             if obj.info.driftCorr
                 disp('Correcting drift')
                 disp('Check if drift corrected data exist')
-                %#1 Check if drift was already corrected
+                % #1 Check if drift was already corrected
                 [run] = obj.checkDrift;
 
                 if run 
@@ -149,7 +149,7 @@ classdef CorrClusterMovie < Core.Movie
        
         end
         
-        function [lCorrPx,indPx] = getPxCorrelation(obj,data,corrInfo)
+        function [corrR] = getPxCorrelation(obj,data,corrInfo)
             %This function scan the image to find pixel that are correlated
             %to other pixel that are close in space (typically check only
             %neighboring pixels
@@ -168,25 +168,26 @@ classdef CorrClusterMovie < Core.Movie
                 data2Cluster = data2Cluster./max(data2Cluster,[],3);
 
                 waitbar(0.1,h,'Getting correlation relationships');
-                %#2 Get correlation relationship between pixels
+                % #2 Get correlation relationship between pixels
                 [corrR]  = corrAnalysis.getCorrRelation(data2Cluster,r);
 
-                waitbar(0.4,h,'Preparing data');
+                waitbar(0.7,h,'Saving data');
   
                 obj.corrRelation = corrR;
                 fileName = [obj.pathRes filesep 'corrRelation.mat'];
                 save(fileName,'corrR');
+                waitbar(1,h,'Finished');
+                pause(1);
+                close(h);
                 
             else
                 
                 disp('found processed data, loading from there');
                 fileName = [obj.pathRes filesep 'corrRelation.mat'];
                 tmp = load(fileName);
+                corrR = tmp.corrR;
+                obj.corrRelation = corrR;
                 
-                obj.corrRelation = tmp.corrR;
-                
-                lCorrPx = tmp.corrR.listCorrPx;
-                indPx = tmp.corrR.indCorrPx;
                 disp('Loading DONE');
             end
             
@@ -197,26 +198,28 @@ classdef CorrClusterMovie < Core.Movie
             %pixel correlation map and linking one by one pixel that are
             %correlated together hence creating a map of group of pixel
             %that are correlated
-            error('Not implemented');
+            
             %check if previous data was found
             [run] = obj.checkCorrMask;
+            run = true;
             
             if or(run,strcmpi(obj.info.runMethod,'run'))
                 assert(~isempty(obj.corrRelation),'correlation relation between pixel not found, please run getPxCorrelation first');
-                assert(~isempty(obj.corrRelation.listCorrPx),'correlation relation between pixel not found, please run getPxCorrelation first');
-                assert(~isempty(obj.corrRelation.indCorrPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
+                assert(~isempty(obj.corrRelation.listPx),'correlation relation between pixel not found, please run getPxCorrelation first');
+                assert(~isempty(obj.corrRelation.indPx), 'correlation relation between pixel not found, please run getPxCorrelation first');
 
-                corrThreshold = corrInfo.thresh;
-                listCorrPx = obj.corrRelation.listCorrPx;
-                inds    = obj.corrRelation.indCorrPx;
-                sumPx   = obj.corrRelation.sumCorrPx;
+%                 corrThreshold = corrInfo.thresh;
+%                 listCorrPx = obj.corrRelation.listCorrPx;
+%                 inds    = obj.corrRelation.indCorrPx;
+%                 sumPx   = obj.corrRelation.sumCorrPx;
 
                 %get distance map
                 %[distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
 
                 disp('========> Performing Pseudo-clustering <==========')
                 %perform pseudo-clustering
-                [corrMask,cleanedCorrMask] = corrAnalysis.corrClustering(listCorrPx,sumPx,inds,data,corrThreshold);
+                %[corrMask,cleanedCorrMask] = corrAnalysis.corrClustering(listCorrPx,sumPx,inds,data,corrThreshold);
+                [corrMask,cleanedCorrMask] = corrAnalysis.bottomUpCorrClustering(obj.corrRelation,data);
 
                 
                 
