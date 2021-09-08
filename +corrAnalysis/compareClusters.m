@@ -16,11 +16,12 @@ function compareClusters(relData,labels)
         data2Plot(2,i) = currData.medCorr;
         data2Plot(3,i) = currData.minCorr;
         data2Plot(4,i) = currData.maxCorr;
-        data2Plot(5,i) = currData.nClusters;
+        data2Plot(5,i) = currData.meanInterClusterCorr;
+        data2Plot(6,i) = currData.nClusters;
     
     end
-    data2Plot(5,:) = data2Plot(5,:)./max(data2Plot(5,:)); 
-    X = categorical({'mean','median','min','max','nClusters'});
+    data2Plot(6,:) = data2Plot(6,:)./max(data2Plot(6,:)); 
+    X = categorical({'mean','median','min','max','interCorr','nClusters'});
     hb = bar(X',data2Plot,'grouped');
     axis square
     box on

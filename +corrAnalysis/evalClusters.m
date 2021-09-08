@@ -12,7 +12,8 @@ function [clustEval,relNum] = evalClusters(mask,data)
             zeros(nClusters,1), zeros(nClusters,1),zeros(nClusters,1),...
             zeros(nClusters,1),'VariableNames',...
             {'meanCorr','medCorr','std','varCoeff','minCorr','maxCorr','nPixels'});
-        
+        traces = zeros(nClusters,size(data,3));
+       
         for i = 1 :nClusters
            
             %get indices of mask for current cluster index
@@ -27,21 +28,42 @@ function [clustEval,relNum] = evalClusters(mask,data)
                 clustEval.nPixels(i) = 1;
                 
             else
-            %get Distance map for current cluster
-            corrMat = 1-corrAnalysis.getDistanceMapFromPxList(currInds,data);
-            
-            %calculate some simple stats on the cluster
-            clustEval.meanCorr(i) = mean(corrMat(corrMat<1));
-            clustEval.medCorr(i)  = median(corrMat(corrMat<1));
-            clustEval.std(i)      = std(corrMat(corrMat<1));
-            clustEval.varCoeff(i) = clustEval.std(i)/clustEval.meanCorr(i);
-            clustEval.minCorr(i) = min(corrMat(corrMat<1));
-            clustEval.maxCorr(i) = max(corrMat(corrMat<1));
-           
-            clustEval.nPixels(i) = length(currInds);
+                % We calculate the average trace
+                [row,col] = find(mask==i);
+                r = repmat(row,1,size(data,3));
+                r = reshape(r',size(data,3)*length(row),1);
+                c = repmat(col,1,size(data,3));
+                c = reshape(c',size(data,3)*length(col),1);
+                
+                f = repmat((1:size(data,3))',length(col),1);
+                idx = sub2ind(size(data),r,c,f);
+                
+                tmpTrace = data(idx);
+                tmpTrace = reshape(tmpTrace,size(data,3),length(row));
+                
+                traces(i,:) = mean(tmpTrace,2);
+                
+                %get Distance map for current cluster
+                corrMat = 1-corrAnalysis.getDistanceMapFromPxList(currInds,data);
+
+                %calculate some simple stats on the cluster
+                clustEval.meanCorr(i) = mean(corrMat(corrMat<1));
+                clustEval.medCorr(i)  = median(corrMat(corrMat<1));
+                clustEval.std(i)      = std(corrMat(corrMat<1));
+                clustEval.varCoeff(i) = clustEval.std(i)/clustEval.meanCorr(i);
+                clustEval.minCorr(i) = min(corrMat(corrMat<1));
+                clustEval.maxCorr(i) = max(corrMat(corrMat<1));
+
+                clustEval.nPixels(i) = length(currInds);
             
             end            
         end
+        %Process the traces
+        corrCoeff = corrcoef(traces');
+
+        U = triu(corrCoeff);
+        U = nonzeros(U);
+        data = U(U<1);
         
         relNum.meanCorr = wmean(clustEval.meanCorr,clustEval.nPixels);
         relNum.medCorr  = wmean(clustEval.medCorr,clustEval.nPixels);
@@ -49,9 +71,8 @@ function [clustEval,relNum] = evalClusters(mask,data)
         relNum.varCoeff = wmean(clustEval.varCoeff,clustEval.nPixels);
         relNum.minCorr  = wmean(clustEval.minCorr,clustEval.nPixels);
         relNum.maxCorr  = wmean(clustEval.maxCorr,clustEval.nPixels);
-        
+        relNum.meanInterClusterCorr = mean(data);
         relNum.nClusters = nClusters;
-        
         
     else
         error('Unexpected mask format');

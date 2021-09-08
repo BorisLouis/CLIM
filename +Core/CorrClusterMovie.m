@@ -444,9 +444,9 @@ classdef CorrClusterMovie < Core.Movie
             
             colors = colormap(color);
             
-            if strcmp(color,'hot')
-                colors = [0,0,0; colors];
-            end
+            
+            colors = [0,0,0; colors];
+            
             
             RGBIM = zeros(size(Mask,1),size(Mask,2),3);
             
@@ -484,6 +484,7 @@ classdef CorrClusterMovie < Core.Movie
             
             figure
             imagesc(RGBIM)
+            axis image
             
             
             

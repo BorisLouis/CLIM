@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\03 - Mar\15 - Comparison ML Pseudo-Clustering';
+file.path = 'D:\Boris\2021\24-08\Mov2- R1OD4';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -68,9 +68,9 @@ toc
 
 
 %% ML Data Processing
-MLOptions.clust2Test = [2 31];
+MLOptions.clust2Test = [2 50];
 MLOptions.GPU = true;
-MLOptions.replicate = 10;
+MLOptions.replicate = 3;
 MLOptions.dist = false; %use dist between point as well as correlation
 
 [MLCorrMask,cleanedMLCorrMask] = myMovie.getMLCorrelationMask(data,MLOptions);
@@ -114,13 +114,13 @@ axis image
 MLOptions.clust2Test = 2;
 MLOptions.GPU = true;
 MLOptions.replicate = 1;
-MLOptions.deltaClust = 5;
+MLOptions.deltaClust = 2;
 
 %profile on
 tic
 distanceMap = corrAnalysis.getDistanceMapFromPxList(inds,data);
 [evalClust] = corrAnalysis.testNumberOfMLCluster(distanceMap,inds,data,...
-    'clust2Test',2,'GPU',true,'replicate',1,'deltaClust',3);
+    'clust2Test',2,'GPU',true,'replicate',1,'deltaClust',2);
 toc
 %profile('viewer')
 

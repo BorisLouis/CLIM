@@ -25,7 +25,9 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
         try
             distanceMap = gpuArray(distanceMap);
             clust = gpuArray(clust);
+            GPUCalc = 'on';
         catch
+            GPUCalc = 'off';
         end
     end
     
@@ -35,14 +37,18 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
     CV = zeros(1,100);
     avg = zeros(1,100);
     stds = zeros(1,100);
+    interCorr =zeros(1,100);
     nClustTested = zeros(1,100);
     while DCV > 0
-        if counter >200
+        if counter >150
             break;
         end
         nClustTested(counter) = clust2Test;
         clust = kmeans(distanceMap,clust2Test,'emptyaction','drop',...
             'replicate',replicate);
+        if strcmp(GPUCalc,'on')
+            clust = gather(clust);
+        end
         
         MLCorrMask = zeros(size(data(:,:,1)));
         for i = 1:length(inds)
@@ -53,8 +59,8 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
         
         CV(counter) = relNum.varCoeff;
         avg(counter) = relNum.meanCorr;
-        stds(counter)         = relNum.std;
-        
+        stds(counter) = relNum.std;
+        interCorr(counter) = relNum.meanInterClusterCorr;
         
         
         DCV = abs(CV(counter) - prevCV);
@@ -72,6 +78,7 @@ function [evalClust] = testNumberOfMLCluster(distanceMap,inds,data,varargin)
     evalClust.avg = avg;
     evalClust.std = stds;
     evalClust.nClust = nClustTested;
+    evalClust.interCorr = interCorr;
 
 
 end
