@@ -5,16 +5,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\09 - September\05 - Mai-Blinking Data\BestData';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\06 - PSD on Best Data';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
 info.driftCorr = true;
 info.ROI = false;
 
-frame2Process = 1:6000;
+frame2Process = 1:10000;
 corrInfo.r = 1; %radius for checking neighbor
-corrInfo.thresh = 0.2;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
+corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -24,28 +24,34 @@ myMovie.correctDrift;
     
 %%
 
-data = myMovie.loadFrames(frame2Process);
+data1 = myMovie.loadFrames(frame2Process);
 
 %% Get pixels correlation
-[listCorrPx,inds] = myMovie.getPxCorrelation(data,corrInfo);
+[listCorrPx,inds] = myMovie.getPxCorrelation(data1,corrInfo);
 %
 
-[corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data,corrInfo);
+[corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data1,corrInfo);
 %
 %%
 %compare the two clusters
 %[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
-[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data);
+[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data1);
+
+relData{1} = relNum1;
+label{1}   = ['Method' '-pseudoClust'];
+corrAnalysis.compareClusters(relData,label);
 
 %% Plotting
-myMovie.plotContour(data,'raw');%raw or clean depending on which we want to use
+myMovie.plotContour(data1,'raw');%raw or clean depending on which we want to use
 
 
 %% Plot traces
-myMovie.plotClusterTraces(data,4);
+myMovie.plotClusterTraces(data1,4);
 
 
 %% Extract intensity traces 
+data = myMovie.loadFrames(1:36000);
+
 [traces] = myMovie.getAllTraces(data);
 
 
@@ -91,6 +97,37 @@ myMovie.plotClusterTraces(data,4);
 %% get image from corrmask
 color= 'colorcube';
 [corrMaskIM] = myMovie.getImageFromMask(corrMask,color);
+
+%% Calculate localization on cluster to get the position of the defect
+%[allLoc] =myMovie.getAllClusterLocalization(data);
+
+idx =112;
+[Localization] = myMovie.getClusterLocalization(data1,idx);
+
+pos = sqrt(Localization.x.^2 + Localization.y.^2);
+figure
+subplot(1,3,1)
+scatter(pos,Localization.int,10,'filled')
+axis square
+box on
+title('Intensity vs Position')
+
+subplot(1,3,2)
+scatter(pos,Localization.angle,10,'filled')
+axis square
+box on
+title('Position vs angle')
+
+subplot(1,3,3)
+scatter(Localization.x,Localization.y,10,'filled')
+axis square
+box on
+title('Intensity vs Angle')
+
+%% test plot
+myMovie.plotContour(data1,'raw');%raw or clean depending on which we want to use
+hold on
+scatter(Localization.x,Localization.y,5,'filled')
 
 %%
 

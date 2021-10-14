@@ -8,6 +8,7 @@ classdef CorrClusterMovie < Core.Movie
         pxData
         corrMask       
         pathRes
+        clustLoc
         
     end
         
@@ -221,7 +222,7 @@ classdef CorrClusterMovie < Core.Movie
             %that are correlated
             
             %check if previous data was found
-            [run] = obj.checkCorrMask;
+            [run] = obj.checkCorrMask(corrInfo.thresh);
             
             if or(run,strcmpi(obj.info.runMethod,'run'))
                 assert(~isempty(obj.pxData),'correlation relation between pixel not found, please run getPxCorrelation first');
@@ -248,15 +249,20 @@ classdef CorrClusterMovie < Core.Movie
                 cMask.method = 'pseudoClust';
                 cMask.clean = cleanedCorrMask;
                 cMask.cleanNCluster = max(cleanedCorrMask(:));
-                fileName = [obj.pathRes filesep 'corrMask.mat'];
-                save(fileName,'cMask');
+                cMask.corrThresh = corrThreshold;
                 
                 obj.corrMask = cMask;
+                
+                
+                fileName = [obj.pathRes filesep 'corrMask' num2str(obj.corrMask.corrThresh) '.mat'];
+                save(fileName,'cMask');
+                
+                
                 
             else
                 disp('Found CorrMask from previous analysis, loading from there');
                 
-                fileName = [obj.pathRes filesep 'corrMask.mat'];
+                fileName = [obj.pathRes filesep 'corrMask' num2str(corrInfo.thresh) '.mat'];
                 tmp = load(fileName);
                 
                 obj.corrMask = tmp.cMask;
@@ -430,12 +436,11 @@ classdef CorrClusterMovie < Core.Movie
                 traceData(i).clustPos = id;
                 traceData(i).nPx = numel(id);
                 traceData(i).method = 'mean';
-                               
-                
+                                            
             end
             
             %save output
-            fileName = [obj.pathRes filesep 'traceData.mat'];
+            fileName = [obj.pathRes filesep 'traceData' num2str(obj.corrMask.corrThresh) '.mat'];
             save(fileName,'traceData');
                       
         end
@@ -443,11 +448,8 @@ classdef CorrClusterMovie < Core.Movie
         function [RGBIM] = getImageFromMask(obj,Mask,color)
             
             colors = colormap(color);
-            
-            
             colors = [0,0,0; colors];
-            
-            
+
             RGBIM = zeros(size(Mask,1),size(Mask,2),3);
             
             [row,col] = find(Mask==0);
@@ -490,6 +492,85 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
+        function [loc] = getClusterLocalization(obj,data,idx)
+            cMask = obj.corrMask;
+            mask = cMask.raw;
+            
+            images = regionprops(mask,'Image','BoundingBox');
+            
+            bBox = round(images(idx).BoundingBox);
+            currentImage = images(idx).Image;
+            
+            data2Fit = double(data(bBox(2):bBox(2)+bBox(4)-1,bBox(1):bBox(1)+bBox(3)-1,:));
+            
+            [X,Y]= meshgrid(bBox(1):bBox(1)+bBox(3)-1,bBox(2):bBox(2)+bBox(4)-1);
+            domain(:,:,1) = X;
+            domain(:,:,2) = Y;
+            
+            loc = struct('x',zeros(size(data2Fit,3),1),'y',zeros(size(data2Fit,3),1),...
+                'int',zeros(size(data2Fit,3),1),'angle',zeros(size(data2Fit,3),1));
+            
+            for i = 1:size(data2Fit,3)
+                currentFrame = data2Fit(:,:,i);
+                currentFrame(~currentImage) = 0;
+                
+                %fit the region with a Gaussian
+                [gPar, fit] = Gauss.Gauss2D_Fit(currentFrame,domain);
+%                 figure
+%                 surf(currentFrame)
+%                 hold on 
+%                 surf(fit)
+                
+                loc.x(i) = gPar(5);
+                loc.y(i) = gPar(6);
+                loc.int(i) = gPar(1);
+                loc.angle(i) = gPar(7);
+                
+            end 
+        end
+        
+        function [allLoc] = getAllClusterLocalization(obj,data)
+           nCluster = obj.corrMask.rawNCluster;
+           allLoc = cell(nCluster,1);
+           for i = 1 :nCluster
+               
+               loc = obj.getClusterLocalization(data,i);
+               allLoc{i} = loc;
+               
+           end
+           obj.clustLoc = allLoc;
+        end
+        
+        function showClusterLoc(obj,idx)
+            assert(~isempty(obj.clustLoc),'Please run getAllClusterLocalization');
+            
+            locData = obj.clustLoc{idx};
+            
+            pos = norm([locData.x,locData.y]);
+            int = locData.int;
+            angle = locData.angle;
+            
+            figure
+            subplot(1,3,1)
+            scatter(pos,int,10,'filled')
+            axis square
+            box on
+            title('Intensity vs Position')
+            
+            subplot(1,3,2)
+            scatter(pos,angle,10,'filled')
+            axis square
+            box on
+            title('Position vs angle')
+            
+            subplot(1,3,3)
+            scatter(int,angle,10,'filled')
+            axis square
+            box on
+            title('Intensity vs Angle')
+            
+        end
+        
     end
     methods(Static)
         
@@ -516,12 +597,11 @@ classdef CorrClusterMovie < Core.Movie
         end
         
         
-        function [run] = checkCorrMask(obj)
+        function [run] = checkCorrMask(obj,thresh)
            
-            path = [obj.pathRes filesep 'corrMask.mat'];
+            path = [obj.pathRes filesep 'corrMask' num2str(thresh) '.mat'];
             %test if file exist
             test = isfile(path);
-            
             run = ~test;
             
         end
