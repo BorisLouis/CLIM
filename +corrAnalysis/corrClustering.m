@@ -1,4 +1,11 @@
-function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,thresh)
+function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,sumPx,inds,data,thresh)
+    %The idea of the modifications here is to:
+    %1) Use listVal to and threshold to add to cluster(this will allow to
+    %test various threshold without having to re-run the first steps)
+    %2) Add multiple indices to the cluster at once instead of 1 by 1 to
+    %reduce the processing time.
+
+    
     %function actually does the clustering.
     safeCount = 2*size(data,1)*size(data,2);
     %initialize the variable

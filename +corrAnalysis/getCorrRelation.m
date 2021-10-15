@@ -1,8 +1,10 @@
-function [listCorrPx,sumCorrPx,corrMap] = getCorrRelation(data2Cluster,r,corrThreshold)
+function [corrRelation] = getCorrRelation(data2Cluster,r)
     %function to find correlation relation between a each pixel of
     %an image and its neighbor pixels
     
     corrRel  = cell(size(data2Cluster,1),size(data2Cluster,2));
+    corrVal  = cell(size(data2Cluster,1),size(data2Cluster,2));
+    
     corrMap  = zeros(size(data2Cluster,1),size(data2Cluster,2));
     %loop through pixels
     for i = 1:size(data2Cluster,1)
@@ -32,19 +34,47 @@ function [listCorrPx,sumCorrPx,corrMap] = getCorrRelation(data2Cluster,r,corrThr
             
             corrMap(i,j) = mean(1-corr);
             
-            if all(corr>corrThreshold)
+            corrRel{currPxIdx} = neighborIdx;
+            corrVal{currPxIdx} = corr;
+            %we use 0.8 to kill the background
+          %  if all(corr>0.8)
+          %  else
+          %     idx = neighborIdx(corr<0.8,:);
+                
 
-            else
-                idx = neighborIdx(corr<corrThreshold,:);
-
-                if ~isempty(idx)
+          %      if ~isempty(idx)
                    %convert to indices for simplicity later
-                   corrRel{currPxIdx} = idx;
-                end
-            end
+          %         corrRel{currPxIdx} = idx;
+          %        corrVal{currPxIdx} = corr(corr<0.8);
+          %      end
+          
+          % end
+
         end
     end
+    %we use 0.8 to kill the background and low correlation pixels
+    [idx2Delete] = cellfun(@(x) ~any(x<0.8),corrVal);
+    SE = strel('disk',3);
+    idx2Delete = imclose(idx2Delete,SE);
+        
+    idx2Delete = reshape(idx2Delete,size(corrRel,1)*size(corrRel,2),1);
+    %reshape and store data.
+    corrRelation.listPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+    corrRelation.listVal = reshape(corrVal,size(corrRel,1)*size(corrRel,2),1);
+    corrRelation.sumPx  = cellfun(@sum,corrRelation.listVal);
     
-    listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
-    sumCorrPx  = cellfun(@sum,listCorrPx);
+    corrRelation.indPx    = (1:length(corrRelation.listPx))';
+        
+    %#4 Clean data by keeping only pixel that have correlation
+    %relation idx2Delete is now calculated above (~line94)
+    %idx2Delete = cellfun(@isempty,corrRelation.listCorrPx);
+    corrRelation.listPx(idx2Delete) =[];
+    corrRelation.listVal(idx2Delete) = [];
+    corrRelation.indPx(idx2Delete) = [];
+    corrRelation.sumPx(idx2Delete) = [];  
+    corrRelation.corrMap = corrMap;
+    disp('======> DONE <=======');
+    
+    %listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
+    %sumCorrPx  = cellfun(@sum,listCorrPx);
 end

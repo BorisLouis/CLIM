@@ -5,14 +5,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\06 - PSD on Best Data';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\Clustering new Test\testData';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
 info.driftCorr = true;
-info.ROI = false;
+info.ROI = true;
 
-frame2Process = 1:10000;
+frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
@@ -23,12 +23,13 @@ myMovie.correctDrift;
 
     
 %%
-
-data1 = myMovie.loadFrames(frame2Process);
+ROI = [80,160,64,64];
+data1 = myMovie.loadFrames(frame2Process,ROI);
 
 %% Get pixels correlation
-[listCorrPx,inds] = myMovie.getPxCorrelation(data1,corrInfo);
-%
+[corrRelation] = myMovie.getPxCorrelation(data1,corrInfo);
+
+%%
 
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data1,corrInfo);
 %
