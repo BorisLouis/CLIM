@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\Clustering new Test\testData';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\20 - Film Blinking\Big Grain Ambiant';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -23,11 +23,43 @@ myMovie.correctDrift;
 
     
 %%
-ROI = [80,160,64,64];
+ROI = [96,96,64,64];
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
+%% deconvolve
+meanData1 = smooth(squeeze(mean(mean(data1,1),2)));
+% 
+testData = [squeeze(data1(32,32,:))];
+
+figure
+subplot(1,3,1)
+plot(testData)
+subplot(1,3,2)
+plot(meanData1)
+subplot(1,3,3)
+[a,r] = deconv(testData,[meanData1]);
+
+plot(r+mean(testData))
+
+
+%test deconvolution on the whole image
+%Need to improve speed here
+meanData1 = smooth(squeeze(mean(mean(data1,1),2)));
+correctedData = data1;
+
+for i =1:size(data1,1)
+    for j=1:size(data1,2)
+        currentData = squeeze(data1(i,j,:));
+        [a,r] = deconv(currentData,meanData1);
+        cleanData = r+mean(currentData);
+        correctedData(i,j,:) = cleanData;
+    end
+end
+
+data2Use = correctedData;
+
 %% Get pixels correlation
-[corrRelation] = myMovie.getPxCorrelation(data1,corrInfo);
+[corrRelation] = myMovie.getPxCorrelation(data2Use,corrInfo);
 
 %%
 
