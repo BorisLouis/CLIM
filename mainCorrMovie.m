@@ -5,14 +5,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\06 - PSD on Best Data';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\20 - Film Blinking\Big Grain Ambiant';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
 info.driftCorr = true;
 info.ROI = false;
 
-frame2Process = 1:10000;
+frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 
@@ -26,11 +26,42 @@ myMovie.correctDrift;
 
 data1 = myMovie.loadFrames(frame2Process);
 
+meanData1 = smooth(squeeze(mean(mean(data1,1),2)));
+% 
+testData = [squeeze(data1(128,128,:));squeeze(data1(128,128,:))];
+
+figure
+subplot(1,3,1)
+plot(testData)
+subplot(1,3,2)
+plot(meanData1)
+subplot(1,3,3)
+[a,r] = deconv(testData,[meanData1;meanData1]);
+
+plot(r+mean(testData))
+
+
+%test deconvolution on the whole image
+%Need to improve speed here
+meanData1 = smooth(squeeze(mean(mean(data1,1),2)));
+correctedData = data1;
+
+for i =1:size(data1,1)
+    for j=1:size(data1,2)
+        currentData = squeeze(data1(i,j,:));
+        [a,r] = deconv(currentData,meanData1);
+        cleanData = r+mean(currentData);
+        correctedData(i,j,:) = cleanData;
+    end
+end
+
+data2Use = correctedData;
+
 %% Get pixels correlation
-[listCorrPx,inds] = myMovie.getPxCorrelation(data1,corrInfo);
+[listCorrPx,inds] = myMovie.getPxCorrelation(data2Use,corrInfo);
 %
 
-[corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data1,corrInfo);
+[corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data2Use,corrInfo);
 %
 %%
 %compare the two clusters

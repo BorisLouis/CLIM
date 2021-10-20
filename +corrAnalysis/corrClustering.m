@@ -113,21 +113,22 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,sumPx,inds,data,th
     clusters(cellfun(@isempty,clusters)) = [];
     
     %fast cleanUp
-    try
-        distanceMap = corrAnalysis.getDistanceMapFromPxList(indsCopy,data);
-        
-    catch
-        
-        distanceMap = [];
-        warning('Too many pixels to generate distance map, using slower but more memory efficient route');
-    end
-    
-    if isempty(distanceMap)
-         [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data,thresh);
-        
-    else
-        [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap,thresh);
-       
-    end
+    cleanCorrMask = rand(size(data,1),size(data,2));
+%     try
+%         distanceMap = corrAnalysis.getDistanceMapFromPxList(indsCopy,data);
+%         
+%     catch
+%         
+%         distanceMap = [];
+%         warning('Too many pixels to generate distance map, using slower but more memory efficient route');
+%     end
+%     
+%     if isempty(distanceMap)
+%          [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data,thresh);
+%         
+%     else
+%         [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap,thresh);
+%        
+%     end
             
 end
