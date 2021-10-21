@@ -112,20 +112,30 @@ classdef CorrClusterMovie < Core.Movie
             
         end       
           
-        function [corrData] = loadFrames(obj,frames)
+        function [corrData] = loadFrames(obj,frames,ROI)
             %simple method to load all requested frames and allow to take
             %roi
             assert(length(frames)>=100,'Frames requested is lower than 100 please process at least 100 fr');
             fr = obj.checkFrame(frames,obj.raw.movInfo.maxFrame);
-                
+            
+            switch nargin
+                case 2
+                    ROI = [];
+                case 3
+                otherwise
+                    error('not enought input argument')
+            end
      
             frame = obj.getFrame(1);
-            if obj.info.ROI
+            if and(obj.info.ROI, isempty(ROI))  
                 figure
                 
                 imagesc(frame(:,:,1))
                 test = drawrectangle();
                 ROI  = round(test.Position);    
+            elseif and(obj.info.ROI,~isempty(ROI))
+                assert(length(ROI)==4,'ROI is expected to be 4 elements');
+                
             else
                 ROI = [];
                 
@@ -406,7 +416,7 @@ classdef CorrClusterMovie < Core.Movie
         
         function [traceData] = getAllTraces(obj,data)
             assert(~isempty(obj.corrMask),'no corrMask found, please run getCorrMask first');
-            corrM  = obj.corrMask.clean;
+            corrM  = obj.corrMask.raw;
             traces = zeros(max(corrM(:)),size(data,3));
             pos    = zeros(max(corrM(:)),2);
             nClust = max(corrM(:));

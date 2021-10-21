@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\20 - Film Blinking\Big Grain Ambiant';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\21 - Film Blinking\Porous sample';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -23,23 +23,25 @@ myMovie.correctDrift;
 
     
 %%
+ROI = [96,96,64,64];
+data1 = myMovie.loadFrames(frame2Process,ROI);
 
-data1 = myMovie.loadFrames(frame2Process);
-
-meanData1 = smooth(squeeze(mean(mean(data1,1),2)));
+%meanData1 = smooth(squeeze(mean(mean(data1,1),2)));
 % 
-testData = [squeeze(data1(128,128,:));squeeze(data1(128,128,:))];
+testData = [squeeze(data1(32,32,:))];
 
-figure
-subplot(1,3,1)
-plot(testData)
-subplot(1,3,2)
-plot(meanData1)
-subplot(1,3,3)
-[a,r] = deconv(testData,[meanData1;meanData1]);
-
-plot(r+mean(testData))
-
+% figure
+% subplot(1,3,1)
+% plot(testData)
+% axis square
+% subplot(1,3,2)
+% plot(meanData1)
+% axis square
+% subplot(1,3,3)
+% [a,r] = deconv(testData,[meanData1]);
+% 
+% plot(r+mean(testData))
+% axis square
 
 %test deconvolution on the whole image
 %Need to improve speed here
@@ -66,7 +68,7 @@ data2Use = correctedData;
 %%
 %compare the two clusters
 %[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
-[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data1);
+[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data2Use);
 
 relData{1} = relNum1;
 label{1}   = ['Method' '-pseudoClust'];
@@ -81,7 +83,7 @@ myMovie.plotClusterTraces(data1,4);
 
 
 %% Extract intensity traces 
-data = myMovie.loadFrames(1:36000);
+data = myMovie.loadFrames(1:6000,ROI);
 
 [traces] = myMovie.getAllTraces(data);
 
