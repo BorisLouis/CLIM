@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\20 - Film Blinking\Big Grain Ambiant';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\20 - Film Blinking\testNewMethod';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
