@@ -581,6 +581,48 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
+        function saveMovie(obj,data,option)
+            path2Save = obj.pathRes;
+            
+            frameRate = option.frameRate;
+            
+            filename = [path2Save filesep 'movie'];
+            % Capture the plot as an image 
+            h = figure('Position',[10 10 768 768]);
+            for i = 1:size(data,3)
+                  imagesc(data(:,:,i));
+                  colormap('gray')
+                  caxis([0 max(data(:))]);
+
+                  axis tight
+                  set(gca,'XColor', 'none','YColor','none')
+                  a = gca;
+                  a.XTickLabel = [];
+                  a.YTickLabel = [];
+
+                  drawnow;
+                  frame = getframe(h); 
+                  im = frame2im(frame); 
+                  [imind,cm] = rgb2ind(im,256); 
+
+                  % Write to the GIF File 
+
+                  if i == 1
+
+                      imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+
+                  else
+
+                      imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+
+                  end
+            end
+            
+            
+            
+            
+        end
+        
     end
     methods(Static)
         

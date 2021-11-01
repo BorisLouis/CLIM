@@ -5,25 +5,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\21 - Film Blinking\Porous sample';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\testOldData Deconvolution';
 file.ext  = '.spe';
 
-info.runMethod  = 'run';
+info.runMethod  = 'run'; %load 
 info.driftCorr = true;
 info.ROI = false;
+ROI = [96,96,64,64];%only used if info.ROI = true
 
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
+saveMovie = false;
+frameRate = 100;
 
 %% Loading data
+%create a CorrClusterMovie object
 myMovie = Core.CorrClusterMovie(file,info);
 
 myMovie.correctDrift;
 
     
-%%
-ROI = [96,96,64,64];
+%% Deconvolution occurs here (will be moved in the object)
+
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
 %meanData1 = smooth(squeeze(mean(mean(data1,1),2)));
@@ -59,15 +63,19 @@ end
 
 data2Use = correctedData;
 
+
+
+
+
 %% Get pixels correlation
 [listCorrPx,inds] = myMovie.getPxCorrelation(data2Use,corrInfo);
 %
-
+% get the correlation Mask
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data2Use,corrInfo);
 %
-%%
-%compare the two clusters
-%[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
+
+
+%% Cluster evaluation
 [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data2Use);
 
 relData{1} = relNum1;
@@ -78,6 +86,13 @@ corrAnalysis.compareClusters(relData,label);
 myMovie.plotContour(data1,'raw');%raw or clean depending on which we want to use
 
 
+%% save Movie
+option.frameRate = frameRate;
+if saveMovie
+    myMovie.saveMovie(data1,option)
+    
+end
+
 %% Plot traces
 myMovie.plotClusterTraces(data1,4);
 
@@ -85,7 +100,7 @@ myMovie.plotClusterTraces(data1,4);
 %% Extract intensity traces 
 data = myMovie.loadFrames(1:6000,ROI);
 
-[traces] = myMovie.getAllTraces(data);
+[traces] = myMovie.getAllTraces(data);%data2Use
 
 
 %% Get interCluster traces

@@ -4,7 +4,7 @@ close all;
 clc;
 %% User input
 
-file.path = 'D:\Documents\Unif\PhD\Papers\13 - IntensityCorrletation\Simulations\Blinking\Blink Amp 125';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\21 - Film Blinking - porous sample\Porous sample';
 file.ext  = '.tif';
 
 info.runMethod  = 'load';
