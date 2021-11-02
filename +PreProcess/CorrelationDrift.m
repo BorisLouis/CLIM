@@ -8,23 +8,34 @@ frame1 = im_In(:,:,1);
 [lb,ub] = getCropPar(frame1,corrSz);
 
 %cropping
-imCropped = im_In(lb(2): ub(2),lb(1):ub(1),:);
+imCropped = im_In(lb(1): ub(1),lb(2):ub(2),:);
 
 correctedStack = zeros(size(im_In));
 Drift=zeros(size(imCropped,3),2);
 
 mid = round(size(imCropped,3)/2);
-imRef = stdfilt(mean(imCropped(:,:,mid+1:mid+driftPeriod),3));
+imRef = mean(imCropped(:,:,mid+1:mid+driftPeriod),3);
+fft_ref=fft2(imRef); 
+
 h = waitbar(0,'Calculating drift');
 for i=1:floor(size(imCropped,3)/driftPeriod)
-    corrMatrix = normxcorr2(imRef,...
-        stdfilt(mean(imCropped(:,:,(i-1)*driftPeriod+1:i*driftPeriod),3)));
+    currentFrame = mean(imCropped(:,:,(i-1)*driftPeriod+1:i*driftPeriod),3);
     
-    corrMatCenter=corrMatrix(...
-    ceil(size(corrMatrix,1)/2)-10:ceil(size(corrMatrix,1)/2)+10,...
-    ceil(size(corrMatrix,2)/2)-10:ceil(size(corrMatrix,2)/2)+10);
+    %corrMatrix = normxcorr2(imRef,currentFrame);
+    
+    fft_frame=fft2(currentFrame);
+    prod=fft_ref.*conj(fft_frame);
+    cc=ifft2(prod);
+    [maxRow,maxCol]=find(fftshift(cc)==max(max(cc)));
+    
+    
+    
+    
+%     corrMatCenter=corrMatrix(...
+%     ceil(size(corrMatrix,1)/2)-10:ceil(size(corrMatrix,1)/2)+10,...
+%     ceil(size(corrMatrix,2)/2)-10:ceil(size(corrMatrix,2)/2)+10);
 
-    [row,col,~,~,~] = Gauss.phasor(corrMatCenter);
+    %[row,col,~,~,~] = Gauss.phasor(corrMatCenter);
 %     
 %     [X,Y] = meshgrid(1:size(corrMatCenter,2),1:size(corrMatCenter,1));
 %     x0 = size(corrMatCenter,2)/2;
@@ -36,9 +47,9 @@ for i=1:floor(size(imCropped,3)/driftPeriod)
 % 
 %     DriftA((i-1)*driftPeriod+1:i*driftPeriod,1) = -(size(corrMatCenter,1)+1)/2+gPar(6);
 %     DriftA((i-1)*driftPeriod+1:i*driftPeriod,2) = -(size(corrMatCenter,2)+1)/2+gPar(5);
-%     
-    Drift((i-1)*driftPeriod+1:i*driftPeriod,1) = row;
-    Drift((i-1)*driftPeriod+1:i*driftPeriod,2) = col;
+    
+    Drift((i-1)*driftPeriod+1:i*driftPeriod,1) = maxRow-round(size(currentFrame,1)/2);
+    Drift((i-1)*driftPeriod+1:i*driftPeriod,2) = maxCol-round(size(currentFrame,2)/2);
     
     
     waitbar(i/floor(size(imCropped,3)/driftPeriod),h,['Calculating drift ' num2str(i) '/' num2str(floor(size(imCropped,3)/driftPeriod))])
@@ -80,8 +91,8 @@ function [lb, ub] = getCropPar(im,corrSz)
     yIdx = round(mean(locY));
    
     %Crop the image to save computing time in the correlation
-    lb = [xIdx - corrSz + 1, yIdx - corrSz + 1];
-    ub = [xIdx + corrSz - 1, yIdx + corrSz - 1];
+    lb = [yIdx - corrSz + 1, xIdx - corrSz + 1];
+    ub = [yIdx + corrSz - 1, xIdx + corrSz - 1];
     %Check that the cropping occurs within the frame
     if lb(1)<1
         lb(1) = 1;

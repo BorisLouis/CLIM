@@ -8,9 +8,14 @@ function [correctedImage]=correctImageDrift(im_In, Drift)
 
 DriftCorrx = round(Drift(:,2));
 DriftCorry = round(Drift(:,1));
-%add padding for shifting images
-correctedImage=ones(size(im_In,1)+2*abs(DriftCorry),size(im_In,2)+...
-    2*abs(DriftCorrx))*min(min(im_In));
+
+
+%correctedImage = circshift(im_In,[DriftCorry DriftCorrx]);
+
+
+% %add padding for shifting images
+correctedImage=randn(size(im_In,1)+2*abs(DriftCorry),size(im_In,2)+...
+    2*abs(DriftCorrx))*20+min(min(im_In));
 
 % Shift the image according to the drift
 correctedImage(abs(DriftCorry)+DriftCorry+1:abs(DriftCorry)+DriftCorry+size(im_In,1),...

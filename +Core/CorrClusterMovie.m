@@ -202,7 +202,32 @@ classdef CorrClusterMovie < Core.Movie
                 disp('Loading DONE');
             end
             
-        end        
+        end
+        
+        function [correctedData] = deconvolve(obj,data)
+            
+            %get all traces that are significantly correlated 
+            indPx = obj.corrRelation.indPx;
+            allTraces= zeros(size(data,1)*size(data,2),size(data,3));
+            for i = 1:length(indPx)
+                [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
+                allTraces(i,:) = data(row,col,:);
+                
+            end
+            
+            meanData1 = squeeze(mean(allTraces,1));
+                  
+            %test deconvolution on the whole image
+            correctedData = data;
+            for i = 1:length(indPx)
+                [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
+                currentData = squeeze(data(row,col,:));
+                [a,r] = deconv(currentData,meanData1);
+                cleanData = r+mean(currentData);
+                correctedData(row,col,:) = cleanData;
+            end
+            
+        end
         
         function [corrMask,cleanedCorrMask] = getCorrelationMask(obj,data,corrInfo)
             %Function that get correlation mask by navigating through the
