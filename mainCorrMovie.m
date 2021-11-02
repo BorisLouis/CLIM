@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\testOldData Deconvolution';
+file.path = 'E:\Film Blinking\21.10.21\Porus sample 1\3rd measurement to be used\30000 - Nitrogen';
 file.ext  = '.spe';
 
 info.runMethod  = 'run'; %load 
@@ -62,7 +62,8 @@ for i =1:size(data1,1)
 end
 
 data2Use = correctedData;
-
+clear correctedData;
+clear data1;
 
 
 
@@ -83,7 +84,7 @@ label{1}   = ['Method' '-pseudoClust'];
 corrAnalysis.compareClusters(relData,label);
 
 %% Plotting
-myMovie.plotContour(data1,'raw');%raw or clean depending on which we want to use
+myMovie.plotContour(data2Use,'raw');%raw or clean depending on which we want to use
 
 
 %% save Movie
@@ -94,11 +95,11 @@ if saveMovie
 end
 
 %% Plot traces
-myMovie.plotClusterTraces(data1,4);
+myMovie.plotClusterTraces(data2Use,4);
 
 
 %% Extract intensity traces 
-data = myMovie.loadFrames(1:6000,ROI);
+data = myMovie.loadFrames(1:30000,ROI);
 
 [traces] = myMovie.getAllTraces(data);%data2Use
 
