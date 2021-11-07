@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\10 - October\20 - Film Blinking - test small grain big grain\testNewMethod';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\07 - Improve Code';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -26,14 +26,16 @@ myMovie.correctDrift;
 ROI = [96,96,64,64];
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
-%% Get pixels correlation
-[corrRelation] = myMovie.getPxCorrelation(data1,corrInfo);
 
 %% Deconvolution
 [correctedData] =  myMovie.deconvolve(data1);
+%% Get pixels correlation
+[corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
+
+
 
 %% get correlation mask from deconvolve data
-[corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+[corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
 %
 %%
 %compare the two clusters

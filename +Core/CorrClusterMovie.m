@@ -204,32 +204,42 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
-        function [correctedData] = deconvolve(obj,data)
+        function [correctedData] = deconvolve(~,data)
             
-            %get all traces that are significantly correlated 
-            indPx = obj.corrRelation.indPx;
-            allTraces= zeros(size(data,1)*size(data,2),size(data,3));
-            for i = 1:length(indPx)
-                [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
-                allTraces(i,:) = data(row,col,:);
-                
-            end
-            
-            meanData1 = squeeze(mean(allTraces,1));
+%             %get all traces that are significantly correlated 
+%             indPx = obj.corrRelation.indPx;
+%             allTraces= zeros(size(data,1)*size(data,2),size(data,3));
+%             for i = 1:length(indPx)
+%                 [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
+%                 allTraces(i,:) = data(row,col,:);
+%                 
+%             end
+            %meanData1 = squeeze(mean(allTraces,1));
                   
-            %test deconvolution on the whole image
-            correctedData = data;
-            for i = 1:length(indPx)
-                [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
-                currentData = squeeze(data(row,col,:));
-                [a,r] = deconv(currentData,meanData1);
-                cleanData = r+mean(currentData);
-                correctedData(row,col,:) = cleanData;
-            end
+%             %test deconvolution on the whole image
+%             correctedData = data;
+%             for i = 1:length(indPx)
+%                 [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
+%                 currentData = squeeze(data(row,col,:));
+%                 [a,r] = deconv(currentData,meanData1);
+%                 cleanData = r+mean(currentData);
+%                 correctedData(row,col,:) = cleanData;
+%             end
             
+            meanData1 = squeeze(mean(mean(data,1),2));
+            correctedData = data;
+            for i =1:size(data,1)
+                for j=1:size(data,2)
+                 currentData = squeeze(data(i,j,:));
+                 [~,r] = deconv(currentData,meanData1);
+                 cleanData = r+mean(currentData);
+                 correctedData(i,j,:) = cleanData;
+                    
+                end
+            end
         end
         
-        function [corrMask,cleanedCorrMask] = getCorrelationMask(obj,data,corrInfo)
+        function [corrMask] = getCorrelationMask(obj,data,corrInfo)
             %Function that get correlation mask by navigating through the
             %pixel correlation map and linking one by one pixel that are
             %correlated together hence creating a map of group of pixel
@@ -246,14 +256,14 @@ classdef CorrClusterMovie < Core.Movie
                 corrThreshold = corrInfo.thresh;
                 listPx = obj.corrRelation.listPx;
                 inds    = obj.corrRelation.indPx;
-                sumPx   = obj.corrRelation.sumPx;
+                meanPx   = obj.corrRelation.meanPx;
                 listVal = obj.corrRelation.listVal;
                 %get distance map
                 %[distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
 
                 disp('========> Performing Pseudo-clustering <==========')
                 %perform pseudo-clustering
-                [corrMask,cleanedCorrMask] = corrAnalysis.corrClustering(listPx,listVal,sumPx,inds,data,corrThreshold);
+                [corrMask] = corrAnalysis.corrClustering(listPx,listVal,meanPx,inds,data,corrThreshold);
 
                 
                 
@@ -261,8 +271,6 @@ classdef CorrClusterMovie < Core.Movie
                 cMask.raw = corrMask;
                 cMask.rawNCluster = max(corrMask(:));
                 cMask.method = 'pseudoClust';
-                cMask.clean = cleanedCorrMask;
-                cMask.cleanNCluster = max(cleanedCorrMask(:));
                 cMask.corrThresh = corrThreshold;
                 
                 obj.corrMask = cMask;

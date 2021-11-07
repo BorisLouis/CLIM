@@ -1,4 +1,4 @@
-function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,sumPx,inds,data,thresh)
+function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
     %The idea of the modifications here is to:
     %1) Use listVal to and threshold to add to cluster(this will allow to
     %test various threshold without having to re-run the first steps)
@@ -19,7 +19,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,sumPx,inds
     %we keep going
     while ~isempty(listCorrPx) 
         %get Index of most correlated pixel
-        [~,idx] = max(sumPx);
+        [~,idx] = max(meanPx);
         %take the index of the first pixel to be treated
         currIndex = inds(idx);
         %add to a new list the pixel that are correlated with the
@@ -33,7 +33,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,sumPx,inds
         if isempty(currList)
             listCorrPx(idx) = [];
             inds(idx) = [];
-            sumPx(idx) = [];
+            meanPx(idx) = [];
             idx = find(isnan(treatedIdx(:,1)),1);
             treatedIdx(idx) = currIndex;
             
@@ -50,7 +50,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,sumPx,inds
 
                 % remove it from the list
                 listCorrPx(inds==currIndex) = [];
-                sumPx(inds==currIndex)= [];
+                meanPx(inds==currIndex)= [];
                 inds(inds==currIndex) = [];
                
                 %update the currentlist to add the new data
@@ -100,7 +100,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,sumPx,inds
 
             % remove it from the list
             listCorrPx(inds==currIndex) = [];
-            sumPx(inds==currIndex) =[];
+            meanPx(inds==currIndex) =[];
             inds(inds==currIndex) = [];
 
             %if exit the first while loop, the first group is complete, we need to

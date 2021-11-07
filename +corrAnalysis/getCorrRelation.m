@@ -36,20 +36,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
             
             corrRel{currPxIdx} = neighborIdx;
             corrVal{currPxIdx} = corr;
-            %we use 0.8 to kill the background
-          %  if all(corr>0.8)
-          %  else
-          %     idx = neighborIdx(corr<0.8,:);
-                
-
-          %      if ~isempty(idx)
-                   %convert to indices for simplicity later
-          %         corrRel{currPxIdx} = idx;
-          %        corrVal{currPxIdx} = corr(corr<0.8);
-          %      end
-          
-          % end
-
+      
         end
     end
     %we use 0.8 to kill the background and low correlation pixels
@@ -61,7 +48,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
     %reshape and store data.
     corrRelation.listPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
     corrRelation.listVal = reshape(corrVal,size(corrRel,1)*size(corrRel,2),1);
-    corrRelation.sumPx  = cellfun(@sum,corrRelation.listVal);
+    corrRelation.meanPx  = cellfun(@mean,corrRelation.listVal);
     
     corrRelation.indPx    = (1:length(corrRelation.listPx))';
         
@@ -71,7 +58,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
     corrRelation.listPx(idx2Delete) =[];
     corrRelation.listVal(idx2Delete) = [];
     corrRelation.indPx(idx2Delete) = [];
-    corrRelation.sumPx(idx2Delete) = [];  
+    corrRelation.meanPx(idx2Delete) = [];  
     corrRelation.corrMap = corrMap;
     disp('======> DONE <=======');
     
