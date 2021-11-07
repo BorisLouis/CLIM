@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'E:\Film Blinking\21.10.21\Porus sample 1\3rd measurement to be used\30000 - Nitrogen';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\Big Grain\N2';
 file.ext  = '.spe';
 
 info.runMethod  = 'run'; %load 
