@@ -18,50 +18,73 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,ind
     %as long as the list of pixel that are correlated is not empty
     %we keep going
     while ~isempty(listCorrPx) 
-        %get Index of most correlated pixel
+        %get Index of most correlated pixel m
         [~,idx] = max(meanPx);
         %take the index of the first pixel to be treated
         currIndex = inds(idx);
         %add to a new list the pixel that are correlated with the
         %currently treated pixel
         currList = listCorrPx{idx};
+        currVal  = listVal{idx};
+        tmpList = [currIndex; currList];
+        idx = find(isnan(treatedIdx(:,1)),1);
+        treatedIdx(idx:idx+length(tmpList)-1) = currIndex;
         %check that the list does not contain already treated
         %pixels
         currList(ismember(currList,treatedIdx,'row'),:) =[];
+        currVal(ismember(currList,treatedIdx,'row'),:) =[];
+        
+        currList(currVal<thresh) = [];
+        
+        tmpList = [currIndex; currList];
+        %add the pixel to the cluster
+        corrMask(tmpList) = group;
+        clusters{group} = [clusters{group}; tmpList, indsCopy(ismember(indsCopy,tmpList))];
+            
         %if the list is empty then the pixel is "dead" and we
         %remove it from the list
         if isempty(currList)
-            listCorrPx(idx) = [];
-            inds(idx) = [];
-            meanPx(idx) = [];
+            listCorrPx(ismember(inds,tmpList)) = [];
+            listVal(ismember(inds,tmpList)) = [];
+            meanPx(ismember(inds,tmpList)) = [];
+            inds(ismember(inds,tmpList)) = [];
             idx = find(isnan(treatedIdx(:,1)),1);
-            treatedIdx(idx) = currIndex;
+            treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
             
         else
             %otherwise we treat all the pixel in the list in the
             %same way
             while ~isempty(currList)
-                % add the new pixel to the group and keep track of it
-                corrMask(currIndex) = group;
-                clusters{group} = [clusters{group}; currIndex, find(indsCopy==currIndex)]; 
-            
+                
+                %1) Treat the list (get correlated pixels and add to treated pixels)
+                newCurrList = cell2mat(listCorrPx(ismember(inds,currList)));
+                valList     = cell2mat(listVal(ismember(inds,currList)));
+                
                 idx = find(isnan(treatedIdx(:,1)),1);
-                treatedIdx(idx) = currIndex;
+                treatedIdx(idx:idx+length(currList)-1) = currList;
 
                 % remove it from the list
-                listCorrPx(inds==currIndex) = [];
-                meanPx(inds==currIndex)= [];
-                inds(inds==currIndex) = [];
-               
-                %update the currentlist to add the new data
-                currIndex = currList(1);
-                currList(1,:) = [];
+                listCorrPx(ismember(inds,currList)) = [];
+                listVal(ismember(inds,currList)) = [];
+                meanPx(ismember(inds,currList)) = [];
+                inds(ismember(inds,currList)) = [];
+                idx = find(isnan(treatedIdx(:,1)),1);
+                treatedIdx(idx:idx+length(currList)-1) = currList;
+
+                %2) Renew the list
+                currList = newCurrList;
                 
-                %get list of element correlated to the current element
-                list2Add  = listCorrPx{inds==currIndex}; 
-                %remove already treated cases and cases already in the list
-                list2Add(or(ismember(list2Add,treatedIdx,'row'),ismember(list2Add,currList,'row'))) = []; 
                 
+                %3) apply restrictions to the list
+                % correlation needs to be high enough:
+                currList(valList<thresh) = [];
+                %All pixel should only be there once:
+                list2Add = unique(currList);
+                
+                %remove already treated pixels from the list:
+                list2Add(ismember(list2Add,treatedIdx,'row')) = []; 
+                
+                %% STOPPPED HERE
                 if isempty(list2Add)
                     
                 else
@@ -83,10 +106,10 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,ind
                         currCluster,data,thresh);
                     
                     %add the new element to the list
-                    currList  = [currList;list2Add];
+                    currList  = list2Add;
                     
                 end
-
+             
                 if isempty(currList)
                     disp(['Found ' num2str(group) ' group(s).']);
                 end

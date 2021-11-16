@@ -21,7 +21,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
             for k = 1:size(neighbor,1)
                 data2 = squeeze(data2Cluster(neighbor(k,1),neighbor(k,2),:));
                 tmpCorr = corrcoef(data1,data2);
-                corr(k) = 1-tmpCorr(2,1);
+                corr(k) = tmpCorr(2,1);
 
             end
             %if correlation between pixel is sufficent we keep
@@ -32,15 +32,15 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
             corr(neighborIdx==currPxIdx) = [];
             neighborIdx(neighborIdx==currPxIdx) = [];
             
-            corrMap(i,j) = mean(1-corr);
+            corrMap(i,j) = mean(corr);
             
             corrRel{currPxIdx} = neighborIdx;
             corrVal{currPxIdx} = corr;
       
         end
     end
-    %we use 0.8 to kill the background and low correlation pixels
-    [idx2Delete] = cellfun(@(x) ~any(x<0.8),corrVal);
+    %we use 0.2 to kill the background and low correlation pixels
+    [idx2Delete] = cellfun(@(x) any(x<0.2),corrVal);
     SE = strel('disk',3);
     idx2Delete = imclose(idx2Delete,SE);
         
