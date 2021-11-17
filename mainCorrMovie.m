@@ -4,6 +4,9 @@
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% !!! Keep in mind that the deconvolution will affect the background, the
+% best would be to make an ROI that removes the background to conteract
+% this
 %% User input
 file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\07 - Improve Code';
 file.ext  = '.spe';
@@ -40,7 +43,7 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 %%
 %compare the two clusters
 %[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
-[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,data1);
+[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
 
 relData{1} = relNum1;
 label{1}   = ['Method' '-pseudoClust'];

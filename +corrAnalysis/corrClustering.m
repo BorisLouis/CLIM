@@ -1,11 +1,10 @@
-function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
+function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
     %The idea of the modifications here is to:
     %1) Use listVal to and threshold to add to cluster(this will allow to
     %test various threshold without having to re-run the first steps)
     %2) Add multiple indices to the cluster at once instead of 1 by 1 to
     %reduce the processing time.
 
-    
     %function actually does the clustering.
     safeCount = 2*size(data,1)*size(data,2);
     %initialize the variable
@@ -26,30 +25,31 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,ind
         %currently treated pixel
         currList = listCorrPx{idx};
         currVal  = listVal{idx};
-        tmpList = [currIndex; currList];
-        idx = find(isnan(treatedIdx(:,1)),1);
-        treatedIdx(idx:idx+length(tmpList)-1) = currIndex;
         %check that the list does not contain already treated
         %pixels
         currList(ismember(currList,treatedIdx,'row'),:) =[];
         currVal(ismember(currList,treatedIdx,'row'),:) =[];
         
         currList(currVal<thresh) = [];
-        
         tmpList = [currIndex; currList];
+       
         %add the pixel to the cluster
         corrMask(tmpList) = group;
         clusters{group} = [clusters{group}; tmpList, indsCopy(ismember(indsCopy,tmpList))];
-            
+        %keep track of the added pixels
+        idx = find(isnan(treatedIdx(:,1)),1);
+        treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
+        currList = tmpList;
+        
         %if the list is empty then the pixel is "dead" and we
         %remove it from the list
         if isempty(currList)
-            listCorrPx(ismember(inds,tmpList)) = [];
-            listVal(ismember(inds,tmpList)) = [];
-            meanPx(ismember(inds,tmpList)) = [];
-            inds(ismember(inds,tmpList)) = [];
+            listCorrPx(ismember(inds,currList)) = [];
+            listVal(ismember(inds,currList)) = [];
+            meanPx(ismember(inds,currList)) = [];
+            inds(ismember(inds,currList)) = [];
             idx = find(isnan(treatedIdx(:,1)),1);
-            treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
+            treatedIdx(idx:idx+length(currList)-1) = currList;
             
         else
             %otherwise we treat all the pixel in the list in the
@@ -60,16 +60,11 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,ind
                 newCurrList = cell2mat(listCorrPx(ismember(inds,currList)));
                 valList     = cell2mat(listVal(ismember(inds,currList)));
                 
-                idx = find(isnan(treatedIdx(:,1)),1);
-                treatedIdx(idx:idx+length(currList)-1) = currList;
-
                 % remove it from the list
                 listCorrPx(ismember(inds,currList)) = [];
                 listVal(ismember(inds,currList)) = [];
                 meanPx(ismember(inds,currList)) = [];
                 inds(ismember(inds,currList)) = [];
-                idx = find(isnan(treatedIdx(:,1)),1);
-                treatedIdx(idx:idx+length(currList)-1) = currList;
 
                 %2) Renew the list
                 currList = newCurrList;
@@ -86,7 +81,7 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,ind
                 
                 %% STOPPPED HERE
                 if isempty(list2Add)
-                    
+                                     
                 else
                     %find pixel that are already inside the cluster to check
                     %for correlation
@@ -104,60 +99,51 @@ function [corrMask,cleanCorrMask] = corrClustering(listCorrPx,listVal,meanPx,ind
                     %list are indeed correlated to the current cluster
                     [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
                         currCluster,data,thresh);
-                    
-                    %add the new element to the list
-                    currList  = list2Add;
-                    
+
                 end
-             
+                
+                %add the new element to the list
+                currList  = list2Add;
                 if isempty(currList)
                     disp(['Found ' num2str(group) ' group(s).']);
+                else
+                    %mark as treated index
+                    idx = find(isnan(treatedIdx(:,1)),1);
+                    treatedIdx(idx:idx+length(currList)-1) = currList;
                 end
 
                 count = count+1;
+                
+                %add the pixel to the cluster
+                corrMask(currList) = group;
+                clusters{group} = [clusters{group}; currList, indsCopy(ismember(indsCopy,currList))];
+                
+               
             end
             %mark the last case as treated:
-            corrMask(currIndex) = group;
-            idx = find(isnan(treatedIdx(:,1)),1);
-            treatedIdx(idx) = currIndex;
+%             corrMask(currIndex) = group;
+%             idx = find(isnan(treatedIdx(:,1)),1);
+%             treatedIdx(idx) = currIndex;
 
             % remove it from the list
-            listCorrPx(inds==currIndex) = [];
-            meanPx(inds==currIndex) =[];
-            inds(inds==currIndex) = [];
+%             listCorrPx(inds==currIndex) = [];
+%             meanPx(inds==currIndex) =[];
+%             inds(inds==currIndex) = [];
 
             %if exit the first while loop, the first group is complete, we need to
             %increment the group number as we are supposed to have treated all
             %cases.
-            group = group+1;
-            clusters{group} = [];
-        end
+            if length(clusters{group})<5
+                clusters{group} = [];
+            else
+                group = group+1;
+                clusters{group} = [];
+            end
 
-        count=count+1;
+            count=count+1;
 
-        if count >= safeCount
-            error('something went wrong')
-        end
+            if count >= safeCount
+                error('something went wrong')
+            end
+        end                
     end
-    
-    clusters(cellfun(@isempty,clusters)) = [];
-    
-    %fast cleanUp
-    try
-        distanceMap = corrAnalysis.getDistanceMapFromPxList(indsCopy,data);
-        
-    catch
-        
-        distanceMap = [];
-        warning('Too many pixels to generate distance map, using slower but more memory efficient route');
-    end
-    
-    if isempty(distanceMap)
-         [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data,thresh);
-        
-    else
-        [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap,thresh);
-       
-    end
-            
-end

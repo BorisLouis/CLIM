@@ -263,9 +263,7 @@ classdef CorrClusterMovie < Core.Movie
 
                 disp('========> Performing Pseudo-clustering <==========')
                 %perform pseudo-clustering
-                [corrMask] = corrAnalysis.corrClustering(listPx,listVal,meanPx,inds,data,corrThreshold);
-
-                
+                [corrMask] = corrAnalysis.corrClustering(listPx,listVal,meanPx,inds,data,corrThreshold);                
                 
                 %save Data 
                 cMask.raw = corrMask;
@@ -275,12 +273,9 @@ classdef CorrClusterMovie < Core.Movie
                 
                 obj.corrMask = cMask;
                 
-                
                 fileName = [obj.pathRes filesep 'corrMask' num2str(obj.corrMask.corrThresh) '.mat'];
                 save(fileName,'cMask');
-                
-                
-                
+
             else
                 disp('Found CorrMask from previous analysis, loading from there');
                 
@@ -289,9 +284,7 @@ classdef CorrClusterMovie < Core.Movie
                 
                 obj.corrMask = tmp.cMask;
                 
-                corrMask = obj.corrMask.raw;
-                cleanedCorrMask = obj.corrMask.clean;
-                
+                corrMask = obj.corrMask.raw;       
             end
             disp('========> DONE <==========')
             
@@ -300,10 +293,6 @@ classdef CorrClusterMovie < Core.Movie
             imagesc(corrMask)
             axis image
             colormap('jet')
-            subplot(1,2,2)
-            imagesc(cleanedCorrMask)
-            axis image
-            colormap('jet');
         
         end
                 
