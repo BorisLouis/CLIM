@@ -38,7 +38,9 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
 %% get correlation mask from deconvolve data
+tic
 [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+toc
 %
 %%
 %compare the two clusters
