@@ -1,28 +1,33 @@
 %% Simulate correlated data
 
 %% Simulation input
-sizeIm = [512 512];
+sizeIm = [64*4 64*4];
 nFrames = 300;
-data = zeros(sizeIm(2),sizeIm(1),nFrames);
-nParticles = 100;
+
+nParticles = 2;
 corrThreshold = 0.3;%smaller is more selective here (0 is perfect correlation)
 model.name = 'gaussian';
-model.sigma_x = 5;
-model.sigma_y = 5;
+model.sigma_x = 5/2.35*4;
+model.sigma_y = 5/2.35*4;
 r = 2; %radius for checking correlation
 
 
 %% Simulations
+data = zeros(sizeIm(2),sizeIm(1),nFrames);
 %coord=[56,56;72,72;56,72;72,56];
-% coord = [16,32;48,32];
+coord = [88,128;
+         128,128];
+delta = abs(coord(1,1)-coord(2,1))/4;
+delta = num2str(delta);
+delta = strrep(delta,'.','_');
 [X,Y] = meshgrid(1:sizeIm(1),1:sizeIm(2));
 %coord = zeros(nParticles,2);
 for i = 1:nParticles
     
-%     x0 = coord(i,1);
-%     y0 = coord(i,2);
-    x0 = randperm(sizeIm(1),1);
-    y0 = randperm(sizeIm(2),1);
+     x0 = coord(i,1);
+     y0 = coord(i,2);
+%    x0 = randperm(sizeIm(1),1);
+%    y0 = randperm(sizeIm(2),1);
     c  = 0;
     BaseInt = 500 + i * 100;
     secondInt = 2*BaseInt;
@@ -53,11 +58,14 @@ noise = randn(size(data));
 
 finalData = data + ones(size(data))*100 +noise*20;
 
+finalData = imresize(finalData,1/4);
 
+filename = ['SRMov_' delta];
+save(filename,'finalData');
 
 
 %%
-frameRate = 10;
+frameRate = 30;
 filename = 'cover.gif';
 % Capture the plot as an image 
 h = figure('Position',[10 10 768 768]);

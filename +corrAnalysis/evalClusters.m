@@ -73,6 +73,7 @@ function [clustEval,relNum] = evalClusters(mask,data)
         relNum.maxCorr  = wmean(clustEval.maxCorr,clustEval.nPixels);
         relNum.meanSize = mean(clustEval.nPixels);
         relNum.meanInterClusterCorr = mean(data);
+        relNum.stdInterClusterCorr  = std(data);
         relNum.nClusters = nClusters;
         
     else

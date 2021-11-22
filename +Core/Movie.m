@@ -450,6 +450,7 @@ classdef Movie < handle
                         movInfo.maxFrame = totFrame;
 
                     end
+                    
                 otherwise
                     extName = strrep(ext,'.','');  
                     [frameInfo,movInfo] = Load.Movie.(extName).getInfo(fullPath);
@@ -462,7 +463,7 @@ classdef Movie < handle
         
         function checkExtension(ext)
             ext = lower(ext);
-            extensionList = {'.his','.ome.tif','.mpg','.spe'};
+            extensionList = {'.his','.ome.tif','.mpg','.spe','.mat'};
             
             check = contains(extensionList,ext);
             

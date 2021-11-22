@@ -5,15 +5,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\Big Grain\N2';
-file.ext  = '.spe';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\07 - Improve Code\SR  Simulation\mov10';
+file.ext  = '.mat';
 
 info.runMethod  = 'run'; %load 
-info.driftCorr = true;
+info.driftCorr = false;
 info.ROI = false;
 ROI = [96,96,64,64];%only used if info.ROI = true
 
-frame2Process = 1:6000;
+frame2Process = 1:300;
 corrInfo.r = 1; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 saveMovie = false;
@@ -65,14 +65,13 @@ data2Use = correctedData;
 clear correctedData;
 clear data1;
 
-
-
-
 %% Get pixels correlation
 [listCorrPx,inds] = myMovie.getPxCorrelation(data2Use,corrInfo);
 %
 % get the correlation Mask
+tic
 [corrMask,cleanedCorrMask] = myMovie.getCorrelationMask(data2Use,corrInfo);
+toc
 %
 
 
