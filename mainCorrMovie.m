@@ -5,15 +5,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\07 - Improve Code\SR  Simulation\mov10';
-file.ext  = '.mat';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22 - Film Blinking Measurement\Small Grain\N2\mov1 - not much bleaching';
+file.ext  = '.spe';
 
 info.runMethod  = 'run'; %load 
-info.driftCorr = false;
-info.ROI = false;
-ROI = [96,96,64,64];%only used if info.ROI = true
+info.driftCorr = true;
+info.ROI = true;
+ROI = [72,72,128,128];%only used if info.ROI = true
 
-frame2Process = 1:300;
+frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
 saveMovie = false;
