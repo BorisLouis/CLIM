@@ -5,18 +5,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22 - Film Blinking Measurement\Small Grain\N2\mov1 - not much bleaching';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22 - Film Blinking Measurement\BiggerGrain\Ambient';
 file.ext  = '.spe';
 
 info.runMethod  = 'run'; %load 
 info.driftCorr = true;
-info.ROI = true;
-ROI = [72,72,128,128];%only used if info.ROI = true
+info.ROI = false;
+ROI = [96,96,64,64];%only used if info.ROI = true
 
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
 corrInfo.thresh = 0.4;%correlation threshold (smaller is more correlation)==> 0.6 == 0.4 Pearson coefficient
-saveMovie = false;
+saveMovie = true;
 frameRate = 100;
 
 %% Loading data
@@ -89,7 +89,7 @@ myMovie.plotContour(data2Use,'raw');%raw or clean depending on which we want to 
 %% save Movie
 option.frameRate = frameRate;
 if saveMovie
-    myMovie.saveMovie(data1,option)
+    myMovie.saveMovie(data2Use,option)
     
 end
 
