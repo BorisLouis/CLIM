@@ -17,6 +17,10 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
     %as long as the list of pixel that are correlated is not empty
     %we keep going
     while ~isempty(listCorrPx) 
+        
+        if group >= 100
+                disp('test');
+        end
         %get Index of most correlated pixel m
         [~,idx] = max(meanPx);
         %take the index of the first pixel to be treated
@@ -35,8 +39,9 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
         tmpList = [currIndex; currList];
         
         %add the pixel to the cluster
-        corrMask(tmpList) = group;
-        clusters{group} = [clusters{group}; tmpList, indsCopy(ismember(indsCopy,tmpList))];
+        %corrMask(tmpList) = group;
+        
+        clusters{group} = [clusters{group}; sort(tmpList), indsCopy(ismember(indsCopy,tmpList))];
         %keep track of the added pixels
         idx = find(isnan(treatedIdx(:,1)),1);
         treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
@@ -86,7 +91,8 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
                 else
                     %find pixel that are already inside the cluster to check
                     %for correlation
-                    currCluster = find(corrMask==group);
+                    currCluster = clusters{group}(:,1);
+                    %currCluster = find(corrMask==group);
 
                     %take a random subset of 10 pixel from the
                     %current cluster
@@ -116,8 +122,8 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
                 count = count+1;
                 
                 %add the pixel to the cluster
-                corrMask(currList) = group;
-                clusters{group} = [clusters{group}; currList, indsCopy(ismember(indsCopy,currList))];
+                %corrMask(currList) = group;
+                clusters{group} = [clusters{group}; sort(currList), indsCopy(ismember(indsCopy,currList))];
                 
                
             end
@@ -134,9 +140,11 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
             %if exit the first while loop, the first group is complete, we need to
             %increment the group number as we are supposed to have treated all
             %cases.
+            
             if length(clusters{group})<5
                 clusters{group} = [];
             else
+                corrMask(clusters{group}(:,1)) = group;
                 group = group+1;
                 clusters{group} = [];
             end

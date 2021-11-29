@@ -370,16 +370,18 @@ classdef CorrClusterMovie < Core.Movie
             
         end
               
-        function plotContour(obj,data,mask2Use)
+        function plotContour(obj,data,corrM)
             
-            assert(~isempty(obj.corrMask),'Need to run getCorrelationMask before plotting contour');
-            maxIm = max(data,[],3);
-            
-            if strcmpi(mask2Use,'raw')
-                corrM = obj.corrMask.raw;
-            elseif strcmpi(mask2Use,'clean')
-                corrM = obj.corrMask.clean;
+            switch nargin
+                case 2
+                    assert(~isempty(obj.corrMask),'Need to run getCorrelationMask before plotting contour');
+                    corrM = obj.corrMask.raw;
+                case 3
+                otherwise 
+                    error('Too many input arguments')
             end
+            
+            maxIm = max(data,[],3);
             
             figure
             hold on

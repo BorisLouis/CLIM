@@ -8,7 +8,7 @@
 % best would be to make an ROI that removes the background to conteract
 % this
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\07 - Improve Code';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\29 - Algorithm comparison\BiggerGrain';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -38,13 +38,17 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
 %% get correlation mask from deconvolve data
-corrInfo.thresh = 0.45;
-for i = 1:9
-    corrInfo.thresh = corrInfo.thresh+0.05;
+ corrInfo.thresh = 0.7; 
+ [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+ [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
+corrInfo.thresh = 0.3;
+for i = 1:11
+    
     [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
     [clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
     threshold(i) = corrInfo.thresh;
     
+    corrInfo.thresh = corrInfo.thresh+0.05;
 end
 %%
 %compare the two clusters
