@@ -25,14 +25,15 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
         %currently treated pixel
         currList = listCorrPx{idx};
         currVal  = listVal{idx};
-        %check that the list does not contain already treated
-        %pixels
-        currList(ismember(currList,treatedIdx,'row'),:) =[];
-        currVal(ismember(currList,treatedIdx,'row'),:) =[];
         
         currList(currVal<thresh) = [];
+        %check that the list does not contain already treated
+        %pixels
+        %currVal(ismember(currList,treatedIdx,'row'),:) =[];
+        currList(ismember(currList,treatedIdx,'row'),:) =[];
+        
         tmpList = [currIndex; currList];
-       
+        
         %add the pixel to the cluster
         corrMask(tmpList) = group;
         clusters{group} = [clusters{group}; tmpList, indsCopy(ismember(indsCopy,tmpList))];

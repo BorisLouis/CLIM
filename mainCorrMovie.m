@@ -38,10 +38,14 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
 %% get correlation mask from deconvolve data
-tic
-[corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
-toc
-%
+corrInfo.thresh = 0.45;
+for i = 1:9
+    corrInfo.thresh = corrInfo.thresh+0.05;
+    [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+    [clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
+    threshold(i) = corrInfo.thresh;
+    
+end
 %%
 %compare the two clusters
 %[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');

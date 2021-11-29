@@ -18,7 +18,7 @@ function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,data,thresh)
         
         distanceMap = corrAnalysis.getDistanceMapFromPxList(list2Comp,data);
         
-        corrVal = distanceMap(nInd+1:end,1:nInd);
+        corrVal = 1-distanceMap(nInd+1:end,1:nInd);
         
 %         %combine input to extract value from distance map
 %         subs = [newList,currCluster];    
@@ -27,7 +27,7 @@ function [ind2Add] = enforceClusterConsistency(ind2Add,currCluster,data,thresh)
 %         %reshape corrVal to test for each cluster
 %         corrVal = reshape(corrVal,nClust,nInd);
         %check threshold
-        corrTest = corrVal<thresh;
+        corrTest = corrVal>thresh;
         %we want new data point to be correlated to 70% of the subset from the
         %existing group
         idx2delete = sum(corrTest,1)./size(corrTest,1)<0.7;

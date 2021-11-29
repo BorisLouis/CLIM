@@ -71,6 +71,7 @@ function [clustEval,relNum] = evalClusters(mask,data)
         relNum.varCoeff = wmean(clustEval.varCoeff,clustEval.nPixels);
         relNum.minCorr  = wmean(clustEval.minCorr,clustEval.nPixels);
         relNum.maxCorr  = wmean(clustEval.maxCorr,clustEval.nPixels);
+        relNum.meanSize = mean(clustEval.nPixels);
         relNum.meanInterClusterCorr = mean(data);
         relNum.stdInterClusterCorr  = std(data);
         relNum.nClusters = nClusters;
@@ -90,5 +91,4 @@ function [wAvg] = wmean(data,weight)
     wAvg = sum(data.*weight)/sum(weight);
     
 end
-
 

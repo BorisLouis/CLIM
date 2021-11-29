@@ -1,86 +1,150 @@
-function [corrMask] = corrClusteringV2(dim,inds,distanceMap)
-    
-    corrMask = zeros(dim(1),dim(2));
-    clustCell = cell(1,100);
-    delta = 1/44;
-    
-    pxList = inds;
-    clustNum = 1;
-    count = 0;
-    while ~isempty(pxList)
-        %Take a point
-        currPoint = pxList(1);
+function [corrMask,cleanCorrMask] = corrClusteringV2(listCorrPx,listVal,meanPx,inds,data,threshold)
+    %function actually does the clustering.
+    safeCount = 2*size(data,1)*size(data,2);
+    %initialize the variable
+    count = 1;
+    group = 1;
+    corrMask = zeros(size(data,1),size(data,2));
+    treatedIdx = NaN(length(inds),1);
+    indsCopy = inds;
+    clusters{group} = [];
+    %as long as the list of pixel that are correlated is not empty
+    %we keep going
+    while ~isempty(listCorrPx) 
+        %get Index of most correlated pixel
+        [~,idx] = max(meanPx);
+        %take the index of the first pixel to be treated
+        currIndex = inds(idx);
+        %add to a new list the pixel that are correlated with the
+        %currently treated pixel
+        currList = listCorrPx{idx};
+        currVal  = listVal{idx};
+        %delete the pixels that have lower correlation than threshold
+        currList(currVal<threshold) = [];
         
-        id = inds==currPoint;
-        %get all the pixel correlated to that point and put them in a
-        %cluster
-        idx = distanceMap(id,:)==1;
-        
-        currentCluster = inds(idx);
-        
-        clusterList = find(idx);
-        %check for "bad" pixels in the cluster
-        for i = 1:length(clusterList)
+        %check that the list does not contain already treated
+        %pixels
+        currList(ismember(currList,treatedIdx,'row'),:) =[];
+        %if the list is empty then the pixel is "dead" and we
+        %remove it from the list
+        if isempty(currList)
+            listCorrPx(idx) = [];
+            listVal(idx) = [];
+            inds(idx) = [];
+            meanPx(idx) = [];
+            idx = find(isnan(treatedIdx(:,1)),1);
+            treatedIdx(idx) = currIndex;
             
-            currentIdx = clusterList(i);
+        else
+            %otherwise we treat all the pixel in the list in the
+            %same way
+            while ~isempty(currList)
+                % add the new pixel to the group and keep track of it
+                corrMask(currIndex) = group;
+                clusters{group} = [clusters{group}; currIndex, find(indsCopy==currIndex)]; 
             
-            positives = distanceMap(currentIdx,:)==1;
-            positivesInCluster = and(positives,idx);
-            positivesOutOfCluster = and(positives,~idx);
-            
-            %need to understand why 3 delta bad and 7 delta good, something
-            %is off as a point can be both 3 delta bad and 7 delta good.
-            deltaCriterion1 = or(~(sum(positivesInCluster) >= (1-3*delta)*sum(idx)),...
-                    ~(sum(positivesOutOfCluster) <= 3*delta*sum(idx)));
-            %TODO make criterion based on correlation level
-            if deltaCriterion1
-                
-                %remove the point from the cluster
-                currentCluster(currentCluster==inds(currentIdx)) = [];
-           
-            end
-        end
-        
-        %check for good pixels outside the cluster
-        [Y,idxA] = setdiff(pxList,currentCluster);
-        
-        idxB = zeros(size(idx));
-        idxB(idxA)=1;
-        for i = 1: length(Y)
-            currentIdx = idxA(i);
-            positives = distanceMap(currentIdx,:)==1;
-            positivesInCluster = and(positives,idxB);
-            positivesOutOfCluster = and(positives,~idxB);
-            
-            deltaCriterion2 = and((sum(positivesInCluster) >= (1-7*delta)*sum(idx)),...
-                    (sum(positivesOutOfCluster) <= 7*delta*sum(idx))); 
-            
-            if deltaCriterion2
-                
-                %remove the point from the cluster
-                currentCluster = [currentCluster; Y(i)];
+                idx = find(isnan(treatedIdx(:,1)),1);
+                treatedIdx(idx) = currIndex;
 
+                % remove it from the list
+                listCorrPx(inds==currIndex) = [];
+                listVal(inds==currIndex) = [];
+                meanPx(inds==currIndex)= [];
+                inds(inds==currIndex) = [];
+               
+                %update the currentlist to add the new data
+                currIndex = currList(1);
+                currList(1,:) = [];
+                
+                %get list of element correlated to the current element
+                list2Add  = listCorrPx{inds==currIndex};
+                valList = listVal{inds==currIndex};
+                %remove already treated cases and cases already in the list
+                valList(or(ismember(list2Add,treatedIdx,'row'),ismember(list2Add,currList,'row'))) = []; 
+                list2Add(or(ismember(list2Add,treatedIdx,'row'),ismember(list2Add,currList,'row'))) = []; 
+                
+                %remove cases that have correlation below threshold
+                list2Add(valList<threshold) = [];
+                
+                if isempty(list2Add)
+                    
+                else
+                    %find pixel that are already inside the cluster to check
+                    %for correlation
+                    currCluster = find(corrMask==group);
+
+                    %take a random subset of 10 pixel from the
+                    %current cluster
+                    try
+                        r = randperm(length(currCluster),10);
+                        currCluster = currCluster(r);
+                    catch
+
+                    end
+                    %check that the pixel that should be added to the
+                    %list are indeed correlated to the current cluster
+                    [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
+                        currCluster,data,threshold);
+                    
+                    %add the new element to the list
+                    currList  = [currList;list2Add];
+                    
+                end
+
+                if isempty(currList)
+                    disp(['Found ' num2str(group) ' group(s).']);
+                end
+
+                count = count+1;
             end
             
+            % remove it from the list
+            listCorrPx(inds==currIndex) = [];
+            listVal(inds==currIndex) = [];
+            meanPx(inds==currIndex) =[];
+            inds(inds==currIndex) = [];
+
+            %mark the last case as treated:
+            
+            idx = find(isnan(treatedIdx(:,1)),1);
+            treatedIdx(idx) = currIndex;
+            %if exit the first while loop, the first group is complete, we need to
+            %increment the group number as we are supposed to have treated all
+            %cases.
+            corrMask(currIndex) = group;
+            group = group+1;
+            clusters{group} = [];
+
+            
+           
         end
-        %add the cluster to the mask
-        corrMask(currentCluster) = clustNum;
-        
-        clustCell{clustNum} = currentCluster;
-        
-        %update the cluster number
-        clustNum = clustNum+1;
-        
-        %remove pixel of current cluster from pxList
-        pxList(ismember(pxList,currentCluster)) = [];
-        
-        count = count +1;
-        
-        if count >length(inds)
-            error('Something went wrong');
+
+        count=count+1;
+
+        if count >= safeCount
+            error('something went wrong')
         end
-        
     end
     
-
+    clusters(cellfun(@isempty,clusters)) = [];
+    
+    %fast cleanUp
+    cleanCorrMask = rand(size(data,1),size(data,2));
+%     try
+%         distanceMap = corrAnalysis.getDistanceMapFromPxList(indsCopy,data);
+%         
+%     catch
+%         
+%         distanceMap = [];
+%         warning('Too many pixels to generate distance map, using slower but more memory efficient route');
+%     end
+%     
+%     if isempty(distanceMap)
+%          [cleanCorrMask] = corrAnalysis.clusterCleanUpMemEff(corrMask,clusters,data,thresh);
+%         
+%     else
+%         [cleanCorrMask] = corrAnalysis.clusterCleanUp(corrMask,clusters,distanceMap,thresh);
+%        
+%     end
+            
 end
