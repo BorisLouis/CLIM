@@ -40,9 +40,11 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
         end
     end
     %we use 0.2 to kill the background and low correlation pixels
-    [idx2Delete] = cellfun(@(x) any(x<0.2),corrVal);
-    SE = strel('disk',3);
-    idx2Delete = imclose(idx2Delete,SE);
+    [idx2Delete] = cellfun(@(x) all(x<0.2),corrVal);
+    %the smoothing of idx2delete cause inconsistencies in the list of
+    %correlated pixel so we dont use it anymore
+    %SE = strel('disk',3);
+    %idx2Delete = imclose(idx2Delete,SE);
         
     idx2Delete = reshape(idx2Delete,size(corrRel,1)*size(corrRel,2),1);
     %reshape and store data.

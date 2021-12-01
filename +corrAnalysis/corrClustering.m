@@ -18,9 +18,6 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
     %we keep going
     while ~isempty(listCorrPx) 
         
-        if group >= 100
-                disp('test');
-        end
         %get Index of most correlated pixel m
         [~,idx] = max(meanPx);
         %take the index of the first pixel to be treated
@@ -41,7 +38,7 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
         %add the pixel to the cluster
         %corrMask(tmpList) = group;
         
-        clusters{group} = [clusters{group}; sort(tmpList), indsCopy(ismember(indsCopy,tmpList))];
+        clusters{group} = [clusters{group}; tmpList];
         %keep track of the added pixels
         idx = find(isnan(treatedIdx(:,1)),1);
         treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
@@ -123,7 +120,7 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
                 
                 %add the pixel to the cluster
                 %corrMask(currList) = group;
-                clusters{group} = [clusters{group}; sort(currList), indsCopy(ismember(indsCopy,currList))];
+                clusters{group} = [clusters{group}; currList];
                 
                
             end

@@ -6,18 +6,19 @@ function [clustEval,relNum] = evalClusters(mask,data)
         
     elseif ismatrix(mask)
         
-        nClusters = max(mask(:));
+        clusterID = unique(mask(mask>0));
+        nClusters = length(clusterID);
         
         clustEval = table(zeros(nClusters,1),zeros(nClusters,1),zeros(nClusters,1),...
             zeros(nClusters,1), zeros(nClusters,1),zeros(nClusters,1),...
             zeros(nClusters,1),'VariableNames',...
             {'meanCorr','medCorr','std','varCoeff','minCorr','maxCorr','nPixels'});
         traces = zeros(nClusters,size(data,3));
-       
+        
         for i = 1 :nClusters
            
             %get indices of mask for current cluster index
-            currInds = find(mask==i);
+            currInds = find(mask==clusterID(i));
             %if only one pixel we just give one's everywhere
             if length(currInds) ==1
                 

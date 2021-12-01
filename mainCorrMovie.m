@@ -8,7 +8,7 @@
 % best would be to make an ROI that removes the background to conteract
 % this
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\29 - Algorithm comparison\BiggerGrain';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\30 - Big algorithm evaluation\Bigger Grain';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -26,7 +26,7 @@ myMovie.correctDrift;
 
     
 %%
-ROI = [96,96,64,64];
+ROI = [26,100,64,64];
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
@@ -38,24 +38,79 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
 %% get correlation mask from deconvolve data
- corrInfo.thresh = 0.7; 
- [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
- [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
-corrInfo.thresh = 0.3;
-for i = 1:11
-    
+%  corrInfo.thresh = 0.7; 
+%  [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+%  [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
+
+
+thresh = 0.3:0.05:0.95;
+allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh));
+threshold = zeros(length(thresh),1);
+treatedArea = zeros(length(thresh),1);
+
+for i = 1:length(thresh)
+    corrInfo.thresh = thresh(i);
     [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
-    [clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
-    threshold(i) = corrInfo.thresh;
     
-    corrInfo.thresh = corrInfo.thresh+0.05;
+    %clean CorrMask
+    a = regionprops(corrMask,'MajorAxisLength','MinorAxisLength');
+    
+    idx = find(and([a.MinorAxisLength]<3,[a.MajorAxisLength]./[a.MinorAxisLength]>2));
+    cleanCorrMask = corrMask;
+    cleanCorrMask(ismember(cleanCorrMask,idx)) = 0;
+    
+    [clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
+    
+    [clustEval1Clean,relNum1Clean(i)] = corrAnalysis.evalClusters(cleanCorrMask,correctedData);
+    threshold(i) = corrInfo.thresh;
+    %calculate % of data treated
+    binarizedMask = corrMask>0;
+
+    treatedArea(i) = sum(binarizedMask(:))./numel(binarizedMask);
+    
+    allCorrMask(:,:,i) = cleanCorrMask;    
+
 end
+
+%% Find best threshold
+%calculate number relative number of cluster
+relClusters = [relNum1.nClusters]./max([relNum1.nClusters]);
+
+
+% Metric based on average correlation within cluster, intercluster
+% correlation and number of clusters
+corrMetric1= ([relNum1.meanCorr].*[relNum1.minCorr])./([relNum1.stdInterClusterCorr].*relClusters);
+
+corrMetric2 = ([relNum1.meanCorr].*[relNum1.minCorr].*treatedArea')./([relNum1.stdInterClusterCorr].*relClusters);
+
+corrMetric3 = ([relNum1.meanCorr].*[relNum1.minCorr].*treatedArea')./([relNum1.stdInterClusterCorr]);
+
+figure
+subplot(1,3,1)
+plot(threshold,corrMetric1)
+xlabel('Threshold')
+ylabel('Goodness Metric')
+box on
+axis square
+subplot(1,3,2)
+plot(threshold,corrMetric2)
+xlabel('Threshold')
+ylabel('Goodness Metric')
+box on
+axis square
+subplot(1,3,3)
+plot(threshold,corrMetric3)
+xlabel('Threshold')
+ylabel('Goodness Metric')
+box on
+axis square
+
 %%
 %compare the two clusters
 %[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
-[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
+[bestClustEval1,bestRelNum] = corrAnalysis.evalClusters(corrMask,correctedData);
 
-relData{1} = relNum1;
+relData{1} = bestRelNum;
 label{1}   = ['Method' '-pseudoClust'];
 corrAnalysis.compareClusters(relData,label);
 

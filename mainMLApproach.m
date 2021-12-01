@@ -8,7 +8,7 @@
 % best would be to make an ROI that removes the background to conteract
 % this
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\29 - Algorithm comparison\BiggerGrain';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\30 - Big algorithm evaluation\Small Grain';
 file.ext  = '.spe';
 
 info.runMethod  = 'load';
@@ -26,7 +26,7 @@ myMovie.correctDrift;
 
     
 %%
-ROI = [96,96,64,64];
+ROI = [26,100,64,64];
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
@@ -40,23 +40,24 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 testData = reshape(correctedData,[size(correctedData,1)*size(correctedData,1), size(correctedData,3)]);
 
 id = 1:size(testData,1);
-idx = dbscan(double(testData),0.08,5,'Distance','Correlation');
 
-corrMask = zeros(size(correctedData,1),size(correctedData,2));
-
-corrMask(id) = idx;
-
-figure
-imagesc(corrMask)
-
-%% Approach 1 - Evaluation
-[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
-
-relData{1} = relNum1;
-label{1}   = ['Method' '-pseudoClust'];
-corrAnalysis.compareClusters(relData,label);
-
-myMovie.plotContour(data1,corrMask);
+% idx = dbscan(double(testData),0.1,3,'Distance','Correlation');
+% 
+% corrMask = zeros(size(correctedData,1),size(correctedData,2));
+% 
+% corrMask(id) = idx;
+% 
+% figure
+% imagesc(corrMask)
+% 
+% %% Approach 1 - Evaluation
+% [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
+% 
+% relData{1} = relNum1;
+% label{1}   = ['Method' '-pseudoClust'];
+% corrAnalysis.compareClusters(relData,label);
+% 
+% myMovie.plotContour(data1,corrMask);
 %% Approach 2 - KMeans
 
 clustCenters = imregionalmax(corrRelation.corrMap);
@@ -84,4 +85,4 @@ relData{1} = relNum1;
 label{1}   = ['Method' '-pseudoClust'];
 corrAnalysis.compareClusters(relData,label);
 
-myMovie.plotContour(data1,corrMask);
+myMovie.plotContour(corrRelation.corrMap,corrMask);
