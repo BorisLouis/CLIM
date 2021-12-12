@@ -11,32 +11,39 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
         for j = 1:size(data2Cluster,2)
             %take a pixel
             currentPxCoord = [i,j];
-            %find its neighbor
-            neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data2Cluster),r);
             
-            corr = zeros(size(neighbor,1),1);                 
-            data1 = squeeze(data2Cluster(currentPxCoord(1),currentPxCoord(2),:));
-            %calculate correlation 1-pearson coefficient ==> 0 is
-            %correlated 2 is anti correated 1 is uncorrelated
-            for k = 1:size(neighbor,1)
-                data2 = squeeze(data2Cluster(neighbor(k,1),neighbor(k,2),:));
-                tmpCorr = corrcoef(data1,data2);
-                corr(k) = tmpCorr(2,1);
-
-            end
-            %if correlation between pixel is sufficent we keep
-            %track of those pixel as being correlated to the
-            %current pixel
-            [neighborIdx] = sub2ind(size(corrRel),neighbor(:,1),neighbor(:,2));
             currPxIdx     = sub2ind(size(corrRel),currentPxCoord(:,1),currentPxCoord(:,2));
-            corr(neighborIdx==currPxIdx) = [];
-            neighborIdx(neighborIdx==currPxIdx) = [];
-            
-            corrMap(i,j) = mean(corr);
-            
-            corrRel{currPxIdx} = neighborIdx;
-            corrVal{currPxIdx} = corr;
-      
+            if or(data2Cluster(i,j,1)==0,isnan(data2Cluster(i,j,1)))
+                corrMap(i,j) = 0;
+                corrRel{currPxIdx} = [];
+                corrVal{currPxIdx} = [];
+            else
+                %find its neighbor
+                neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data2Cluster),r);
+
+                corr = zeros(size(neighbor,1),1);                 
+                data1 = squeeze(data2Cluster(currentPxCoord(1),currentPxCoord(2),:));
+                %calculate correlation 1-pearson coefficient ==> 0 is
+                %correlated 2 is anti correated 1 is uncorrelated
+                for k = 1:size(neighbor,1)
+                    data2 = squeeze(data2Cluster(neighbor(k,1),neighbor(k,2),:));
+                    tmpCorr = corrcoef(data1,data2);
+                    corr(k) = tmpCorr(2,1);
+
+                end
+                %if correlation between pixel is sufficent we keep
+                %track of those pixel as being correlated to the
+                %current pixel
+                [neighborIdx] = sub2ind(size(corrRel),neighbor(:,1),neighbor(:,2));
+               
+                corr(neighborIdx==currPxIdx) = [];
+                neighborIdx(neighborIdx==currPxIdx) = [];
+
+                corrMap(i,j) = nanmean(corr);
+
+                corrRel{currPxIdx} = neighborIdx(~isnan(corr));
+                corrVal{currPxIdx} = corr(~isnan(corr));
+            end
         end
     end
     %we use 0.2 to kill the background and low correlation pixels

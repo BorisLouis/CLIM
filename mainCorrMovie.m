@@ -8,12 +8,12 @@
 % best would be to make an ROI that removes the background to conteract
 % this
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\30 - Big algorithm evaluation\Bigger Grain';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\12 - December\12 - Code improve attempt';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
 info.driftCorr = true;
-info.ROI = true;
+info.ROI = false;
 
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
@@ -38,10 +38,13 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
 %% get correlation mask from deconvolve data
-%  corrInfo.thresh = 0.7; 
-%  [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
-%  [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
+corrInfo.thresh = 0.6; 
+[corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
 
+relData{1} = relNum1;
+label{1}   = ['Method' '-pseudoClust'];
+corrAnalysis.compareClusters(relData,label);
 
 thresh = 0.3:0.05:0.95;
 allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh));
@@ -71,6 +74,23 @@ for i = 1:length(thresh)
     allCorrMask(:,:,i) = cleanCorrMask;    
 
 end
+
+
+
+
+%% max number of cluster
+relClusters = [relNum1.nClusters]./max([relNum1.nClusters]);
+optMetric = treatedArea.*relClusters';
+figure
+plot(optMetric)
+
+thresholdToUse = threshold(optMetric==max(optMetric));
+
+
+%% clean the cluster based on statistical significance
+
+
+
 
 %% Find best threshold
 %calculate number relative number of cluster

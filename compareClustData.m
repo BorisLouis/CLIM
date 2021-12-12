@@ -13,9 +13,22 @@
 % corrAnalysis.compareClusters(relData,label);
 
 
+% 
+% relData{1} = relNum1(11);
+% relData{2} = relNum1Clean(11);
+% label{1}   = ['Normal'];
+% label{2}   = ['Cleaned'];
+% corrAnalysis.compareClusters(relData,label);
 
-relData{1} = relNum1(11);
-relData{2} = relNum1Clean(11);
-label{1}   = ['Normal'];
-label{2}   = ['Cleaned'];
+
+relData{1} = Pseudo;
+relData{2} = Watershed;
+relData{3} = Kmean;
+%relData{4} = DBScan;
+
+label{1} = 'Pseudo';
+label{2} = 'Watershed';
+label{3} = 'Kmean';
+%label{4} = 'DBScan';
+
 corrAnalysis.compareClusters(relData,label);

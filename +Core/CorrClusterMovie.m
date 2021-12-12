@@ -9,6 +9,7 @@ classdef CorrClusterMovie < Core.Movie
         corrMask       
         pathRes
         clustLoc
+        deconvFunction
         
     end
         
@@ -160,6 +161,60 @@ classdef CorrClusterMovie < Core.Movie
        
         end
         
+        function [correctedData] = deconvolve(obj,data)
+            
+            disp('Detecting background based on autocorrelation')
+            %remove background
+            medAutoCorr = zeros(size(data,1),size(data,2));
+            for i = 1:size(data,1)
+                for j = 1:size(data,2)
+                
+                    currData = double(squeeze(data(i,j,:)));
+                    medAutoCorr(i,j) = median(autocorr(currData));
+                    
+                end
+            end
+            
+            deleteMask = medAutoCorr>0.1;
+            %clean up the binary image mask
+            SE = strel('disk',4);
+            deleteMask = imopen(deleteMask,SE);
+            deleteMask = imfill(deleteMask,'holes');
+            %keep only the largest area
+            d = regionprops(deleteMask,'Area','PixelIdxList');
+            [~,idx] = max([d.Area]);
+            delMask = zeros(size(deleteMask));
+            delMask(d(idx).PixelIdxList) = 1;
+            %store the mask            
+            obj.deconvFunction.Mask = delMask;
+            %repeeat it in z and multiply it
+            delMask = repmat(delMask,1,1,size(data,3));
+            
+            bkgCorrData = double(delMask).*double(data);
+                     
+            %deconvolve data
+            [correctedData,deconvFunc] = Core.CorrClusterMovie.deconvolveFromMean(bkgCorrData);
+            
+            obj.deconvFunction.Curve = deconvFunc;
+            
+            figure
+            subplot(1,2,1)
+            imagesc(deleteMask(:,:,1))
+            title('Background removal mask')
+            axis image
+            subplot(1,2,2)
+            plot(deconvFunc.Data)
+            hold on
+            plot(deconvFunc.smoothed,'r','Linewidth',2);
+            legend({'Data','Smoothed'})
+            axis square
+            title('Deconvolution curve')
+            box on
+            
+        end
+        
+
+        
         function [corrRelation] = getPxCorrelation(obj,data,corrInfo)
             %This function scan the image to find pixel that are correlated
             %to other pixel that are close in space (typically check only
@@ -172,15 +227,16 @@ classdef CorrClusterMovie < Core.Movie
             
                 data = double(data);
                 r = corrInfo.r;
-                corrThreshold = corrInfo.thresh;
                 h=waitbar(0,'Normalizing Data...');
-                % #1 Normalize the data
-                data2Cluster = data-min(data,[],3);
-                data2Cluster = data2Cluster./max(data2Cluster,[],3);
+%                 % #1 Normalize the data
+%                 Does not affect the data so deleted this part
+%                 data2Cluster = data-min(data,[],3);
+%                 data2Cluster = data2Cluster./max(data2Cluster,[],3);
+            
 
                 waitbar(0.1,h,'Getting correlation relationships');
                 %#2 Get correlation relationship between pixels
-                [corrRelation]  = corrAnalysis.getCorrRelation(data2Cluster,r);
+                [corrRelation]  = corrAnalysis.getCorrRelation(data,r);
 
                 waitbar(0.8,h,'Saving data');
   
@@ -203,42 +259,7 @@ classdef CorrClusterMovie < Core.Movie
             end
             
         end
-        
-        function [correctedData] = deconvolve(~,data)
-            
-%             %get all traces that are significantly correlated 
-%             indPx = obj.corrRelation.indPx;
-%             allTraces= zeros(size(data,1)*size(data,2),size(data,3));
-%             for i = 1:length(indPx)
-%                 [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
-%                 allTraces(i,:) = data(row,col,:);
-%                 
-%             end
-            %meanData1 = squeeze(mean(allTraces,1));
-                  
-%             %test deconvolution on the whole image
-%             correctedData = data;
-%             for i = 1:length(indPx)
-%                 [row,col] = ind2sub(size(data(:,:,1)),indPx(i));
-%                 currentData = squeeze(data(row,col,:));
-%                 [a,r] = deconv(currentData,meanData1);
-%                 cleanData = r+mean(currentData);
-%                 correctedData(row,col,:) = cleanData;
-%             end
-            
-            meanData1 = squeeze(mean(mean(data,1),2));
-            correctedData = data;
-            for i =1:size(data,1)
-                for j=1:size(data,2)
-                 currentData = squeeze(data(i,j,:));
-                 [~,r] = deconv(currentData,meanData1);
-                 cleanData = r+mean(currentData);
-                 correctedData(i,j,:) = cleanData;
-                    
-                end
-            end
-        end
-        
+                
         function [corrMask] = getCorrelationMask(obj,data,corrInfo)
             %Function that get correlation mask by navigating through the
             %pixel correlation map and linking one by one pixel that are
@@ -586,7 +607,26 @@ classdef CorrClusterMovie < Core.Movie
         
     end
     methods(Static)
-        
+        function [correctedData,deconvFunc] = deconvolveFromMean(data)
+            
+            %calculate the mean intensity trace, ignoring zeros from
+            %background deletion step
+            meanData = squeeze(sum(sum(data,1),2)./sum(sum(data(:,:,1)~=0,1),2));
+            deconvolveFunc = smooth(meanData,0.1,'rloess');
+            correctedData = data;
+            for i =1:size(data,1)
+                for j=1:size(data,2)
+                     currentData = squeeze(data(i,j,:));
+                     [~,r] = deconv(currentData,deconvolveFunc);
+                     cleanData = r+mean(currentData);
+                     correctedData(i,j,:) = cleanData; 
+                end
+            end
+            
+            deconvFunc.Data = meanData;
+            deconvFunc.smoothed = deconvolveFunc;
+            
+         end
     end
     methods(Access = 'private')
         function [run] = checkDrift(obj)
@@ -618,7 +658,7 @@ classdef CorrClusterMovie < Core.Movie
             run = ~test;
             
         end
-
+        
     end
         
 end
