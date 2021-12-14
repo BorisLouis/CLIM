@@ -170,7 +170,8 @@ classdef CorrClusterMovie < Core.Movie
                 for j = 1:size(data,2)
                 
                     currData = double(squeeze(data(i,j,:)));
-                    medAutoCorr(i,j) = median(autocorr(currData));
+                    AC = autocorr(currData);
+                    medAutoCorr(i,j) = AC(2);
                     
                 end
             end
@@ -199,7 +200,7 @@ classdef CorrClusterMovie < Core.Movie
             
             figure
             subplot(1,2,1)
-            imagesc(deleteMask(:,:,1))
+            imagesc(delMask(:,:,1))
             title('Background removal mask')
             axis image
             subplot(1,2,2)
@@ -398,29 +399,39 @@ classdef CorrClusterMovie < Core.Movie
                     assert(~isempty(obj.corrMask),'Need to run getCorrelationMask before plotting contour');
                     corrM = obj.corrMask.raw;
                 case 3
+                    assert(ismatrix(corrM),'correlation mask needs to be a matrix');
                 otherwise 
                     error('Too many input arguments')
             end
             
             maxIm = max(data,[],3);
             
+            contour = cell(length(unique(corrM)),1);
+            n = 1;
+            for i = unique(corrM(:))'
+                currMask = corrM == i;
+                if not(all(currMask(:)==0))
+                    contour{n} = Plotting.bwperimtrace(corrM == i,[1 size(corrM,2)],[1 size(corrM,1)]);
+                    n=n+1;
+                end
+            end
+
             figure
             hold on
             imagesc(maxIm)
-            axis image
-            colormap('jet')
+            for i = 1:size(contour,1)
+                              
 
-            for i = 1:max(corrM(:))
-                corrMaskCopy = corrM;
+                %contour = bwboundaries(corrMaskCopy);
 
-                corrMaskCopy(corrM~=i) = 0;
-
-                contour = bwboundaries(corrMaskCopy);
-
-                plot(contour{1}(:,2),contour{1}(:,1),'w','LineWidth',2)
+                plot(contour{i}{1}(:,1),contour{i}{1}(:,2),'w','LineWidth',2)
 
             end
             axis ij
+            
+            xlim([1 size(maxIm,2)])
+            ylim([1 size(maxIm,1)]);
+            
         end
         
         function plotClusterTraces(obj,data,idx)
@@ -612,12 +623,12 @@ classdef CorrClusterMovie < Core.Movie
             %calculate the mean intensity trace, ignoring zeros from
             %background deletion step
             meanData = squeeze(sum(sum(data,1),2)./sum(sum(data(:,:,1)~=0,1),2));
-            deconvolveFunc = smooth(meanData,0.1,'rloess');
+            deconvolveFunc = smooth(meanData,0.05,'rloess');
             correctedData = data;
             for i =1:size(data,1)
                 for j=1:size(data,2)
                      currentData = squeeze(data(i,j,:));
-                     [~,r] = deconv(currentData,deconvolveFunc);
+                     [~,r] = deconv(currentData,meanData);
                      cleanData = r+mean(currentData);
                      correctedData(i,j,:) = cleanData; 
                 end

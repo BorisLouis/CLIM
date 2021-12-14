@@ -8,12 +8,12 @@
 % best would be to make an ROI that removes the background to conteract
 % this
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\12 - December\12 - Code improve attempt';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\12 - December\12 - Code improve attempt\BigGrain';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
 info.driftCorr = true;
-info.ROI = false;
+info.ROI = true;
 
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
@@ -32,19 +32,22 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 %% Deconvolution
 [correctedData] =  myMovie.deconvolve(data1);
+
 %% Get pixels correlation
 [corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
 
 
 
 %% get correlation mask from deconvolve data
-corrInfo.thresh = 0.6; 
+corrInfo.thresh = 0.8; 
 [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
 [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
 
 relData{1} = relNum1;
 label{1}   = ['Method' '-pseudoClust'];
 corrAnalysis.compareClusters(relData,label);
+
+%% Scanning threshold
 
 thresh = 0.3:0.05:0.95;
 allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh));
@@ -135,8 +138,11 @@ label{1}   = ['Method' '-pseudoClust'];
 corrAnalysis.compareClusters(relData,label);
 
 %% Plotting
-myMovie.plotContour(data1,'raw');%raw or clean depending on which we want to use
+myMovie.plotContour(data1);%raw or clean depending on which we want to use
 
+%% 
+
+myMovie.plotContour(corrRelation.corrMap,cleanCorrMask);
 
 %% Plot traces
 myMovie.plotClusterTraces(data1,4);

@@ -6,6 +6,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
     corrVal  = cell(size(data2Cluster,1),size(data2Cluster,2));
     
     corrMap  = zeros(size(data2Cluster,1),size(data2Cluster,2));
+   
     %loop through pixels
     for i = 1:size(data2Cluster,1)
         for j = 1:size(data2Cluster,2)
@@ -15,19 +16,21 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
             currPxIdx     = sub2ind(size(corrRel),currentPxCoord(:,1),currentPxCoord(:,2));
             if or(data2Cluster(i,j,1)==0,isnan(data2Cluster(i,j,1)))
                 corrMap(i,j) = 0;
+                pValMap(i,j) = 0;
                 corrRel{currPxIdx} = [];
-                corrVal{currPxIdx} = [];
+                
             else
                 %find its neighbor
                 neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data2Cluster),r);
 
-                corr = zeros(size(neighbor,1),1);                 
+                corr = zeros(size(neighbor,1),1);
+                pVal = zeros(size(neighbor,1),1);
                 data1 = squeeze(data2Cluster(currentPxCoord(1),currentPxCoord(2),:));
                 %calculate correlation 1-pearson coefficient ==> 0 is
                 %correlated 2 is anti correated 1 is uncorrelated
                 for k = 1:size(neighbor,1)
                     data2 = squeeze(data2Cluster(neighbor(k,1),neighbor(k,2),:));
-                    tmpCorr = corrcoef(data1,data2);
+                    [tmpCorr] = corrcoef(data1,data2);
                     corr(k) = tmpCorr(2,1);
 
                 end
@@ -40,6 +43,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
                 neighborIdx(neighborIdx==currPxIdx) = [];
 
                 corrMap(i,j) = nanmean(corr);
+                
 
                 corrRel{currPxIdx} = neighborIdx(~isnan(corr));
                 corrVal{currPxIdx} = corr(~isnan(corr));
@@ -69,6 +73,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
     corrRelation.indPx(idx2Delete) = [];
     corrRelation.meanPx(idx2Delete) = [];  
     corrRelation.corrMap = corrMap;
+  
     disp('======> DONE <=======');
     
     %listCorrPx = reshape(corrRel,size(corrRel,1)*size(corrRel,2),1);
