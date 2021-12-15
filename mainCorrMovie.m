@@ -18,6 +18,7 @@ info.ROI = true;
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
 corrInfo.thresh = 0.6;%correlation threshold Pearson coefficient
+corrInfo.neighbor = 4; %4 or 8 (8 means that diagonal are taken too)
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
