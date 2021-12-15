@@ -1,4 +1,4 @@
-function [corrRelation] = getCorrRelation(data2Cluster,r)
+function [corrRelation] = getCorrRelation(data2Cluster,r,neigh)
     %function to find correlation relation between a each pixel of
     %an image and its neighbor pixels
     
@@ -21,7 +21,7 @@ function [corrRelation] = getCorrRelation(data2Cluster,r)
                 
             else
                 %find its neighbor
-                neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data2Cluster),r);
+                neighbor = corrAnalysis.findNeighbor(currentPxCoord,size(data2Cluster),r,neigh);
 
                 corr = zeros(size(neighbor,1),1);
                 pVal = zeros(size(neighbor,1),1);
