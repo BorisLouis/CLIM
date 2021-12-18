@@ -17,8 +17,8 @@ info.ROI = true;
 
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
-corrInfo.thresh = 0.6;%correlation threshold Pearson coefficient
-corrInfo.neighbor = 4; %4 or 8 (8 means that diagonal are taken too)
+corrInfo.thresh = 0.5;%correlation threshold Pearson coefficient
+corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -37,16 +37,13 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 %% Get pixels correlation
 [corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
 
-
-
 %% get correlation mask from deconvolve data
-corrInfo.thresh = 0.8; 
-[corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
-[clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
-
-relData{1} = relNum1;
-label{1}   = ['Method' '-pseudoClust'];
-corrAnalysis.compareClusters(relData,label);
+% [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+% [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
+% 
+% relData{1} = relNum1;
+% label{1}   = ['Method' '-pseudoClust'];
+% corrAnalysis.compareClusters(relData,label);
 
 %% Scanning threshold
 
@@ -54,6 +51,9 @@ thresh = 0.3:0.05:0.95;
 allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh));
 threshold = zeros(length(thresh),1);
 treatedArea = zeros(length(thresh),1);
+
+rearrangeData = reshape(correctedData,[size(correctedData,1)*size(correctedData,2),size(correctedData,3)]);
+
 
 for i = 1:length(thresh)
     corrInfo.thresh = thresh(i);
@@ -65,6 +65,13 @@ for i = 1:length(thresh)
     idx = find(and([a.MinorAxisLength]<3,[a.MajorAxisLength]./[a.MinorAxisLength]>2));
     cleanCorrMask = corrMask;
     cleanCorrMask(ismember(cleanCorrMask,idx)) = 0;
+    
+    label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
+    
+    cleanLabel= reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
+    
+    sil(:,i) = silhouette(rearrangeData,label,'Correlation');
+    cleanSil(:,i) = silhouette(rearrangeData,cleanLabel);
     
     [clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
     

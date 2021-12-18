@@ -10,14 +10,24 @@ classdef CorrCluster <handle
     end
     
     methods
-        function obj = CorrCluster(inds,trace)
+        function obj = CorrCluster(inds,id,trace,corrMap)
             %UNTITLED5 Construct an instance of this class
             %   Detailed explanation goes here
-            obj.inds = inds;
-            obj.avgTrace = trace;
-            obj.nPx = length(inds);
-            obj.corrRel = 1;
-            
+            switch nargin
+                case 3
+                    obj.inds = [inds,id];
+                    obj.avgTrace = trace;
+                    obj.nPx = length(inds);
+                    obj.corrRel = 1;
+                case 4
+                    obj.inds = [inds,id];
+                    obj.avgTrace = trace;
+                    obj.nPx = length(inds);
+                    obj.corrRel = corrMap;
+                otherwise
+                    error('Incorrect number of input');
+            end
+
         end
         
         function inds = getInds(obj)
