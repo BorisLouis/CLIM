@@ -60,7 +60,7 @@ h = waitbar(0,'Starting drift correction');
 for i=1:size(imCropped,3)
     im2Correct = imresize(im_In(:,:,i),scalingFactor);
     [tmp] = PreProcess.correctImageDrift(im2Correct,...
-        -round(Drift(i,:)*scalingFactor));
+        +round(Drift(i,:)*scalingFactor));
     
     correctedStack(:,:,i) = imresize(tmp,1/scalingFactor);
     waitbar(i/size(imCropped,3),h,['Drift correction ' num2str(i) '/' num2str(size(imCropped,3))])

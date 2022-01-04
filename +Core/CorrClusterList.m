@@ -77,15 +77,15 @@ classdef CorrClusterList < handle
             if or(size(indsA,1)==1,size(indsB,1)==1)
                 doMerge = true;
             else
-                maxCorrA = max(corrRelA);
-                maxCorrB = max(corrRelB);
-                meanMax = (maxCorrA*clustA.nPx + maxCorrB*clustB.nPx)/(clustA.nPx+clustB.nPx);
+                meanCorrDistA = mean(corrRelA);
+                meanCorrDistB = mean(corrRelB);
+                meanM = (meanCorrDistA*clustA.nPx + meanCorrDistB*clustB.nPx)/(clustA.nPx+clustB.nPx);
                
-                minCorrAB = min(newCorrRel);
+                maxCorrDistAB = max(newCorrRel);
                 
-                sil = (meanMax-minCorrAB)/max([minCorrAB,meanMax]);
+                sil = (maxCorrDistAB-meanM)/max([maxCorrDistAB,meanM]);
                 
-                if sil <0.8
+                if sil <0.7
                     doMerge = true;
                 else 
                     doMerge = false;

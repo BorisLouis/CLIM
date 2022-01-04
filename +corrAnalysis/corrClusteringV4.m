@@ -47,7 +47,7 @@ function [corrMask] = corrClusteringV4(data,corrRelation,distanceMap,thresh)
                 nCounts = 1; 
             end
             
-            stopCriteria = nCounts> length(clusterList.clusters);
+            stopCriteria = or(nCounts> length(clusterList.clusters),length(distanceMap)==1);
     end
 
     corrMask = clusterList.getCorrMask(dim);

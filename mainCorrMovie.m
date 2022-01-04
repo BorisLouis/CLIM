@@ -8,7 +8,7 @@
 % best would be to make an ROI that removes the background to conteract
 % this
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\12 - December\12 - Code improve attempt\BigGrain';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22 - Film Blinking Measurement\BiggerGrain\N2';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -17,8 +17,10 @@ info.ROI = true;
 
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
-corrInfo.thresh = 0.5;%correlation threshold Pearson coefficient
 corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
+
+minCorr = 0.4;%Minimum correlation we want to have
+stepCorr = 0.05; %Correlation difference between different tested threshold
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -47,42 +49,69 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 %% Scanning threshold
 
-thresh = 0.3:0.05:0.95;
-allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh));
+expMinCorr = min(corrRelation.corrMap(:));
+%round to closest 0.05 number
+%usedMinCorr = round(max([minCorr,expMinCorr])/0.05)*0.05;
+
+thresh = minCorr:stepCorr:0.9;
+
+allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh),3);
 threshold = zeros(length(thresh),1);
 treatedArea = zeros(length(thresh),1);
+cleanTreatedArea = zeros(length(thresh),1);
+silCleanTreatedArea =zeros(length(thresh),1);
 
 rearrangeData = reshape(correctedData,[size(correctedData,1)*size(correctedData,2),size(correctedData,3)]);
-
-
 for i = 1:length(thresh)
     corrInfo.thresh = thresh(i);
     [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
     
     %clean CorrMask
     a = regionprops(corrMask,'MajorAxisLength','MinorAxisLength');
-    
     idx = find(and([a.MinorAxisLength]<3,[a.MajorAxisLength]./[a.MinorAxisLength]>2));
     cleanCorrMask = corrMask;
     cleanCorrMask(ismember(cleanCorrMask,idx)) = 0;
-    
     label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
     
-    cleanLabel= reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
+    %Calculate silhouette of clusters
+    tmpRearrangeData = rearrangeData;
+    silDist = silhouette(tmpRearrangeData,label,'Correlation');
+    silLabel = label;
+    sDist = silDist;
+    sDist(label==0) = [];
+    label(label==0) = [];
+    sil(i) = mean(sDist);
     
-    sil(:,i) = silhouette(rearrangeData,label,'Correlation');
-    cleanSil(:,i) = silhouette(rearrangeData,cleanLabel);
+    %Calculate silhouette of cleaned up clusters
+    cleanLabel= reshape(cleanCorrMask,[size(corrMask,1)*size(corrMask,2),1]);
+    tmpRearrangeData = rearrangeData;
+    tmpRearrangeData(cleanLabel==0,:) = [];
+    cleanLabel(cleanLabel==0) = [];
+    cleanSil(i) = mean(silhouette(tmpRearrangeData,cleanLabel,'Correlation'));
+    
+    % clean cluster based on sil (delete <0.2
+    tmpRearrangeData = rearrangeData;
+    silLabel(silDist<0.2) = 0; %Problem size silDist vs silLabel ! 
+    silCleanMask = reshape(silLabel,size(corrMask));
+   
+    tmpRearrangeData(silLabel==0,:) = [];
+    silLabel(silLabel==0) = [];
+    silClean(i) = mean(silhouette(tmpRearrangeData,silLabel,'Correlation'));
     
     [clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
-    
     [clustEval1Clean,relNum1Clean(i)] = corrAnalysis.evalClusters(cleanCorrMask,correctedData);
-    threshold(i) = corrInfo.thresh;
-    %calculate % of data treated
-    binarizedMask = corrMask>0;
-
-    treatedArea(i) = sum(binarizedMask(:))./numel(binarizedMask);
+    [clustEval1SilClean,relNum1SilClean(i)] = corrAnalysis.evalClusters(silCleanMask,correctedData);
     
-    allCorrMask(:,:,i) = cleanCorrMask;    
+    threshold(i) = corrInfo.thresh;
+    
+    %calculate % of data treated   
+    treatedArea(i) = sum(corrMask(:)>0)./numel(corrMask);
+    cleanTreatedArea(i) = sum(cleanCorrMask(:)>0)./numel(corrMask);
+    silCleanTreatedArea(i) = sum(silCleanMask(:)>0)./numel(corrMask);
+    
+    allCorrMask(:,:,i,1) = corrMask;
+    allCorrMask(:,:,i,2) = cleanCorrMask;
+    allCorrMask(:,:,i,3) = silCleanMask;
 
 end
 
