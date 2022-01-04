@@ -8,7 +8,7 @@
 % best would be to make an ROI that removes the background to conteract
 % this
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22 - Film Blinking Measurement\BiggerGrain\N2';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\12 - December\12 - Code improve attempt\BigGrain';
 file.ext  = '.spe';
 
 info.runMethod  = 'run';
@@ -21,6 +21,7 @@ corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
 
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
+maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -39,38 +40,19 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 %% Get pixels correlation
 [corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
 
-%% get correlation mask from deconvolve data
-% [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
-% [clustEval1,relNum1] = corrAnalysis.evalClusters(corrMask,correctedData);
-% 
-% relData{1} = relNum1;
-% label{1}   = ['Method' '-pseudoClust'];
-% corrAnalysis.compareClusters(relData,label);
-
 %% Scanning threshold
 
-expMinCorr = min(corrRelation.corrMap(:));
-%round to closest 0.05 number
-%usedMinCorr = round(max([minCorr,expMinCorr])/0.05)*0.05;
+thresh = minCorr:stepCorr:maxCorr;
 
-thresh = minCorr:stepCorr:0.9;
-
-allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh),3);
+allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh));
 threshold = zeros(length(thresh),1);
 treatedArea = zeros(length(thresh),1);
-cleanTreatedArea = zeros(length(thresh),1);
-silCleanTreatedArea =zeros(length(thresh),1);
 
 rearrangeData = reshape(correctedData,[size(correctedData,1)*size(correctedData,2),size(correctedData,3)]);
 for i = 1:length(thresh)
     corrInfo.thresh = thresh(i);
     [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
     
-    %clean CorrMask
-    a = regionprops(corrMask,'MajorAxisLength','MinorAxisLength');
-    idx = find(and([a.MinorAxisLength]<3,[a.MajorAxisLength]./[a.MinorAxisLength]>2));
-    cleanCorrMask = corrMask;
-    cleanCorrMask(ismember(cleanCorrMask,idx)) = 0;
     label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
     
     %Calculate silhouette of clusters
@@ -81,89 +63,53 @@ for i = 1:length(thresh)
     sDist(label==0) = [];
     label(label==0) = [];
     sil(i) = mean(sDist);
-    
-    %Calculate silhouette of cleaned up clusters
-    cleanLabel= reshape(cleanCorrMask,[size(corrMask,1)*size(corrMask,2),1]);
-    tmpRearrangeData = rearrangeData;
-    tmpRearrangeData(cleanLabel==0,:) = [];
-    cleanLabel(cleanLabel==0) = [];
-    cleanSil(i) = mean(silhouette(tmpRearrangeData,cleanLabel,'Correlation'));
-    
-    % clean cluster based on sil (delete <0.2
-    tmpRearrangeData = rearrangeData;
-    silLabel(silDist<0.2) = 0; %Problem size silDist vs silLabel ! 
-    silCleanMask = reshape(silLabel,size(corrMask));
-   
-    tmpRearrangeData(silLabel==0,:) = [];
-    silLabel(silLabel==0) = [];
-    silClean(i) = mean(silhouette(tmpRearrangeData,silLabel,'Correlation'));
-    
-    [clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
-    [clustEval1Clean,relNum1Clean(i)] = corrAnalysis.evalClusters(cleanCorrMask,correctedData);
-    [clustEval1SilClean,relNum1SilClean(i)] = corrAnalysis.evalClusters(silCleanMask,correctedData);
-    
+       
+    %[clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
     threshold(i) = corrInfo.thresh;
     
     %calculate % of data treated   
     treatedArea(i) = sum(corrMask(:)>0)./numel(corrMask);
-    cleanTreatedArea(i) = sum(cleanCorrMask(:)>0)./numel(corrMask);
-    silCleanTreatedArea(i) = sum(silCleanMask(:)>0)./numel(corrMask);
-    
-    allCorrMask(:,:,i,1) = corrMask;
-    allCorrMask(:,:,i,2) = cleanCorrMask;
-    allCorrMask(:,:,i,3) = silCleanMask;
-
+   
+    allCorrMask(:,:,i) = corrMask;
+   
 end
 
 
+%% find optimal threshold
 
-
-%% max number of cluster
-relClusters = [relNum1.nClusters]./max([relNum1.nClusters]);
-optMetric = treatedArea.*relClusters';
+optMetric = sil(:).*treatedArea(:);
 figure
-plot(optMetric)
-
-thresholdToUse = threshold(optMetric==max(optMetric));
-
-
-%% clean the cluster based on statistical significance
-
-
-
-
-%% Find best threshold
-%calculate number relative number of cluster
-relClusters = [relNum1.nClusters]./max([relNum1.nClusters]);
-
-
-% Metric based on average correlation within cluster, intercluster
-% correlation and number of clusters
-corrMetric1= ([relNum1.meanCorr].*[relNum1.minCorr])./([relNum1.stdInterClusterCorr].*relClusters);
-
-corrMetric2 = ([relNum1.meanCorr].*[relNum1.minCorr].*treatedArea')./([relNum1.stdInterClusterCorr].*relClusters);
-
-corrMetric3 = ([relNum1.meanCorr].*[relNum1.minCorr].*treatedArea')./([relNum1.stdInterClusterCorr]);
-
-figure
-subplot(1,3,1)
-plot(threshold,corrMetric1)
-xlabel('Threshold')
-ylabel('Goodness Metric')
-box on
+hold on
+plot(threshold,optMetric)
+xlabel('Correlation threshold')
+ylabel('Mean Silhouette coefficient');
 axis square
-subplot(1,3,2)
-plot(threshold,corrMetric2)
-xlabel('Threshold')
-ylabel('Goodness Metric')
 box on
-axis square
-subplot(1,3,3)
-plot(threshold,corrMetric3)
-xlabel('Threshold')
-ylabel('Goodness Metric')
-box on
-axis square
+
+guess.sig = 0.3;
+guess.mu = threshold(optMetric==max(optMetric));
+[FitPar,fit] = Gauss.gauss1D(optMetric,threshold,guess);
+
+plot(threshold,fit);
+
+threshold2Use = FitPar(2);
+
+%% Calculate final corrMask
+corrInfo.thresh = threshold2Use;
+[corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+
+label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
+
+%Calculate silhouette of clusters
+tmpRearrangeData = rearrangeData;
+silDist = silhouette(tmpRearrangeData,label,'Correlation');
+silLabel = label;
+sDist = silDist;
+sDist(label==0) = [];
+label(label==0) = [];
+bestSil = mean(sDist);
+
+
 
 %%
 %compare the two clusters
@@ -179,7 +125,7 @@ myMovie.plotContour(data1);%raw or clean depending on which we want to use
 
 %% 
 
-myMovie.plotContour(corrRelation.corrMap,cleanCorrMask);
+myMovie.plotContour(corrRelation.corrMap,corrMask);
 
 %% Plot traces
 myMovie.plotClusterTraces(data1,4);
