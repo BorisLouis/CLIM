@@ -4,15 +4,17 @@
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% !!! Keep in mind that the deconvolution will affect the background, the
+% best would be to make an ROI that removes the background to conteract
+% this
 %% User input
 file.path = 'D:\Documents\Unif\PhD\2021-Data\12 - December\12 - Code improve attempt\BigGrain';
 file.ext  = '.spe';
 
-info.runMethod  = 'run'; %always leave to RUN
+info.runMethod  = 'run';
 info.driftCorr = true;
-info.ROI = false;
-%      [x y  w h]
-ROI = [96,96,64,64]; %leave empty to not use ROI to find threshold
+info.ROI = true;
+ROI = [26,100,64,64];
 
 frame2Process = 1:6000;
 corrInfo.r = 1; %radius for checking neighbor
@@ -36,22 +38,20 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 [correctedData] =  myMovie.deconvolve(data1);
 
 %% Get pixels correlation
-ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
-[corrRelation] = myMovie.getPxCorrelation(ROICorrData,corrInfo);
+[corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
 
 %% Scanning threshold
 
 thresh = minCorr:stepCorr:maxCorr;
 
-
-allCorrMask = zeros(size(ROICorrData,1),size(ROICorrData,2),length(thresh));
+allCorrMask = zeros(size(correctedData,1),size(correctedData,2),length(thresh));
 threshold = zeros(length(thresh),1);
 treatedArea = zeros(length(thresh),1);
 
-rearrangeData = reshape(ROICorrData,[size(ROICorrData,1)*size(ROICorrData,2),size(ROICorrData,3)]);
+rearrangeData = reshape(correctedData,[size(correctedData,1)*size(correctedData,2),size(correctedData,3)]);
 for i = 1:length(thresh)
     corrInfo.thresh = thresh(i);
-    [corrMask] = myMovie.getCorrelationMask(ROICorrData,corrInfo);
+    [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
     
     label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
     
@@ -95,23 +95,19 @@ plot(threshold,fit);
 threshold2Use = FitPar(2);
 
 %% Calculate final corrMask
-
 corrInfo.thresh = threshold2Use;
-[corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
 [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
 
-% label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
-% rearrangeData = reshape(correctedData,[size(correctedData,1)*size(correctedData,2),size(correctedData,3)]);
-% %Calculate silhouette of clusters
-% tmpRearrangeData = rearrangeData;
-% tmpRearrangeData(label==0,:) = [];
-% label(label==0) = [];
-% silDist = silhouette(tmpRearrangeData,label,'Correlation');
-% silLabel = label;
-% sDist = silDist;
-% sDist(label==0) = [];
-% label(label==0) = [];
-% bestSil = mean(sDist);
+label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
+
+%Calculate silhouette of clusters
+tmpRearrangeData = rearrangeData;
+silDist = silhouette(tmpRearrangeData,label,'Correlation');
+silLabel = label;
+sDist = silDist;
+sDist(label==0) = [];
+label(label==0) = [];
+bestSil = mean(sDist);
 
 
 
@@ -188,7 +184,7 @@ color= 'colorcube';
 %[allLoc] =myMovie.getAllClusterLocalization(data);
 
 idx =112;
-[Localization] = myMovie.getClusterLocalization(data,idx);
+[Localization] = myMovie.getClusterLocalization(data1,idx);
 
 pos = sqrt(Localization.x.^2 + Localization.y.^2);
 figure
@@ -211,7 +207,7 @@ box on
 title('Intensity vs Angle')
 
 %% test plot
-myMovie.plotContour(data,'raw');%raw or clean depending on which we want to use
+myMovie.plotContour(data1,'raw');%raw or clean depending on which we want to use
 hold on
 scatter(Localization.x,Localization.y,5,'filled')
 
