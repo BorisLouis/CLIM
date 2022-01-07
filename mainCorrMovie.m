@@ -5,18 +5,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\12 - December\12 - Code improve attempt\BigGrain';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\30 - Big algorithm evaluation\Porous';
 file.ext  = '.spe';
 
-info.runMethod  = 'run'; %always leave to RUN
+info.runMethod  = 'load';%
 info.driftCorr = true;
-info.ROI = false;
+info.ROI = true;%this is to use ROI for the whole analysis
 %      [x y  w h]
-ROI = [96,96,64,64]; %leave empty to not use ROI to find threshold
+ROI = [64,64,96,96]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 
 frame2Process = 1:6000;
-corrInfo.r = 1; %radius for checking neighbor
-corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
 
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
@@ -35,85 +33,29 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 %% Deconvolution
 [correctedData] =  myMovie.deconvolve(data1);
 
-%% Get pixels correlation
-ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
-[corrRelation] = myMovie.getPxCorrelation(ROICorrData,corrInfo);
-
 %% Scanning threshold
+if info.ROI ==false
+    ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
+else
+    ROICorrData = correctedData;
+end
 
 thresh = minCorr:stepCorr:maxCorr;
 
-
-allCorrMask = zeros(size(ROICorrData,1),size(ROICorrData,2),length(thresh));
-threshold = zeros(length(thresh),1);
-treatedArea = zeros(length(thresh),1);
-
-rearrangeData = reshape(ROICorrData,[size(ROICorrData,1)*size(ROICorrData,2),size(ROICorrData,3)]);
-for i = 1:length(thresh)
-    corrInfo.thresh = thresh(i);
-    [corrMask] = myMovie.getCorrelationMask(ROICorrData,corrInfo);
-    
-    label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
-    
-    %Calculate silhouette of clusters
-    tmpRearrangeData = rearrangeData;
-    silDist = silhouette(tmpRearrangeData,label,'Correlation');
-    silLabel = label;
-    sDist = silDist;
-    sDist(label==0) = [];
-    label(label==0) = [];
-    sil(i) = mean(sDist);
-       
-    %[clustEval1,relNum1(i)] = corrAnalysis.evalClusters(corrMask,correctedData);
-    threshold(i) = corrInfo.thresh;
-    
-    %calculate % of data treated   
-    treatedArea(i) = sum(corrMask(:)>0)./numel(corrMask);
-   
-    allCorrMask(:,:,i) = corrMask;
-   
-end
-
-
-%% find optimal threshold
-
-optMetric = sil(:).*treatedArea(:);
-figure
-hold on
-plot(threshold,optMetric)
-xlabel('Correlation threshold')
-ylabel('Mean Silhouette coefficient');
-axis square
-box on
-
-guess.sig = 0.3;
-guess.mu = threshold(optMetric==max(optMetric));
-[FitPar,fit] = Gauss.gauss1D(optMetric,threshold,guess);
-
-plot(threshold,fit);
-
-threshold2Use = FitPar(2);
+[allCorrMask,threshold2Use] = myMovie.findOptimalThreshold(ROICorrData,thresh);
 
 %% Calculate final corrMask
 
 corrInfo.thresh = threshold2Use;
+%get px correlation
 [corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
+%get the mask using the optimal threshold
 [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
 
-% label = reshape(corrMask,[size(corrMask,1)*size(corrMask,2),1]);
-% rearrangeData = reshape(correctedData,[size(correctedData,1)*size(correctedData,2),size(correctedData,3)]);
-% %Calculate silhouette of clusters
-% tmpRearrangeData = rearrangeData;
-% tmpRearrangeData(label==0,:) = [];
-% label(label==0) = [];
-% silDist = silhouette(tmpRearrangeData,label,'Correlation');
-% silLabel = label;
-% sDist = silDist;
-% sDist(label==0) = [];
-% label(label==0) = [];
-% bestSil = mean(sDist);
 
+%% clean up mask
 
+[cleanMask,silMap] = myMovie.cleanCorrMask(data1);
 
 %%
 %compare the two clusters
@@ -137,7 +79,6 @@ myMovie.plotClusterTraces(data1,4);
 
 %% Extract intensity traces 
 data = myMovie.loadFrames(1:36000);
-
 [traces] = myMovie.getAllTraces(data);
 
 
@@ -211,7 +152,7 @@ box on
 title('Intensity vs Angle')
 
 %% test plot
-myMovie.plotContour(data,'raw');%raw or clean depending on which we want to use
+myMovie.plotContour(data);%raw or clean depending on which we want to use
 hold on
 scatter(Localization.x,Localization.y,5,'filled')
 

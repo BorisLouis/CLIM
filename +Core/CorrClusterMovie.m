@@ -6,10 +6,12 @@ classdef CorrClusterMovie < Core.Movie
     
     properties (SetAccess = 'private')
         corrRelation
-        corrMask       
+        corrMask
+        cleanMask
         pathRes
         clustLoc
         deconvFunction
+        thresholdScan
         
     end
         
@@ -39,7 +41,7 @@ classdef CorrClusterMovie < Core.Movie
                 %#1 Check if drift was already corrected
                 [run] = obj.checkDrift;
 
-                if run 
+                if or(run,strcmpi(obj.info.runMethod,'run'))
                     correlationInfo.corrSz = 75; %in px. Radius of the ROI used for correlation
                     %correlation function
                     correlationInfo.driftPeriod = 10; %in Frame, Number of frame that are averaged
@@ -213,49 +215,36 @@ classdef CorrClusterMovie < Core.Movie
             box on
             
         end
-        
-
-        
+               
         function [corrRelation] = getPxCorrelation(obj,data,corrInfo)
             %This function scan the image to find pixel that are correlated
             %to other pixel that are close in space (typically check only
             %neighboring pixels
             
             %check if previous data was found
-            [run] = obj.checkPxData;
+            [run] = obj.checkCorrRelation(size(data));
             
             if or(run,strcmpi(obj.info.runMethod,'run'))
             
                 data = double(data);
                 r = corrInfo.r;
-                neigh = corrInfo.neighbor;
-                h=waitbar(0,'Normalizing Data...');
-%                 % #1 Normalize the data
-%                 Does not affect the data so deleted this part
-%                 data2Cluster = data-min(data,[],3);
-%                 data2Cluster = data2Cluster./max(data2Cluster,[],3);
-            
-
-                waitbar(0.1,h,'Getting correlation relationships');
+                neigh = corrInfo.neighbor;      
+               
                 %#2 Get correlation relationship between pixels
                 [corrRelation]  = corrAnalysis.getCorrRelation(data,r,neigh);
-
-                waitbar(0.8,h,'Saving data');
   
                 obj.corrRelation = corrRelation;
                 fileName = [obj.pathRes filesep 'corrRelation.mat'];
                 save(fileName,'corrRelation');
-                waitbar(1,h,'Finished');
-                pause(1);
-                close(h);
-                
+                          
             else
                 
                 disp('found processed data, loading from there');
                 fileName = [obj.pathRes filesep 'corrRelation.mat'];
                 tmp = load(fileName);
-                corrR = tmp.corrR;
+                corrR = tmp.corrRelation;
                 obj.corrRelation = corrR;
+                corrRelation = corrR;
                 
                 disp('Loading DONE');
             end
@@ -269,7 +258,7 @@ classdef CorrClusterMovie < Core.Movie
             %that are correlated
             
             %check if previous data was found
-            [run] = obj.checkCorrMask(corrInfo.thresh);
+            [run] = obj.checkCorrMask(size(data),corrInfo.thresh);
             
             if or(run,strcmpi(obj.info.runMethod,'run'))
                 assert(~isempty(obj.corrRelation),'correlation relation between pixel not found, please run getPxCorrelation first');
@@ -322,81 +311,131 @@ classdef CorrClusterMovie < Core.Movie
             axis image
         
         end
-                
-        function [meanTraces] = checkMask(obj,data,clust)
-            mask = obj.corrMask;
-            data = double(data);
-            %get the requested cluster
-            subMask = mask ==clust;
-            subMask = bwareaopen(subMask,8);
-            subMask = imfill(subMask,8,'holes');
+        
+        function [allCorrMask,thresh2Use] = findOptimalThreshold(obj,data,thresh)
             
-            labSubMask = bwlabel(subMask);
+            %check if previous data was found
+            [run] = obj.checkThreshScan;
             
-            idx = max(labSubMask(:));
-            
-            disp(['Found ' num2str(idx) ' spatially speparated clusters with the number ' num2str(clust)]);
-            
-            meanTraces = zeros(idx,size(data,3));
-            for i = 1:idx
-                % get indices of traces 
-                [row,col] = find(labSubMask==i);
-                r = repmat(row,1,size(data,3));
-                r = reshape(r',size(data,3)*length(row),1);
-                c = repmat(col,1,size(data,3));
-                c = reshape(c',size(data,3)*length(col),1);
+            if or(run,strcmpi(obj.info.runMethod,'run'))
+                corrInfo.r = 1; %radius for checking neighbor
+                corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
                 
-                f = repmat((1:size(data,3))',length(col),1);
-                idx = sub2ind(size(data),r,c,f);
-                
-                %get the data
-                tmpTrace = data(idx);
-                tmpTrace = reshape(tmpTrace,size(data,3),length(row));
-                
-                %check correlation
-                tmpCorr = corrcoef(double(tmpTrace));
-                                              
-                disp(['The min correlation in the cluster is ' num2str(min(tmpCorr(:)))]);
-                disp(['The max correlation in the cluster is ' num2str(max(tmpCorr(tmpCorr<1)))]);
-                disp(['The median correlation in the cluster is ' num2str(median(tmpCorr(tmpCorr<1)))])
-                
-                meanTraces(i,:) = mean(tmpTrace,2);
-                
-                id = randperm(size(tmpTrace,2),5);
-                
-                trace2Show = tmpTrace(:,id);
+                [~] = obj.getPxCorrelation(data,corrInfo);
+
+                allCorrMask = zeros(size(data,1),size(data,2),length(thresh));
+                threshold = zeros(length(thresh),1);
+                treatedArea = zeros(length(thresh),1);
+
+                %scan threshold and determine goodness metric based on
+                %silhouette
+                rearrangeData = reshape(data,[size(data,1)*size(data,2),size(data,3)]);
+                for i = 1:length(thresh)
+                    corrInfo.thresh = thresh(i);
+                    [corrM] = obj.getCorrelationMask(data,corrInfo);
+
+                    label = reshape(corrM,[size(corrM,1)*size(corrM,2),1]);
+
+                    %Calculate silhouette of clusters
+                    tmpRearrangeData = rearrangeData;
+                    tmpRearrangeData(label==0,:) =[];
+                    label(label==0) = [];
+                    silDist = silhouette(tmpRearrangeData,label,'Correlation');
+       
+                    sil(i) = mean(silDist);
+
+                    threshold(i) = corrInfo.thresh;
+
+                    %calculate % of data treated   
+                    treatedArea(i) = sum(corrM(:)>0)./numel(corrM);
+
+                    allCorrMask(:,:,i) = corrM;
+
+                end
+                % find optimal threshold
+                optMetric = sil(:).*treatedArea(:);
                 figure
                 hold on
-                for j = 1 : length(id)
-                   
-                    plot(trace2Show(:,j)./mean(trace2Show(:,j),1));
-                    
-                end
-                plot(meanTraces(i,:)./mean(meanTraces(i,:),2),'linewidth',2,'color',[0.4 0.4 0.4]);
-                xlabel('Frames')
-                ylabel('Norm. Intensity')
+                plot(threshold,optMetric)
+                xlabel('Correlation threshold')
+                ylabel('Mean Silhouette coefficient');
                 axis square
                 box on
-                title(['Cluster ' num2str(clust) '.' num2str(i) ' examplary traces and avg']);
+
+                guess.sig = 0.3;
+                guess.mu = threshold(optMetric==max(optMetric));
+                [FitPar,fit] = Gauss.gauss1D(optMetric,threshold,guess);
+
+                plot(threshold,fit);
+
+                thresh2Use = FitPar(2);
+                
+                %save data
+                threshScan.threshold = threshold;
+                threshScan.sil = sil;
+                threshScan.optMetric = optMetric;
+                threshScan.optMetricType = 'Sil&treatedArea';
+                threshScan.treatedArea = treatedArea;
+                threshScan.corrMask = allCorrMask;
+                threshScan.optThresh = thresh2Use;
+                
+                fileName = [obj.pathRes filesep 'thresholdScan.mat'];
+                save(fileName,'threshScan');
+            
+            else
+                fileName = [obj.pathRes filesep 'thresholdScan.mat'];
+                
+                tmp = load(fileName);
+                obj.thresholdScan = tmp.threshScan;
+                
+                allCorrMask = tmp.threshScan.corrMask;
+                thresh2Use = tmp.threshScan.optThresh;
                 
             end
             
-            meanCorr = corrcoef(meanTraces');
-            uniCorr = unique(meanCorr);
-            disp(['The spatially separated clusters are correlated together with: ' num2str(uniCorr(uniCorr<1)')]);
-            
-            figure
-            hold on
-            for i = 1:size(meanTraces,1)
-                plot(meanTraces(i,:)./mean(meanTraces(i,:)))
+        end
+                
+        function [cleanMask,silMap] = cleanCorrMask(obj,data)
+            corrM = obj.corrMask.raw;
+            traceData = obj.getAllTraces(data);
+            traces = [traceData.trace];
+            silMap = zeros(size(corrM));
+                        
+            [row,col] = find(corrM>0);
+            label = corrM(corrM>0);
+            px2Move = table(zeros(size(label)),zeros(size(label)),zeros(size(label)),'VariableNames',{'currClust','Sil','bestClust'});
+            for i = 1:length(row)
+               %1 get current Trace 
+                currentTrace   = squeeze(data(row(i),col(i),:));
+                currentCluster = label(i);
+               %2 get correlation with each cluster
+                tmpTraces = [traces currentTrace];
+                corrData = corrcoef(double(tmpTraces));
+                
+                currentCorrData = corrData(end,:);
+                currentCorrData(currentCorrData==1) = 0;
+                
+                correlation2Cluster = currentCorrData(currentCluster);
+                [maxCorr,idx2MaxCorr] = maxk(currentCorrData,2);
+                
+                secondBestCorr = max(maxCorr(idx2MaxCorr~=currentCluster));
+                secondBestClust = idx2MaxCorr(maxCorr==secondBestCorr);
+                silMap(row(i),col(i)) = (correlation2Cluster - secondBestCorr)/max([correlation2Cluster,secondBestCorr]);
+                
+                px2Move(i,:).currClust = currentCluster;
+                px2Move(i,:).Sil  = silMap(row(i),col(i));
+                if silMap<-0.2
+                    px2Move(i,:).bestClust = secondBestClust;
+                else
+                    px2Move(i,:).bestClust = currentCluster;
+                end
             end
-            xlabel('Frames')
-            ylabel('Norm. Intensity')
-            title('comp. cluster with same number')
             
+            cleanMask = corrM;
+            cleanMask(silMap<0.2) = 0;
             
         end
-              
+                     
         function plotContour(obj,data,corrM)
             
             switch nargin
@@ -456,7 +495,7 @@ classdef CorrClusterMovie < Core.Movie
         
         function [traceData] = getAllTraces(obj,data)
             assert(~isempty(obj.corrMask),'no corrMask found, please run getCorrMask first');
-            corrM  = obj.corrMask.clean;
+            corrM  = obj.corrMask.raw;
             traces = zeros(max(corrM(:)),size(data,3));
             pos    = zeros(max(corrM(:)),2);
             nClust = max(corrM(:));
@@ -493,59 +532,6 @@ classdef CorrClusterMovie < Core.Movie
             fileName = [obj.pathRes filesep 'traceData' num2str(obj.corrMask.corrThresh) '.mat'];
             save(fileName,'traceData');
                       
-        end
-        
-        function [RGBIM] = getImageFromMask(obj,Mask,color)
-            
-            
-            RGBIM = label2rgb(Mask,color,'k','shuffle');
-
-            figure
-            imagesc(RGBIM)
-            axis image
-            
-%             
-%             colors = colormap(color);
-%             colors = [0,0,0; colors];
-% 
-%             RGBIM = zeros(size(Mask,1),size(Mask,2),3);
-%             
-%             [row,col] = find(Mask==0);
-%             r = repmat(row,1,size(RGBIM,3));
-%             r = reshape(r',size(RGBIM,3)*length(row),1);
-%             c = repmat(col,1,size(RGBIM,3));
-%             c = reshape(c',size(RGBIM,3)*length(col),1);
-% 
-%             f = repmat((1:size(RGBIM,3))',length(col),1);
-%             idx = sub2ind(size(RGBIM),r,c,f);
-%             %color background
-%             
-%             RGBIM(idx) = repmat(colors(1,:)',length(row),1);
-%             %for the 'real' data use everything above 25% of the range so
-%             %the background is more constrasted.
-%             idx2Use = round(0.25*length(colors));
-%             cropColors = colors(idx2Use:end,:);
-%             for i = 1:max(Mask(:))
-%                 [row,col] = find(Mask==i);
-%                 r = repmat(row,1,size(RGBIM,3));
-%                 r = reshape(r',size(RGBIM,3)*length(row),1);
-%                 c = repmat(col,1,size(RGBIM,3));
-%                 c = reshape(c',size(RGBIM,3)*length(col),1);
-% 
-%                 f = repmat((1:size(RGBIM,3))',length(col),1);
-%                 idx = sub2ind(size(RGBIM),r,c,f);
-%                 
-%                 idx2Use = randi(size(cropColors,1));
-%                 
-%                 RGBIM(idx) = repmat(cropColors(idx2Use,:)',length(row),1);
-%                 
-%                 
-%             end
-%             
-%             figure
-%             imagesc(RGBIM)
-%             axis image
-            
         end
         
         function [loc] = getClusterLocalization(obj,data,idx)
@@ -648,7 +634,18 @@ classdef CorrClusterMovie < Core.Movie
             deconvFunc.Data = meanData;
             deconvFunc.smoothed = deconvolveFunc;
             
-         end
+        end
+        
+        function [RGBIM] = getImageFromMask(Mask,color)
+            
+            RGBIM = label2rgb(Mask,color,'k','shuffle');
+
+            figure
+            imagesc(RGBIM)
+            axis image
+            
+        end
+        
     end
     methods(Access = 'private')
         function [run] = checkDrift(obj)
@@ -661,24 +658,47 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
-        function [run] = checkPxData(obj)
+        function [run] = checkCorrRelation(obj,dim)
            
-            path = [obj.pathRes filesep 'pxData.mat'];
+            path = [obj.pathRes filesep 'corrRelation.mat'];
             %test if file exist
             test = isfile(path);
             
+            if test
+                tmp = load(path);
+                dimCorrRel = size(tmp.corrRelation.corrMap);
+                
+                if ~all(dimCorrRel == dim(1:2))
+                    test = false;
+                end                
+            end
+                
+            run = ~test;
+            
+        end
+          
+        function [run] = checkCorrMask(obj,dim,thresh)
+           
+            path = [obj.pathRes filesep 'corrMask' num2str(thresh) '.mat'];
+            test = isfile(path);
+            if test%check if the mask has the correct size
+                mask = load(path);
+                mask = mask.cMask.raw;
+                
+                if ~all(size(mask)==dim(1:2))
+                    test = false;
+                end
+            end
+            %test if file exist
+           
             run = ~test;
             
         end
         
-        
-        function [run] = checkCorrMask(obj,thresh)
-           
-            path = [obj.pathRes filesep 'corrMask' num2str(thresh) '.mat'];
-            %test if file exist
-            test = isfile(path);
-            run = ~test;
-            
+        function [run] = checkThreshScan(obj)
+            path = [obj.pathRes filesep 'thresholdScan.mat'];
+            %run if path does not exist
+            run = ~isfile(path);
         end
         
     end
