@@ -5,12 +5,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\30 - Big algorithm evaluation\Porous';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\22.11.21\Small grain batch1_2\Place1\Air';
 file.ext  = '.spe';
 
-info.runMethod  = 'load';%
+info.runMethod  = 'run';%
 info.driftCorr = true;
-info.ROI = true;%this is to use ROI for the whole analysis
+info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]
 ROI = [64,64,96,96]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 
@@ -26,7 +26,7 @@ myMovie = Core.CorrClusterMovie(file,info);
 myMovie.correctDrift;
 
     
-%%
+%% Loading frames  
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
 
@@ -53,11 +53,13 @@ corrInfo.thresh = threshold2Use;
 [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
 
 
-%% clean up mask
-
+%% clean up mask (+ Silhouette map)
+% THIS STEP IS VERY LONG
+tic
 [cleanMask,silMap] = myMovie.cleanCorrMask(data1);
+toc
 
-%%
+%% Old correlation metrics (histogram)
 %compare the two clusters
 %[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
 [bestClustEval1,bestRelNum] = corrAnalysis.evalClusters(corrMask,correctedData);
@@ -69,7 +71,7 @@ corrAnalysis.compareClusters(relData,label);
 %% Plotting
 myMovie.plotContour(data1);%raw or clean depending on which we want to use
 
-%% 
+%% Plot Contour
 
 myMovie.plotContour(corrRelation.corrMap,corrMask);
 
@@ -78,7 +80,7 @@ myMovie.plotClusterTraces(data1,4);
 
 
 %% Extract intensity traces 
-data = myMovie.loadFrames(1:36000);
+data = myMovie.loadFrames(1:30000);
 [traces] = myMovie.getAllTraces(data);
 
 

@@ -227,8 +227,9 @@ classdef CorrClusterMovie < Core.Movie
             if or(run,strcmpi(obj.info.runMethod,'run'))
             
                 data = double(data);
-                r = corrInfo.r;
-                neigh = corrInfo.neighbor;      
+
+                r = 1;
+                neigh = 8;      
                
                 %#2 Get correlation relationship between pixels
                 [corrRelation]  = corrAnalysis.getCorrRelation(data,r,neigh);
@@ -354,6 +355,7 @@ classdef CorrClusterMovie < Core.Movie
                 end
                 % find optimal threshold
                 optMetric = sil(:).*treatedArea(:);
+                optMetric(isnan(optMetric)) =0;
                 figure
                 hold on
                 plot(threshold,optMetric)
@@ -399,43 +401,75 @@ classdef CorrClusterMovie < Core.Movie
             corrM = obj.corrMask.raw;
             traceData = obj.getAllTraces(data);
             traces = [traceData.trace];
+            
+            clusterCorr = corrcoef(traces);
+            
             silMap = zeros(size(corrM));
                         
-            [row,col] = find(corrM>0);
             label = corrM(corrM>0);
-            px2Move = table(zeros(size(label)),zeros(size(label)),zeros(size(label)),'VariableNames',{'currClust','Sil','bestClust'});
-            for i = 1:length(row)
-               %1 get current Trace 
-                currentTrace   = squeeze(data(row(i),col(i),:));
-                currentCluster = label(i);
-               %2 get correlation with each cluster
-                tmpTraces = [traces currentTrace];
-                corrData = corrcoef(double(tmpTraces));
+            %px2Move = table(zeros(size(label)),zeros(size(label)),zeros(size(label)),'VariableNames',{'currClust','Sil','bestClust'});
+            lab = unique(label);
+            for i = 1:length(lab)
+                idx = lab(i);
+                currClust = idx;
+                [row,col] = find(corrM==currClust);
+                [corr,idx2Clust] = maxk(clusterCorr(currClust,:),10);
+          
+                traces2Comp = traces(:,idx2Clust);
                 
-                currentCorrData = corrData(end,:);
-                currentCorrData(currentCorrData==1) = 0;
-                
-                correlation2Cluster = currentCorrData(currentCluster);
-                [maxCorr,idx2MaxCorr] = maxk(currentCorrData,2);
-                
-                secondBestCorr = max(maxCorr(idx2MaxCorr~=currentCluster));
-                secondBestClust = idx2MaxCorr(maxCorr==secondBestCorr);
-                silMap(row(i),col(i)) = (correlation2Cluster - secondBestCorr)/max([correlation2Cluster,secondBestCorr]);
-                
-                px2Move(i,:).currClust = currentCluster;
-                px2Move(i,:).Sil  = silMap(row(i),col(i));
-                if silMap<-0.2
-                    px2Move(i,:).bestClust = secondBestClust;
-                else
-                    px2Move(i,:).bestClust = currentCluster;
+                for j = 1:length(row)
+                    currentTrace   = squeeze(data(row(j),col(j),:));
+                    tmpTraces = [traces2Comp currentTrace];
+                    corrData = corrcoef(double(tmpTraces));
+
+                    currentCorrData = corrData(end,:);
+                    currentCorrData(currentCorrData==1) = 0;
+                    
+                    [maxCorr,idx2MaxCorr] = maxk(currentCorrData,2);
+                    %get correlation to its own cluster (where correlated
+                    %cluster gave 1 in correlation)
+                    correlation2Cluster = currentCorrData(corr==1);
+                    
+                    
+                    secondBestCorr = max(maxCorr(maxCorr ~= correlation2Cluster));
+                   % secondBestClust = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
+                    silMap(row(j),col(j)) = (correlation2Cluster - secondBestCorr)/max([correlation2Cluster,secondBestCorr]);
+
+%                     px2Move(i,:).currClust = currClust;
+%                     px2Move(i,:).Sil  = silMap(row(i),col(i));
+%                     if silMap<-0.2
+%                         px2Move(i,:).bestClust = secondBestClust;
+%                     else
+%                         px2Move(i,:).bestClust = currClust;
+%                     end
+
                 end
+                
             end
+           
             
             cleanMask = corrM;
             cleanMask(silMap<0.2) = 0;
             
-        end
-                     
+            figure 
+            subplot(1,2,1)
+            imagesc(cleanMask)
+            colormap('colorcube')
+            axis image
+            
+            subplot(1,2,2)
+            imagesc(silMap)
+            colormap('jet')
+            axis image
+          
+            
+            fileName = [obj.pathRes filesep 'SilCleanedCorrMask.mat'];
+            save(fileName,'cleanMask');
+            
+            fileName = [obj.pathRes filesep 'SilhouetteMap.mat'];
+            save(fileName,'silMap');
+            
+        end             
         function plotContour(obj,data,corrM)
             
             switch nargin
@@ -480,7 +514,7 @@ classdef CorrClusterMovie < Core.Movie
         
         function plotClusterTraces(obj,data,idx)
             
-            corrM = obj.corrMask.clean;
+            corrM = obj.corrMask.raw;
             [row,col] = find(corrM==idx);
             trace = zeros(length(row),size(data,3));
             figure 
