@@ -5,14 +5,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\22.11.21\Small grain batch1_2\Place1\Air';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\23.11.21\bigger grain 1.2\place 1\Air';
 file.ext  = '.spe';
 
-info.runMethod  = 'run';%
+info.runMethod  = 'load';%
 info.driftCorr = true;
 info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]
-ROI = [64,64,96,96]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
+ROI = [96 96 64 64]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 
 frame2Process = 1:6000;
 
@@ -35,9 +35,17 @@ data1 = myMovie.loadFrames(frame2Process,ROI);
 
 %% Scanning threshold
 if info.ROI ==false
-    ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
+    myMovie.info.ROIUsed = [];
+    if isempty(ROI)
+        ROICorrData = correctedData;
+    else
+        ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
+        
+    end
 else
     ROICorrData = correctedData;
+    myMovie.info.ROIUsed = ROI;
+    
 end
 
 thresh = minCorr:stepCorr:maxCorr;
@@ -69,7 +77,7 @@ label{1}   = ['Method' '-pseudoClust'];
 corrAnalysis.compareClusters(relData,label);
 
 %% Plotting
-myMovie.plotContour(data1);%raw or clean depending on which we want to use
+myMovie.plotContour(data1(:,:,1),corrMask);%raw or clean depending on which we want to use
 
 %% Plot Contour
 
@@ -78,10 +86,18 @@ myMovie.plotContour(corrRelation.corrMap,corrMask);
 %% Plot traces
 myMovie.plotClusterTraces(data1,4);
 
+%% get image from corrmask with numbered
+color= 'colorcube';
+[corrMaskIM] = myMovie.getImageFromMask(corrMask,color);
 
 %% Extract intensity traces 
 data = myMovie.loadFrames(1:30000);
 [traces] = myMovie.getAllTraces(data);
+
+
+%% Generate final Output
+
+[corrOutput] = myMovie.generateResults;
 
 
 %% Get interCluster traces
@@ -123,9 +139,7 @@ data = myMovie.loadFrames(1:30000);
 %     disp(test);
 % end
 
-%% get image from corrmask
-color= 'colorcube';
-[corrMaskIM] = myMovie.getImageFromMask(corrMask,color);
+
 
 %% Calculate localization on cluster to get the position of the defect
 %[allLoc] =myMovie.getAllClusterLocalization(data);

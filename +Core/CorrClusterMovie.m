@@ -5,15 +5,19 @@ classdef CorrClusterMovie < Core.Movie
     %any data inside. Methods allow to display and do stuff with the data.
     
     properties (SetAccess = 'private')
+        deconvFunction
         corrRelation
         corrMask
-        cleanMask
         pathRes
+        cleanMask
+        traceData
+        silMap
         clustLoc
-        deconvFunction
         thresholdScan
         
     end
+    
+  
         
     methods
         function obj = CorrClusterMovie(raw,info)
@@ -399,8 +403,12 @@ classdef CorrClusterMovie < Core.Movie
                 
         function [cleanMask,silMap] = cleanCorrMask(obj,data)
             corrM = obj.corrMask.raw;
-            traceData = obj.getAllTraces(data);
-            traces = [traceData.trace];
+            if isempty(obj.traceData)
+                traceD = obj.getAllTraces(data);
+            else
+                traceD = obj.traceData;
+            end
+                traces = [traceD.trace];
             
             clusterCorr = corrcoef(traces);
             
@@ -450,6 +458,8 @@ classdef CorrClusterMovie < Core.Movie
             
             cleanMask = corrM;
             cleanMask(silMap<0.2) = 0;
+            obj.cleanMask = cleanMask;
+            obj.silMap = silMap;
             
             figure 
             subplot(1,2,1)
@@ -482,7 +492,7 @@ classdef CorrClusterMovie < Core.Movie
                     error('Too many input arguments')
             end
             
-            maxIm = max(data,[],3);
+            meanIm = mean(data,3);
             
             contour = cell(length(unique(corrM)),1);
             n = 1;
@@ -496,7 +506,7 @@ classdef CorrClusterMovie < Core.Movie
 
             figure
             hold on
-            imagesc(maxIm)
+            imagesc(meanIm)
             for i = 1:size(contour,1)
                               
 
@@ -507,8 +517,8 @@ classdef CorrClusterMovie < Core.Movie
             end
             axis ij
             
-            xlim([1 size(maxIm,2)])
-            ylim([1 size(maxIm,1)]);
+            xlim([1 size(meanIm,2)])
+            ylim([1 size(meanIm,1)]);
             
         end
         
@@ -527,15 +537,15 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
-        function [traceData] = getAllTraces(obj,data)
+        function [traceD] = getAllTraces(obj,data)
             assert(~isempty(obj.corrMask),'no corrMask found, please run getCorrMask first');
             corrM  = obj.corrMask.raw;
             traces = zeros(max(corrM(:)),size(data,3));
             pos    = zeros(max(corrM(:)),2);
             nClust = max(corrM(:));
-            traceData = struct('trace',0,'clustPos',0,...
-                'nPx',0,'method',0);
-            traceData(nClust).trace = 0;
+            traceD = struct('trace',0,'clustPos',0,...
+                'nPx',0,'clustIdx',0,'method',0);
+            traceD(nClust).trace = 0;
             
             for i = 1 : nClust
                 % get indices of traces 
@@ -555,18 +565,58 @@ classdef CorrClusterMovie < Core.Movie
                 traces(i,:) = mean(tmpTrace,2);
                 pos(i,:)    = [mean(row), mean(col)];
                 
-                traceData(i).trace = mean(tmpTrace,2);
-                traceData(i).clustPos = id;
-                traceData(i).nPx = numel(id);
-                traceData(i).method = 'mean';
+                traceD(i).trace = mean(tmpTrace,2);
+                traceD(i).clustPos = id;
+                traceD(i).nPx = numel(id);
+                traceD(i).clustIdx = i;
+                traceD(i).method = 'mean';
                                             
             end
             
+            obj.traceData = traceD;
             %save output
             fileName = [obj.pathRes filesep 'traceData' num2str(obj.corrMask.corrThresh) '.mat'];
-            save(fileName,'traceData');
+            save(fileName,'traceD');
                       
         end
+        
+        function [corrOutput] = generateResults(obj)
+            assert(~isempty(obj.traceData),'Need to run getAllTraces Firts');
+            
+            results = obj.traceData;
+            mask = obj.corrMask.raw;
+            silM = obj.silMap;
+            nClust = length(unique(mask(mask>0)));
+            assert(length(results)==nClust,'Something is inconsistent in the data');
+            
+            for i = 1 : nClust
+                % get indices of traces 
+                cMask = mask==i;
+                meanSil = mean(silM(cMask));
+                results(i).meanSil = meanSil;
+                      
+            end
+            
+            corrOutput.path = obj.raw.fullPath;
+            corrOutput.frames = obj.raw.maxFrame;
+            corrOutput.corrMap = obj.corrRelation.corrMap;
+            corrOutput.corrMask = obj.corrMask.raw;
+            corrOutput.rawNCluster = obj.corrMask.rawNCluster;
+            corrOutput.threshold = obj.corrMask.corrThresh;
+            corrOutput.method = obj.corrMask.method;
+            corrOutput.cleanMask = obj.cleanMask;
+            corrOutput.ROI = obj.info.ROI;
+            if isfield(obj.info,'ROIUsed')
+                corrOutput.ROIUsed = obj.info.ROIUsed;
+            end
+            corrOutput.silMap    = obj.silMap;
+            corrOutput.results   = results;
+            
+            fileName = [obj.raw.movInfo.Path filesep 'corrAnalysisResults-' num2str(obj.corrMask.corrThresh) '.mat'];
+            save(fileName,'corrOutput');
+
+        end
+        
         
         function [loc] = getClusterLocalization(obj,data,idx)
             cMask = obj.corrMask;
@@ -647,6 +697,7 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
+        
     end
     methods(Static)
         function [correctedData,deconvFunc] = deconvolveFromMean(data)
@@ -677,6 +728,22 @@ classdef CorrClusterMovie < Core.Movie
             figure
             imagesc(RGBIM)
             axis image
+            
+            figure
+            imagesc(RGBIM)
+            axis image
+            
+            hold on
+            
+            centers = regionprops(Mask,'Centroid');
+            
+            for i = 1:length(unique(Mask(Mask>0)))
+                 x = centers(i).Centroid(1);
+                 y = centers(i).Centroid(2);
+                 
+                 text(x,y,['.',num2str(i)],'FontSize',8,'Color','white')
+                
+            end
             
         end
         
