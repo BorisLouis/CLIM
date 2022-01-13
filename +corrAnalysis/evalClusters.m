@@ -1,4 +1,4 @@
-function [clustEval,relNum] = evalClusters(mask,data)
+function [clustEval,relNum,corr2ClusterMap] = evalClusters(mask,data)
     assert(ndims(data)==3,'Data is expected to have 3 dimensions');
 
     if iscell(mask)
@@ -14,7 +14,7 @@ function [clustEval,relNum] = evalClusters(mask,data)
             zeros(nClusters,1),'VariableNames',...
             {'meanCorr','medCorr','std','varCoeff','minCorr','maxCorr','nPixels'});
         traces = zeros(nClusters,size(data,3));
-        
+        corr2ClusterMap = zeros(size(mask));
         for i = 1 :nClusters
            
             %get indices of mask for current cluster index
@@ -30,7 +30,7 @@ function [clustEval,relNum] = evalClusters(mask,data)
                 
             else
                 % We calculate the average trace
-                [row,col] = find(mask==i);
+                [row,col] = find(mask==clusterID(i));
                 r = repmat(row,1,size(data,3));
                 r = reshape(r',size(data,3)*length(row),1);
                 c = repmat(col,1,size(data,3));
@@ -46,25 +46,35 @@ function [clustEval,relNum] = evalClusters(mask,data)
                 
                 %get Distance map for current cluster
                 corrMat = 1-corrAnalysis.getDistanceMapFromPxList(currInds,data);
-
+                
+                corrMat(corrMat==1) = nan;
+                
+                corr2ClusterMap(currInds) = nanmean(corrMat,2);
+                
                 %calculate some simple stats on the cluster
-                clustEval.meanCorr(i) = mean(corrMat(corrMat<1));
-                clustEval.medCorr(i)  = median(corrMat(corrMat<1));
-                clustEval.std(i)      = std(corrMat(corrMat<1));
+                clustEval.meanCorr(i) = nanmean(corrMat(corrMat<1));
+                clustEval.medCorr(i)  = nanmedian(corrMat(corrMat<1));
+                clustEval.std(i)      = nanstd(corrMat(corrMat<1));
                 clustEval.varCoeff(i) = clustEval.std(i)/clustEval.meanCorr(i);
-                clustEval.minCorr(i) = min(corrMat(corrMat<1));
-                clustEval.maxCorr(i) = max(corrMat(corrMat<1));
-
+                clustEval.minCorr(i) = nanmin(corrMat(corrMat<1));
+                clustEval.maxCorr(i) = nanmax(corrMat(corrMat<1));
+                clustEval.Intensity(i) = mean(traces(i,:));
                 clustEval.nPixels(i) = length(currInds);
             
             end            
         end
         %Process the traces
         corrCoeff = corrcoef(traces');
-
+        
         U = triu(corrCoeff);
         U = nonzeros(U);
         data = U(U<1);
+        
+        % store interclusterCorr
+        corrCoeff(corrCoeff==1) = nan;
+        clustEval.meanInterClustCorr = nanmean(corrCoeff,2);
+        clustEval.maxInterClustCorr  = nanmax(corrCoeff,[],2);
+        
         
         relNum.meanCorr = wmean(clustEval.meanCorr,clustEval.nPixels);
         relNum.medCorr  = wmean(clustEval.medCorr,clustEval.nPixels);
@@ -72,6 +82,7 @@ function [clustEval,relNum] = evalClusters(mask,data)
         relNum.varCoeff = wmean(clustEval.varCoeff,clustEval.nPixels);
         relNum.minCorr  = wmean(clustEval.minCorr,clustEval.nPixels);
         relNum.maxCorr  = wmean(clustEval.maxCorr,clustEval.nPixels);
+        relNum.meanInt  = wmean(clustEval.Intensity,clustEval.nPixels);
         relNum.meanSize = mean(clustEval.nPixels);
         relNum.meanInterClusterCorr = mean(data);
         relNum.stdInterClusterCorr  = std(data);

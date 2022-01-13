@@ -10,6 +10,7 @@ classdef CorrClusterMovie < Core.Movie
         corrRelation
         corrMask
         clustEval
+        corrClustMap
         cleanMask
         silMap
         traceData
@@ -539,16 +540,16 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
-        function [clustEval1,relNum] = evalCluster(obj,corrMask,data)
+        function [clustEval1,relNum,corrClustMap] = evalCluster(obj,corrMask,data)
             
-            [clustEval1,relNum] = corrAnalysis.evalClusters(corrMask,data);
+            [clustEval1,relNum,corrClustMap] = corrAnalysis.evalClusters(corrMask,data);
             relData{1} = relNum;
             label{1}   = ['Method' '-pseudoClust'];
             corrAnalysis.compareClusters(relData,label);
 
             obj.clustEval = clustEval1;
-            
-            
+            obj.corrClustMap = corrClustMap;
+                 
         end
         
         function [traceD] = getAllTraces(obj,data)
@@ -612,6 +613,9 @@ classdef CorrClusterMovie < Core.Movie
                 results(i).meanCorr = corrMetrics.meanCorr(i);
                 results(i).stdCorr = corrMetrics.std(i);
                 results(i).minCorr = corrMetrics.minCorr(i);
+                results(i).Intensity = corrMetrics.Intensity(i);
+                results(i).meanInterClustCorr(i) = corrMetrics.meanInterClustCorr(i);
+                results(i).maxInterClustCorr(i)  = corrMetrics.maxInterClustCorr(i);
                       
             end
             
@@ -629,6 +633,7 @@ classdef CorrClusterMovie < Core.Movie
                 corrOutput.ROIUsed = obj.info.ROIUsed;
             end
             corrOutput.silMap    = obj.silMap;
+            corrOutput.corrClustMap = obj.corrClustMap;
             corrOutput.results   = results;
             
             fileName = [obj.raw.movInfo.Path filesep 'corrAnalysisResults-' num2str(obj.corrMask.corrThresh) '.mat'];
