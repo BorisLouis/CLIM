@@ -6,12 +6,14 @@ classdef CorrClusterMovie < Core.Movie
     
     properties (SetAccess = 'private')
         deconvFunction
+        pathRes
         corrRelation
         corrMask
-        pathRes
+        clustEval
         cleanMask
-        traceData
         silMap
+        traceData
+        
         clustLoc
         thresholdScan
         
@@ -537,6 +539,18 @@ classdef CorrClusterMovie < Core.Movie
             
         end
         
+        function [clustEval1,relNum] = evalCluster(obj,corrMask,data)
+            
+            [clustEval1,relNum] = corrAnalysis.evalClusters(corrMask,data);
+            relData{1} = relNum;
+            label{1}   = ['Method' '-pseudoClust'];
+            corrAnalysis.compareClusters(relData,label);
+
+            obj.clustEval = clustEval1;
+            
+            
+        end
+        
         function [traceD] = getAllTraces(obj,data)
             assert(~isempty(obj.corrMask),'no corrMask found, please run getCorrMask first');
             corrM  = obj.corrMask.raw;
@@ -584,6 +598,7 @@ classdef CorrClusterMovie < Core.Movie
             assert(~isempty(obj.traceData),'Need to run getAllTraces Firts');
             
             results = obj.traceData;
+            corrMetrics = obj.clustEval;
             mask = obj.corrMask.raw;
             silM = obj.silMap;
             nClust = length(unique(mask(mask>0)));
@@ -594,6 +609,9 @@ classdef CorrClusterMovie < Core.Movie
                 cMask = mask==i;
                 meanSil = mean(silM(cMask));
                 results(i).meanSil = meanSil;
+                results(i).meanCorr = corrMetrics.meanCorr(i);
+                results(i).stdCorr = corrMetrics.std(i);
+                results(i).minCorr = corrMetrics.minCorr(i);
                       
             end
             
@@ -606,6 +624,7 @@ classdef CorrClusterMovie < Core.Movie
             corrOutput.method = obj.corrMask.method;
             corrOutput.cleanMask = obj.cleanMask;
             corrOutput.ROI = obj.info.ROI;
+            
             if isfield(obj.info,'ROIUsed')
                 corrOutput.ROIUsed = obj.info.ROIUsed;
             end

@@ -68,13 +68,8 @@ tic
 toc
 
 %% Old correlation metrics (histogram)
-%compare the two clusters
-%[~,relNum2] = compare2Cluster(corrMask,cleanedCorrMask,data,'V1');
-[bestClustEval1,bestRelNum] = corrAnalysis.evalClusters(corrMask,correctedData);
+[bestClustEval1,bestRelNum] = myMovie.evalCluster(corrMask,correctedData);
 
-relData{1} = bestRelNum;
-label{1}   = ['Method' '-pseudoClust'];
-corrAnalysis.compareClusters(relData,label);
 
 %% Plotting
 myMovie.plotContour(data1(:,:,1),corrMask);%raw or clean depending on which we want to use
