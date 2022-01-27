@@ -60,6 +60,7 @@ function [clustEval,relNum,corr2ClusterMap] = evalClusters(mask,data)
                 clustEval.maxCorr(i) = nanmax(corrMat(corrMat<1));
                 clustEval.Intensity(i) = mean(traces(i,:));
                 clustEval.nPixels(i) = length(currInds);
+                clustEval.Amp(i)     = (max(traces(i,:))-min(traces(i,:)))/max(traces(i,:));
             
             end            
         end

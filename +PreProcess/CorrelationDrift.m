@@ -8,7 +8,12 @@ frame1 = im_In(:,:,1);
 [lb,ub] = getCropPar(frame1,corrSz);
 
 %cropping
-imCropped = im_In(lb(1): ub(1),lb(2):ub(2),:);
+if or(isnan(lb),isnan(ub))
+    imCropped = im_In;
+else
+    imCropped = im_In(lb(1): ub(1),lb(2):ub(2),:);
+
+end
 
 correctedStack = zeros(size(im_In));
 Drift=zeros(size(imCropped,3),2);

@@ -4,22 +4,26 @@
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+clear
+clc
+close all
+
 %% User input
 file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\23.11.21\bigger grain 1.2\place 1\Air';
-file.ext  = '.spe';
+file.ext  = '';
 
 info.runMethod  = 'load';%
-info.driftCorr = true;
+info.driftCorr = false;
 info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]
-ROI = [96 96 64 64]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
+ROI = [5 71 230 141]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 
 frame2Process = 1:6000;
 
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
-
+deconvolve = true;
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
 
@@ -29,18 +33,28 @@ myMovie.correctDrift;
 %% Loading frames  
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
-
+%% 
+myMovie.saveMovie(data1,50);
 %% Deconvolution
-[correctedData] =  myMovie.deconvolve(data1);
-
+if deconvolve
+    [correctedData] =  myMovie.deconvolve(data1);
+else
+    correctedData = data1;
+end
 %% Scanning threshold
 if info.ROI ==false
     myMovie.info.ROIUsed = [];
     if isempty(ROI)
         ROICorrData = correctedData;
     else
-        ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
-        
+        try
+            testROIRadius = 32;
+            ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
+        catch except
+            if strcmp(except.identifier, 'MATLAB:badsubscript')
+                ROICorrData = correctedData;
+            end
+        end
     end
 else
     ROICorrData = correctedData;
@@ -62,10 +76,8 @@ corrInfo.thresh = threshold2Use;
 
 
 %% clean up mask (+ Silhouette map)
-% THIS STEP IS VERY LONG
-tic
-[cleanMask,silMap] = myMovie.cleanCorrMask(data1);
-toc
+
+[cleanMask,silMap] = myMovie.cleanCorrMask(correctedData);
 
 %% Old correlation metrics (histogram)
 [bestClustEval1,bestRelNum] = myMovie.evalCluster(corrMask,correctedData);

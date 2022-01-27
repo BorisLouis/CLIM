@@ -9,7 +9,7 @@ if strcmp(model.name, 'gaussian')
     f1 = ((Xgrid - xpos).^2) / (2*(sigma_x.^2));
     f2 = ((Ygrid - ypos).^2) / (2*(sigma_y.^2));
     A  = 1/(2*pi*sigma_x*sigma_y);  
-    psf = A * exp(-(f1+f2));
+    psf = 1 * exp(-(f1+f2));
 else
     error('Other models are not implemented yet');
 end

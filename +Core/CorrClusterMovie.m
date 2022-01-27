@@ -12,7 +12,7 @@ classdef CorrClusterMovie < Core.Movie
         clustEval
         corrClustMap
         cleanMask
-        silMap
+        sil
         traceData
         
         clustLoc
@@ -45,7 +45,7 @@ classdef CorrClusterMovie < Core.Movie
             if obj.info.driftCorr
                 disp('Correcting drift')
                 disp('Check if drift corrected data exist')
-                %#1 Check if drift was already corrected
+                %1 Check if drift was already corrected
                 [run] = obj.checkDrift;
 
                 if or(run,strcmpi(obj.info.runMethod,'run'))
@@ -58,20 +58,25 @@ classdef CorrClusterMovie < Core.Movie
                     %objects of interest
                     
                     disp('Loading Data ...')
-                    h = waitbar(0,'Loading Frames');
+                    %h = waitbar(0,'Loading Frames');
                     nFrame = obj.raw.movInfo.maxFrame;
-                    allFrames = zeros(obj.raw.movInfo.Length,obj.raw.movInfo.Width,nFrame);
-                    for i = 1:nFrame
+                    %allFrames = zeros(obj.raw.movInfo.Length,obj.raw.movInfo.Width,nFrame);
+                    
+                    disp(['Loading Frames ...'])
+                    allFrames = obj.getFrame;
+%                     for i = 1:nFrame
+% 
+%                         allFrames(:,:,i) = uint16(obj.getFrame(i));
+%                         waitbar(i/(nFrame),h,...
+%                             ['Loading Frames ' num2str(i) '/' num2str(nFrame)]);
+% 
+%                     end
+%                     close(h);
 
-                        allFrames(:,:,i) = uint16(obj.getFrame(i));
-                        waitbar(i/(nFrame),h,...
-                            ['Loading Frames ' num2str(i) '/' num2str(nFrame)]);
-
-                    end
-                    close(h);
+                    disp('====>DONE<=====')
                     disp('Correcting drift...')
                     %fix Drift
-                    [corrData,~] = PreProcess.CorrelationDrift(allFrames,scalingFactor,correlationInfo);
+                    [corrData,Drift] = PreProcess.CorrelationDrift(double(allFrames),scalingFactor,correlationInfo);
 
                     currentFolder = obj.raw.movInfo.Path;
 
@@ -205,7 +210,8 @@ classdef CorrClusterMovie < Core.Movie
             %deconvolve data
             [correctedData,deconvFunc] = Core.CorrClusterMovie.deconvolveFromMean(bkgCorrData);
             
-            obj.deconvFunction.Curve = deconvFunc;
+            obj.deconvFunction.Curve = deconvFunc.Data;
+            obj.deconvFunction.Smoothed = deconvFunc.smoothed;
             
             figure
             subplot(1,2,1)
@@ -238,7 +244,7 @@ classdef CorrClusterMovie < Core.Movie
                 r = 1;
                 neigh = 8;      
                
-                %#2 Get correlation relationship between pixels
+                %2 Get correlation relationship between pixels
                 [corrRelation]  = corrAnalysis.getCorrRelation(data,r,neigh);
   
                 obj.corrRelation = corrRelation;
@@ -329,8 +335,12 @@ classdef CorrClusterMovie < Core.Movie
                 corrInfo.r = 1; %radius for checking neighbor
                 corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
                 
-                [~] = obj.getPxCorrelation(data,corrInfo);
-
+%                 noise2Add = randn(size(data))*10;
+%                 
+%                 data2Save = uint16(int16(data)+int16(noise2Add));
+%                 
+%                 [corrRelation] = obj.getPxCorrelation(data2Save,corrInfo);
+                [corrRelation] = obj.getPxCorrelation(data,corrInfo);
                 allCorrMask = zeros(size(data,1),size(data,2),length(thresh));
                 threshold = zeros(length(thresh),1);
                 treatedArea = zeros(length(thresh),1);
@@ -348,7 +358,7 @@ classdef CorrClusterMovie < Core.Movie
                     tmpRearrangeData = rearrangeData;
                     tmpRearrangeData(label==0,:) =[];
                     label(label==0) = [];
-                    silDist = silhouette(tmpRearrangeData,label,'Correlation');
+                    silDist = silhouette(double(tmpRearrangeData),label,'Correlation');
        
                     sil(i) = mean(silDist);
 
@@ -415,26 +425,38 @@ classdef CorrClusterMovie < Core.Movie
             
             clusterCorr = corrcoef(traces);
             
+            stats = regionprops(corrM,'Centroid');
+           
             silMap = zeros(size(corrM));
                         
             label = corrM(corrM>0);
             %px2Move = table(zeros(size(label)),zeros(size(label)),zeros(size(label)),'VariableNames',{'currClust','Sil','bestClust'});
             lab = unique(label);
+            secondBestPerCluster = zeros(size(lab));
             for i = 1:length(lab)
+                %gather current cluster
                 idx = lab(i);
                 currClust = idx;
                 [row,col] = find(corrM==currClust);
-                [corr,idx2Clust] = maxk(clusterCorr(currClust,:),10);
-          
-                traces2Comp = traces(:,idx2Clust);
                 
+                %get the index of top 10 closest cluster
+                currCenter = stats(idx).Centroid;
+                dist = cellfun(@(x) abs(x-currCenter),{stats.Centroid},'UniformOutput',false);
+                euclDist = cellfun(@(x) sqrt(sum(x.^2)),dist);
+                [~,idx2Clust] = mink(euclDist,10); 
+                %previously getting top 10 correlated
+                %[corr,idx2Clust] = maxk(clusterCorr(currClust,:),10);
+                corr = clusterCorr(currClust,idx2Clust);
+                traces2Comp = traces(:,idx2Clust);
+                secondBestPerPixel = zeros(size(row));
                 for j = 1:length(row)
                     currentTrace   = squeeze(data(row(j),col(j),:));
                     tmpTraces = [traces2Comp currentTrace];
                     corrData = corrcoef(double(tmpTraces));
 
                     currentCorrData = corrData(end,:);
-                    currentCorrData(currentCorrData==1) = 0;
+                    currentCorrData(currentCorrData==1) = -inf;
+                    
                     
                     [maxCorr,idx2MaxCorr] = maxk(currentCorrData,2);
                     %get correlation to its own cluster (where correlated
@@ -442,9 +464,11 @@ classdef CorrClusterMovie < Core.Movie
                     correlation2Cluster = currentCorrData(corr==1);
                     
                     
-                    secondBestCorr = max(maxCorr(maxCorr ~= correlation2Cluster));
+                    [secondBestCorr,id] = max(maxCorr(maxCorr ~= correlation2Cluster));
                    % secondBestClust = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
                     silMap(row(j),col(j)) = (correlation2Cluster - secondBestCorr)/max([correlation2Cluster,secondBestCorr]);
+                    
+                    secondBestPerPixel(j) = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
 
 %                     px2Move(i,:).currClust = currClust;
 %                     px2Move(i,:).Sil  = silMap(row(i),col(i));
@@ -456,13 +480,19 @@ classdef CorrClusterMovie < Core.Movie
 
                 end
                 
+                x = unique(secondBestPerPixel);
+                bestMatchCount = groupcounts(secondBestPerPixel);
+                [~,ii] = max(bestMatchCount);
+                secondBestPerCluster(i) = x(ii);
+
             end
            
             
             cleanMask = corrM;
             cleanMask(silMap<0.2) = 0;
             obj.cleanMask = cleanMask;
-            obj.silMap = silMap;
+            obj.sil.map = silMap;
+            obj.sil.secondBest = secondBestPerCluster;
             
             figure 
             subplot(1,2,1)
@@ -598,10 +628,13 @@ classdef CorrClusterMovie < Core.Movie
         function [corrOutput] = generateResults(obj)
             assert(~isempty(obj.traceData),'Need to run getAllTraces Firts');
             
+            
+            examplaryFrame = obj.getFrame(round(obj.raw.maxFrame/2));
             results = obj.traceData;
             corrMetrics = obj.clustEval;
             mask = obj.corrMask.raw;
-            silM = obj.silMap;
+            silM = obj.sil.map;
+            secondBestClust = obj.sil.secondBest;
             nClust = length(unique(mask(mask>0)));
             assert(length(results)==nClust,'Something is inconsistent in the data');
             
@@ -614,13 +647,17 @@ classdef CorrClusterMovie < Core.Movie
                 results(i).stdCorr = corrMetrics.std(i);
                 results(i).minCorr = corrMetrics.minCorr(i);
                 results(i).Intensity = corrMetrics.Intensity(i);
-                results(i).meanInterClustCorr(i) = corrMetrics.meanInterClustCorr(i);
-                results(i).maxInterClustCorr(i)  = corrMetrics.maxInterClustCorr(i);
-                      
+                results(i).Amp = corrMetrics.Amp(i);
+                results(i).meanInterClustCorr = corrMetrics.meanInterClustCorr(i);
+                results(i).maxInterClustCorr  = corrMetrics.maxInterClustCorr(i);
+                results(i).secondBestClust = secondBestClust(i);
+                
             end
             
+            corrOutput.deconvFunction = obj.deconvFunction;
             corrOutput.path = obj.raw.fullPath;
             corrOutput.frames = obj.raw.maxFrame;
+            corrOutput.Image  = examplaryFrame;
             corrOutput.corrMap = obj.corrRelation.corrMap;
             corrOutput.corrMask = obj.corrMask.raw;
             corrOutput.rawNCluster = obj.corrMask.rawNCluster;
@@ -632,7 +669,7 @@ classdef CorrClusterMovie < Core.Movie
             if isfield(obj.info,'ROIUsed')
                 corrOutput.ROIUsed = obj.info.ROIUsed;
             end
-            corrOutput.silMap    = obj.silMap;
+            corrOutput.silMap    = obj.sil.map;
             corrOutput.corrClustMap = obj.corrClustMap;
             corrOutput.results   = results;
             
@@ -641,6 +678,24 @@ classdef CorrClusterMovie < Core.Movie
 
         end
         
+        function saveMovie(obj,data,fps)
+            path2File = obj.pathRes; 
+            filename=sprintf('%s%smovie.%s', path2File,'\','avi');
+            
+            v = VideoWriter(filename,'Indexed AVI');
+            v.Colormap = colormap(gray);
+            v.FrameRate = fps;
+            open(v);
+            %convert to uint8
+            data = double(data);
+            normData = data./max(data(:))*255;
+            normData(normData<0) = 0;
+            
+            writeVideo(v,uint8(normData(:,:,1:10:end)))
+            close(v);
+            
+          
+        end
         
         function [loc] = getClusterLocalization(obj,data,idx)
             cMask = obj.corrMask;
@@ -770,6 +825,7 @@ classdef CorrClusterMovie < Core.Movie
             end
             
         end
+         
         
     end
     methods(Access = 'private')
