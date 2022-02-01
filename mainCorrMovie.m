@@ -9,15 +9,15 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\23.11.21\bigger grain 1.2\place 1\Air';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\23.11.21\bigger grain 1.2\place 2\Air';
 file.ext  = '';
 
-info.runMethod  = 'load';%
+info.runMethod  = 'run';%
 info.driftCorr = false;
-info.ROI = false;%this is to use ROI for the whole analysis
+info.ROI = true;%this is to use ROI for the whole analysis
 %      [x y  w h]
-ROI = [5 71 230 141]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
-
+ROI = [5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
+testROIRadius = 32;
 frame2Process = 1:6000;
 
 minCorr = 0.4;%Minimum correlation we want to have
@@ -42,24 +42,20 @@ else
     correctedData = data1;
 end
 %% Scanning threshold
+center = [round(size(correctedData,1)/2), round(size(correctedData,2)/2)];
 if info.ROI ==false
-    myMovie.info.ROIUsed = [];
-    if isempty(ROI)
-        ROICorrData = correctedData;
-    else
-        try
-            testROIRadius = 32;
-            ROICorrData = correctedData(ROI(2):ROI(2)+ROI(4)-1,ROI(1):ROI(1)+ROI(3)-1,:);
-        catch except
-            if strcmp(except.identifier, 'MATLAB:badsubscript')
-                ROICorrData = correctedData;
-            end
-        end
-    end
+    myMovie.info.ROIUsed = [];    
 else
     ROICorrData = correctedData;
     myMovie.info.ROIUsed = ROI;
-    
+end
+try
+        
+    ROICorrData = correctedData(center(1)-testROIRadius:center(1)+testROIRadius-1,center(2)-testROIRadius:center(2)+testROIRadius-1,:);
+catch except
+    if strcmp(except.identifier, 'MATLAB:badsubscript')
+        ROICorrData = correctedData;
+    end
 end
 
 thresh = minCorr:stepCorr:maxCorr;
@@ -98,7 +94,7 @@ color= 'colorcube';
 [corrMaskIM] = myMovie.getImageFromMask(corrMask,color);
 
 %% Extract intensity traces 
-data = myMovie.loadFrames(1:30000);
+data = myMovie.loadFrames(1:30000,ROI);
 [traces] = myMovie.getAllTraces(data);
 
 

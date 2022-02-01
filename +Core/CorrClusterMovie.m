@@ -382,7 +382,7 @@ classdef CorrClusterMovie < Core.Movie
                 box on
 
                 guess.sig = 0.3;
-                guess.mu = threshold(optMetric==max(optMetric));
+                guess.mu = 0.6;
                 [FitPar,fit] = Gauss.gauss1D(optMetric,threshold,guess);
 
                 plot(threshold,fit);
