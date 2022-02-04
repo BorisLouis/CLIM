@@ -9,7 +9,7 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\23.11.21\bigger grain 1.2\place 2\Air';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\22.11.21\Small grain batch1_2\Place1\N2';
 file.ext  = '';
 
 info.runMethod  = 'run';%

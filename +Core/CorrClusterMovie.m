@@ -334,13 +334,8 @@ classdef CorrClusterMovie < Core.Movie
             if or(run,strcmpi(obj.info.runMethod,'run'))
                 corrInfo.r = 1; %radius for checking neighbor
                 corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
-                
-%                 noise2Add = randn(size(data))*10;
-%                 
-%                 data2Save = uint16(int16(data)+int16(noise2Add));
-%                 
-%                 [corrRelation] = obj.getPxCorrelation(data2Save,corrInfo);
-                [corrRelation] = obj.getPxCorrelation(data,corrInfo);
+
+                [~] = obj.getPxCorrelation(data,corrInfo);
                 allCorrMask = zeros(size(data,1),size(data,2),length(thresh));
                 threshold = zeros(length(thresh),1);
                 treatedArea = zeros(length(thresh),1);
@@ -348,6 +343,7 @@ classdef CorrClusterMovie < Core.Movie
                 %scan threshold and determine goodness metric based on
                 %silhouette
                 rearrangeData = reshape(data,[size(data,1)*size(data,2),size(data,3)]);
+                Sil = zeros(length(thresh),1);
                 for i = 1:length(thresh)
                     corrInfo.thresh = thresh(i);
                     [corrM] = obj.getCorrelationMask(data,corrInfo);
@@ -360,7 +356,7 @@ classdef CorrClusterMovie < Core.Movie
                     label(label==0) = [];
                     silDist = silhouette(double(tmpRearrangeData),label,'Correlation');
        
-                    sil(i) = mean(silDist);
+                    Sil(i) = mean(silDist);
 
                     threshold(i) = corrInfo.thresh;
 
@@ -371,7 +367,7 @@ classdef CorrClusterMovie < Core.Movie
 
                 end
                 % find optimal threshold
-                optMetric = sil(:).*treatedArea(:);
+                optMetric = Sil(:).*treatedArea(:);
                 optMetric(isnan(optMetric)) =0;
                 figure
                 hold on
@@ -381,17 +377,17 @@ classdef CorrClusterMovie < Core.Movie
                 axis square
                 box on
 
-                guess.sig = 0.3;
-                guess.mu = 0.6;
-                [FitPar,fit] = Gauss.gauss1D(optMetric,threshold,guess);
+%                 guess.sig = 0.3;
+%                 guess.mu = 0.6;
+%                 [FitPar,fit] = Gauss.gauss1D(optMetric,threshold,guess);
+% 
+%                 plot(threshold,fit);
 
-                plot(threshold,fit);
-
-                thresh2Use = FitPar(2);
+                thresh2Use = max(optMetric);
                 
                 %save data
                 threshScan.threshold = threshold;
-                threshScan.sil = sil;
+                threshScan.sil = Sil;
                 threshScan.optMetric = optMetric;
                 threshScan.optMetricType = 'Sil&treatedArea';
                 threshScan.treatedArea = treatedArea;
