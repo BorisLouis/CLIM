@@ -32,7 +32,7 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
         %pixels
         %currVal(ismember(currList,treatedIdx,'row'),:) =[];
         currList(ismember(currList,treatedIdx,'row'),:) =[];
-        
+        currList(~ismember(currList,indsCopy,'row'),:) = [];
         tmpList = [currIndex; currList];
         
         %add the pixel to the cluster
@@ -81,29 +81,31 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
                 
                 %remove already treated pixels from the list:
                 list2Add(ismember(list2Add,treatedIdx,'row')) = []; 
-                
                 %% STOPPPED HERE
                 if isempty(list2Add)
                                      
                 else
-                    %find pixel that are already inside the cluster to check
-                    %for correlation
-                    currCluster = clusters{group}(:,1);
-                    %currCluster = find(corrMask==group);
+                    
+                    list2Add(~ismember(list2Add,indsCopy,'row'),:) = [];
+                    if ~isempty(list2Add)
+                        %find pixel that are already inside the cluster to check
+                        %for correlation
+                        currCluster = clusters{group}(:,1);
+                        %currCluster = find(corrMask==group);
 
-                    %take a random subset of 10 pixel from the
-                    %current cluster
-                    try
-                        r = randperm(length(currCluster),10);
-                        currCluster = currCluster(r);
-                    catch
+                        %take a random subset of 10 pixel from the
+                        %current cluster
+                        try
+                            r = randperm(length(currCluster),10);
+                            currCluster = currCluster(r);
+                        catch
 
+                        end
+                        %check that the pixel that should be added to the
+                        %list are indeed correlated to the current cluster
+                        [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
+                            currCluster,data,thresh);
                     end
-                    %check that the pixel that should be added to the
-                    %list are indeed correlated to the current cluster
-                    [list2Add] = corrAnalysis.enforceClusterConsistency(list2Add,...
-                        currCluster,data,thresh);
-
                 end
                 
                 %add the new element to the list
