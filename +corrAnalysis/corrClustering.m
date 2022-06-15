@@ -150,7 +150,7 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
 
             count=count+1;
 
-            if count >= safeCount
+            if and(count >= safeCount,~isempty(currList))
                 error('something went wrong')
             end
         end                

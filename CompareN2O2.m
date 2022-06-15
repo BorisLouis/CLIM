@@ -28,6 +28,19 @@ for i = 1:length(corrOutputO2.results)
               compRes(n).SilO2 = corrOutputO2.results(i).meanSil;
               compRes(n).SilN2 = corrOutputN2.results(j).meanSil;
               
+              compRes(n).betaO2 = corrOutputO2.results(i).beta;
+              compRes(n).betaN2 = corrOutputN2.results(j).beta;
+              
+              compRes(n).tauO2 =  corrOutputO2.results(i).tau;
+              
+              compRes(n).tauN2 =  corrOutputN2.results(j).tau;
+              
+              compRes(n).freqO2 = corrOutputO2.results(i).freq;
+              compRes(n).freqN2 = corrOutputN2.results(j).freq;
+              
+              compRes(n).PSDO2 = corrOutputO2.results(i).PSD;
+              compRes(n).PSDN2 = corrOutputN2.results(j).PSD;
+              
               compRes(n).idxO2 = i;
               compRes(n).idxN2 = j;
              
@@ -136,4 +149,35 @@ axis image
 xlim([0.1 0.5])
 ylim([0.1 0.5])
 
+box on
+%% Fit Comparison
+figure
+subplot(1,3,1)
+idx = find([compRes.overlap]==1);
+rIdx = randi([1 length(idx)],1);
+
+scatter(compRes(rIdx).freqO2,compRes(rIdx).PSDO2)
+hold on
+scatter(compRes(rIdx).freqN2,compRes(rIdx).PSDN2)
+set(gca,'XScale','log')
+set(gca,'YScale','log')
+axis square
+box on
+legend({'O2','N2'})
+
+subplot(1,3,2)
+scatter([compRes.betaO2],[compRes.betaN2],10,'filled')
+xlabel('Beta O2')
+ylabel('Beta N2')
+axis image
+xlim([1 2.5])
+ylim([1 2.5])
+box on
+subplot(1,3,3)
+scatter([compRes.tauO2]./(2*pi),[compRes.tauN2]./(2*pi),10,'filled')
+xlabel('Tau O2')
+ylabel('Tau N2')
+axis square
+set(gca,'XScale','log')
+set(gca,'YScale','log')
 box on

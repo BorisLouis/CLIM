@@ -9,21 +9,22 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\22.11.21\Small grain batch1_2\Place1\N2';
+file.path = 'D:\Documents\Unif\PhD\2022-Data\02 - February\28 - Blinking Array';
 file.ext  = '';
 
-info.runMethod  = 'run';%
+info.runMethod  = 'load';%load
 info.driftCorr = false;
-info.ROI = true;%this is to use ROI for the whole analysis
+info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]
-ROI = [5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
+ROI = [];
+% For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 testROIRadius = 32;
 frame2Process = 1:6000;
 
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
-deconvolve = true;
+deconvolve = false;
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
 
@@ -66,7 +67,7 @@ thresh = minCorr:stepCorr:maxCorr;
 
 corrInfo.thresh = threshold2Use;
 %get px correlation
-[corrRelation] = myMovie.getPxCorrelation(correctedData,corrInfo);
+[corrRelation] = myMovie.getPxCorrelation(correctedData);
 %get the mask using the optimal threshold
 [corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
 
@@ -95,7 +96,11 @@ color= 'colorcube';
 
 %% Extract intensity traces 
 data = myMovie.loadFrames(1:30000,ROI);
-[traces] = myMovie.getAllTraces(data);
+method = 'SilWeigth';
+[traces] = myMovie.getAllTraces(correctedData,method);
+
+
+
 
 
 %% Generate final Output

@@ -8,7 +8,7 @@ classdef CorrClusterMovie < Core.Movie
         deconvFunction
         pathRes
         corrRelation
-        corrMask
+        
         clustEval
         corrClustMap
         cleanMask
@@ -19,7 +19,9 @@ classdef CorrClusterMovie < Core.Movie
         thresholdScan
         
     end
-    
+    properties (SetAccess = 'public')
+        corrMask
+    end
   
         
     methods
@@ -229,7 +231,7 @@ classdef CorrClusterMovie < Core.Movie
             
         end
                
-        function [corrRelation] = getPxCorrelation(obj,data,corrInfo)
+        function [corrRelation] = getPxCorrelation(obj,data)
             %This function scan the image to find pixel that are correlated
             %to other pixel that are close in space (typically check only
             %neighboring pixels
@@ -335,7 +337,7 @@ classdef CorrClusterMovie < Core.Movie
                 corrInfo.r = 1; %radius for checking neighbor
                 corrInfo.neighbor = 8; %4 or 8 (8 means that diagonal are taken too)
 
-                [~] = obj.getPxCorrelation(data,corrInfo);
+                [~] = obj.getPxCorrelation(data);
                 allCorrMask = zeros(size(data,1),size(data,2),length(thresh));
                 threshold = zeros(length(thresh),1);
                 treatedArea = zeros(length(thresh),1);
@@ -382,8 +384,8 @@ classdef CorrClusterMovie < Core.Movie
 %                 [FitPar,fit] = Gauss.gauss1D(optMetric,threshold,guess);
 % 
 %                 plot(threshold,fit);
-
-                thresh2Use = max(optMetric);
+                [~,idx] = max(optMetric);
+                thresh2Use = threshold(idx);
                 
                 %save data
                 threshScan.threshold = threshold;
@@ -412,7 +414,8 @@ classdef CorrClusterMovie < Core.Movie
                 
         function [cleanMask,silMap] = cleanCorrMask(obj,data)
             corrM = obj.corrMask.raw;
-            if isempty(obj.traceData)
+            
+            if length(obj.traceData) ~= max(corrM(:))
                 traceD = obj.getAllTraces(data);
             else
                 traceD = obj.traceData;
@@ -578,7 +581,19 @@ classdef CorrClusterMovie < Core.Movie
                  
         end
         
-        function [traceD] = getAllTraces(obj,data)
+        function [traceD] = getAllTraces(obj,data,method)
+            
+            switch nargin
+                case 2
+                    method = 'mean';
+                case 3
+                otherwise
+                    error('Too many input argument')
+            end
+            
+            silVal = obj.sil.map;
+            
+            
             assert(~isempty(obj.corrMask),'no corrMask found, please run getCorrMask first');
             corrM  = obj.corrMask.raw;
             traces = zeros(max(corrM(:)),size(data,3));
@@ -603,14 +618,25 @@ classdef CorrClusterMovie < Core.Movie
                 tmpTrace = data(idx);
                 tmpTrace = reshape(tmpTrace,size(data,3),length(row));
                 
-                traces(i,:) = mean(tmpTrace,2);
+                
                 pos(i,:)    = [mean(row), mean(col)];
                 
-                traceD(i).trace = mean(tmpTrace,2);
+                switch lower(method)
+                    case 'mean'
+                         traceD(i).trace = mean(tmpTrace,2);
+                    case 'silweigth'
+                         silWeight = silVal(id);
+                         silWeight = repmat(silWeight',size(tmpTrace,1),1);
+                         traceD(i).trace = sum(double(tmpTrace).*silWeight,2)./(sum(silWeight(1,:)));
+                    case 'silthresh'
+                        silWeight = silVal(id);
+                        traceD(i).trace = mean(tmpTrace(:,silWeight>0.2),2);
+                end
+               
                 traceD(i).clustPos = id;
                 traceD(i).nPx = numel(id);
                 traceD(i).clustIdx = i;
-                traceD(i).method = 'mean';
+                traceD(i).method = method;
                                             
             end
             
@@ -620,6 +646,9 @@ classdef CorrClusterMovie < Core.Movie
             save(fileName,'traceD');
                       
         end
+        
+
+
         
         function [corrOutput] = generateResults(obj)
             assert(~isempty(obj.traceData),'Need to run getAllTraces Firts');
@@ -664,6 +693,8 @@ classdef CorrClusterMovie < Core.Movie
             
             if isfield(obj.info,'ROIUsed')
                 corrOutput.ROIUsed = obj.info.ROIUsed;
+            else
+                corrOutput.ROIUsed = [];
             end
             corrOutput.silMap    = obj.sil.map;
             corrOutput.corrClustMap = obj.corrClustMap;
