@@ -591,8 +591,13 @@ classdef CorrClusterMovie < Core.Movie
                     error('Too many input argument')
             end
             
-            silVal = obj.sil.map;
-            
+            if ~isempty(obj.sil)
+                silVal = obj.sil.map;
+            else
+                method = 'mean';
+                warning('Intensity extraction method chosen could not be achieve because the silhouette map is missing, calculating via mean...');
+                
+            end
             
             assert(~isempty(obj.corrMask),'no corrMask found, please run getCorrMask first');
             corrM  = obj.corrMask.raw;

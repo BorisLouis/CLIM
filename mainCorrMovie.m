@@ -12,7 +12,7 @@ close all
 file.path = 'D:\Documents\Unif\PhD\2022-Data\02 - February\28 - Blinking Array';
 file.ext  = '';
 
-info.runMethod  = 'load';%load
+info.runMethod  = 'run';%load % load will try to load existing data from previous run
 info.driftCorr = false;
 info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]

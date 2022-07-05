@@ -24,7 +24,7 @@ frame2Process = 1:6000;
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
-deconvolve = true;
+deconvolve = false;
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
 
