@@ -631,6 +631,8 @@ classdef CorrClusterMovie < Core.Movie
                          traceD(i).trace = mean(tmpTrace,2);
                     case 'silweigth'
                          silWeight = silVal(id);
+                         tmpTrace(:,silWeight<0.05) = [];
+                         silWeight(silWeight<0.05) = [];
                          silWeight = repmat(silWeight',size(tmpTrace,1),1);
                          traceD(i).trace = sum(double(tmpTrace).*silWeight,2)./(sum(silWeight(1,:)));
                     case 'silthresh'

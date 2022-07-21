@@ -2,7 +2,6 @@
 %In this experiment we assume that the volume of the crystal and the amount
 %of charges available to quench is constant. We slowy increase the number
 %of traps and thus the concentration
-
 clear
 clc 
 close all
@@ -10,18 +9,22 @@ close all
 path2Save = 'D:\Documents\Unif\PhD\2022-Data\04 - April\26 Blinking Models';
 simParam.baseCounts = 10000;
 simParam.trapCapacity = 300;
+simParam.nSim = 100;
+simParam.nTraps = 0; %0 is for getting 1 simulation per number of traps, otherwise it is a fix number
 simParam.sdCapacity  = 0.1;
+
 %0.05 probability is the standard (=1switch every 20 frames = 1 sec)
-simParam.onProb = 0.1; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
-simParam.offProb = 0.1;
+simParam.onProb = 0.2; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
+simParam.offProb = 0.05;
 simParam.sdProb = 0.5;
 
-simParam.nSim = 100;
+
 simParam.nFrames = 6000;
 simParam.bkgCounts = 500;
 resolution = 10;
 simParam.onProb = simParam.onProb /resolution;
 simParam.offProb = simParam.offProb /resolution; 
+%%
 
 statsTS = table(zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),...
     zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),'VariableNames',...
@@ -41,9 +44,22 @@ simParam.trapCapacity2 = double(S);
 symObj = syms;
 cellfun(@clear,symObj)
 
-for i = 1:simParam.nSim
-    simParam.nTraps = i;
+if simParam.nTraps <= 0
+    mode = 'multi';
     
+else
+    mode = 'single';
+end
+
+for i = 1:simParam.nSim
+    switch mode
+        case 'multi'
+            simParam.nTraps = i;
+        case 'single'
+        otherwise
+            error('Unknown trap simulation mode');
+    end
+   
     simParam.nFrames = simParam.nFrames*resolution;
     
     [trapSatIntensity,interactionIntensity] = Sim.trapSim(simParam);
@@ -60,8 +76,8 @@ for i = 1:simParam.nSim
         if noise
             background = int16(ones(size(tmpTs))*simParam.bkgCounts);
             noise2Add = randn(size(tmpTs))*noiseAmp(j);
-            tsIntensity2Save = uint16(int16(tmpTs)+background+int16(noise2Add));
-            intIntensity2Save = uint16(int16(tmpInt)+background+int16(noise2Add));
+            tsIntensity2Save = int16(int16(tmpTs)+background+int16(noise2Add));
+            intIntensity2Save = int16(int16(tmpInt)+background+int16(noise2Add));
         else
             tsIntensity2Save = trapSatIntensity;
             intIntensity2Save = interactionIntensity;

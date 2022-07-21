@@ -9,10 +9,10 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2022-Data\02 - February\28 - Blinking Array';
+file.path = 'D:\Documents\Unif\PhD\2022-Data\07 - July\Sudipta Issues';
 file.ext  = '';
 
-info.runMethod  = 'run';%load % load will try to load existing data from previous run
+info.runMethod  = 'load';%load % load will try to load existing data from previous run
 info.driftCorr = false;
 info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]
@@ -24,7 +24,7 @@ frame2Process = 1:6000;
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
-deconvolve = false;
+deconvolve = true;
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
 
