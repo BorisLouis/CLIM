@@ -9,22 +9,22 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2022-Data\02 - February\23 - Test Code improvement\N2';
+file.path = 'D:\Documents\Unif\PhD\2022-Data\07 - July\22 - Device data\OD 2.3';
 file.ext  = '';
 
 info.runMethod  = 'load';%
-info.driftCorr = false;
+info.driftCorr = true;
 info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]
 ROI = [];
 % For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 testROIRadius = 32;
-frame2Process = 1:6000;
+frame2Process = 1:1000;
 
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
-deconvolve = false;
+deconvolve = true;
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
 
@@ -81,7 +81,9 @@ traces = myMovie.getAllTraces(ROICorrData);
 %newCorrMask = myMovie.silBasedClusterMerge(corrMask,ROICorrData,traces,bestClustEval1.meanCorr);
 
 
+%%
 
+[corrOutput] = myMovie.generateResults;
 
 %% Scanning threshold
 center = [round(size(correctedData,1)/2), round(size(correctedData,2)/2)];

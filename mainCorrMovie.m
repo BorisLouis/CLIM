@@ -9,17 +9,17 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2022-Data\07 - July\Sudipta Issues';
+file.path = 'D:\Documents\Unif\PhD\2022-Data\07 - July\22 - Device data\OD 0.3';
 file.ext  = '';
 
-info.runMethod  = 'load';%load % load will try to load existing data from previous run
-info.driftCorr = false;
+info.runMethod  = 'run';%load % load will try to load existing data from previous run
+info.driftCorr = true;
 info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]
 ROI = [];
 % For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 testROIRadius = 32;
-frame2Process = 1:6000;
+frame2Process = 1:1000;
 
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
