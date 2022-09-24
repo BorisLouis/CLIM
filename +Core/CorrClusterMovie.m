@@ -346,6 +346,7 @@ classdef CorrClusterMovie < Core.Movie
                 %silhouette
                 rearrangeData = reshape(data,[size(data,1)*size(data,2),size(data,3)]);
                 Sil = zeros(length(thresh),1);
+                SilClust = Sil;
                 for i = 1:length(thresh)
                     corrInfo.thresh = thresh(i);
                     [corrM] = obj.getCorrelationMask(data,corrInfo);
@@ -359,7 +360,13 @@ classdef CorrClusterMovie < Core.Movie
                     silDist = silhouette(double(tmpRearrangeData),label,'Correlation');
        
                     Sil(i) = mean(silDist);
-
+                    
+                    % get silhouette from clusters
+                    [~,silMap] = obj.cleanCorrMask(data);
+                    SilClust(i) = mean(silMap(:));
+                    
+                    % end addition
+                    
                     threshold(i) = corrInfo.thresh;
 
                     %calculate % of data treated   
@@ -369,7 +376,7 @@ classdef CorrClusterMovie < Core.Movie
 
                 end
                 % find optimal threshold
-                optMetric = Sil(:).*treatedArea(:);
+                optMetric = SilClust(:).*treatedArea(:);
                 optMetric(isnan(optMetric)) =0;
                 figure
                 hold on

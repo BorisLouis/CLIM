@@ -1,4 +1,4 @@
-function [satTrapIntensity, interactionIntensity] = trapSim(simParam)
+function [satTrapIntensity, interactionIntensity,state] = trapSim(simParam)
 %store useful parameters
 nTraps = simParam.nTraps;
 
@@ -35,6 +35,8 @@ prevState = initialState;
 
 rng('shuffle')
 dice = rand(nFrames,nTraps);
+state= zeros(1,nFrames);
+state(1) = sum(initialState/nTraps);
 for i=2:nFrames
    currentState = prevState;
    for j = 1:nTraps
@@ -48,6 +50,9 @@ for i=2:nFrames
    interactionIntensity(:,i) = I0 * (I0/(I0+sum(currentState(:).*capacityList2(:))));
    
    prevState = currentState;
+   
+    state(i) = sum(currentState/nTraps);
+   
 end
               
 end

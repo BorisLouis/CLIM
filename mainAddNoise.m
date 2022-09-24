@@ -6,9 +6,9 @@ close all
 
 %% User input
 path2Save = 'D:\Documents\Unif\PhD\2022-Data\01 - Jan\20 - Fluctuation rate';
-simParam.sizeIm = 64;
+simParam.sizeIm = 31;
 simParam.nFrames = 6000;
-simParam.nParticles = 4;
+simParam.nParticles = 6;
 
 simParam.baseCounts = 3000;
 simParam.sdCounts = 0;
@@ -21,7 +21,7 @@ simParam.enhancement = 0.5; %in %
 simParam.enhTau = 9000;
 simType = 'blinking'; %'enhancement', 'bleaching', 'blinking','blinkenha'
 
-delta = 5;
+delta = 6;
 model.name = 'gaussian';
 model.sigma_x = 3;
 model.sigma_y = 3;
@@ -47,8 +47,8 @@ nFrames = simParam.nFrames;
 [X,Y] = meshgrid(1:sizeIm,1:sizeIm);
 data = zeros(sizeIm,sizeIm,nFrames,'uint16');
 
-x = [27,32,32,37];
-y = [32,37,27,32];
+x = [14,14,18,18,12,20];
+y = [13,19,13,19,16,16];
 
 PSF = Sim.getPSF(X,Y,simParam.sizeIm/2,simParam.sizeIm/2,model);
 

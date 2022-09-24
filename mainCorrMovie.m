@@ -12,7 +12,7 @@ close all
 file.path = 'D:\Documents\Unif\PhD\2022-Data\07 - July\22 - Device data\OD 0.3';
 file.ext  = '';
 
-info.runMethod  = 'run';%load % load will try to load existing data from previous run
+info.runMethod = 'run';%load % load will try to load existing data from previous run
 info.driftCorr = true;
 info.ROI = false;%this is to use ROI for the whole analysis
 %      [x y  w h]

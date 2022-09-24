@@ -9,13 +9,13 @@ close all
 path2Save = 'D:\Documents\Unif\PhD\2022-Data\04 - April\26 Blinking Models';
 simParam.baseCounts = 10000;
 simParam.trapCapacity = 300;
-simParam.nSim = 100;
+simParam.nSim = 20;
 simParam.nTraps = 0; %0 is for getting 1 simulation per number of traps, otherwise it is a fix number
 simParam.sdCapacity  = 0.1;
 
 %0.05 probability is the standard (=1switch every 20 frames = 1 sec)
-simParam.onProb = 0.2; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
-simParam.offProb = 0.05;
+simParam.onProb = 0.05; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
+simParam.offProb = 0.95;
 simParam.sdProb = 0.5;
 
 
@@ -23,7 +23,11 @@ simParam.nFrames = 6000;
 simParam.bkgCounts = 500;
 resolution = 10;
 simParam.onProb = simParam.onProb /resolution;
-simParam.offProb = simParam.offProb /resolution; 
+simParam.offProb = simParam.offProb /resolution;
+
+nTrapList = [1:simParam.nSim];
+nTrapList = [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 50, 100, 150, 200, 250, 500, 1000, 1500, 2000];
+
 %%
 
 statsTS = table(zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),...
@@ -51,10 +55,10 @@ else
     mode = 'single';
 end
 
-for i = 1:simParam.nSim
+for i = 1:min([length(nTrapList),simParam.nSim])
     switch mode
         case 'multi'
-            simParam.nTraps = i;
+            simParam.nTraps = nTrapList(i);
         case 'single'
         otherwise
             error('Unknown trap simulation mode');
@@ -62,11 +66,24 @@ for i = 1:simParam.nSim
    
     simParam.nFrames = simParam.nFrames*resolution;
     
-    [trapSatIntensity,interactionIntensity] = Sim.trapSim(simParam);
+    [trapSatIntensity,interactionIntensity,state] = Sim.trapSim(simParam);
     simParam.nFrames = simParam.nFrames/resolution;
-    trapSatIntensity = imresize(trapSatIntensity,[1, simParam.nFrames]);
-    interactionIntensity = imresize(interactionIntensity,[1, simParam.nFrames]);
+    
+    trace = zeros(simParam.nFrames,1);
+    for j = 1:simParam.nFrames
+        trace(j) = mean(interactionIntensity((j-1)*10+1:(j-1)*10+1+9));
 
+    end
+    interactionIntensity = trace;
+    
+    
+    trace = zeros(simParam.nFrames,1);
+    for j = 1:simParam.nFrames
+        trace(j) = mean(trapSatIntensity((j-1)*10+1:(j-1)*10+1+9));
+
+    end
+    trapSatIntensity = trace;
+    
     noise = true;
     noiseAmp = [50];
 

@@ -13,14 +13,14 @@ path2Save = 'D:\Documents\Unif\PhD\2022-Data\04 - April\26 Blinking Models';
 initCount = 1000;
 initialVolume = 0.5*0.5*0.2;
 
-simParam.trapCapacity = 200;
+simParam.trapCapacity = 950;
 simParam.sdCapacity  = 0.1;
 %0.05 probability is the standard (=1switch every 20 frames = 1 sec)
-simParam.onProb = 0.1; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
+simParam.onProb = 0.01; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
 simParam.offProb = 0.1;
 simParam.sdProb = 0.5;
-
-simParam.nSim = 50;
+trapList = [1, 2, 3, 4, 5, 8, 10,15,20,25,30,40,50,80,100,150,200,300,500,1000,1500,2000];
+simParam.nSim = 22;
 simParam.nFrames = 6000;
 simParam.bkgCounts = 500;
 resolution = 10;
@@ -44,22 +44,33 @@ syms x
 eqn =  simParam.baseCounts * (simParam.baseCounts/(simParam.baseCounts+x)) == simParam.baseCounts-simParam.trapCapacity ;
 S= solve(eqn,x);
 simParam.trapCapacity2 = double(S);
-
 symObj = syms;
 cellfun(@clear,symObj)
 
 for i = 1:simParam.nSim
-    currentVolume = initialVolume*(i);
-    simParam.baseCounts = initCount*(i);
-    simParam.nTraps = uint16(1*currentVolume/initialVolume);
+    currentVolume = initialVolume*trapList(i);
+    simParam.baseCounts = initCount*trapList(i);
+    simParam.nTraps = trapList(i);
 
     simParam.nFrames = simParam.nFrames*resolution;
-    
-    [trapSatIntensity,interactionIntensity] = Sim.trapSim(simParam);
+       
+    [trapSatIntensity,interactionIntensity,state] = Sim.trapSim(simParam);
     simParam.nFrames = simParam.nFrames/resolution;
-    trapSatIntensity = imresize(trapSatIntensity,[1, simParam.nFrames]);
-    interactionIntensity = imresize(interactionIntensity,[1, simParam.nFrames]);   
     
+    trace = zeros(simParam.nFrames,1);
+    for j = 1:simParam.nFrames
+        trace(j) = mean(interactionIntensity((j-1)*10+1:(j-1)*10+1+9));
+
+    end
+    interactionIntensity = trace;
+    
+    
+    trace = zeros(simParam.nFrames,1);
+    for j = 1:simParam.nFrames
+        trace(j) = mean(trapSatIntensity((j-1)*10+1:(j-1)*10+1+9));
+
+    end
+    trapSatIntensity = trace;
     noise = true;
     noiseAmp = [50];
 
@@ -91,6 +102,8 @@ for i = 1:simParam.nSim
     corrOutput.results(i).traceTsNN = trapSatIntensity;
     corrOutput.results(i).traceIntNN = interactionIntensity;
     corrOutput.results(i).nTrap = simParam.nTraps;
+    corrOutput.results(i).volume = currentVolume;
+    corrOutput.results(i).charges = simParam.baseCounts;
     
     tsIntensity2Save = double(tsIntensity2Save);     
     statsTS(i,:).width = std(tsIntensity2Save);
