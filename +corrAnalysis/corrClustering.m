@@ -1,4 +1,4 @@
-function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
+function [corrMask,frames] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh,doPlot)
     %The idea of the modifications here is to:
     %1) Use listVal to and threshold to add to cluster(this will allow to
     %test various threshold without having to re-run the first steps)
@@ -15,7 +15,7 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
     indsCopy = inds;
     clusters{group} = [];
     %as long as the list of pixel that are correlated is not empty
-    %we keep going
+    %we keep going    
     while ~isempty(listCorrPx) 
         
         %get Index of most correlated pixel m
@@ -126,16 +126,7 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
                 
                
             end
-            %mark the last case as treated:
-%             corrMask(currIndex) = group;
-%             idx = find(isnan(treatedIdx(:,1)),1);
-%             treatedIdx(idx) = currIndex;
-
-            % remove it from the list
-%             listCorrPx(inds==currIndex) = [];
-%             meanPx(inds==currIndex) =[];
-%             inds(inds==currIndex) = [];
-
+  
             %if exit the first while loop, the first group is complete, we need to
             %increment the group number as we are supposed to have treated all
             %cases.
@@ -147,7 +138,7 @@ function [corrMask] = corrClustering(listCorrPx,listVal,meanPx,inds,data,thresh)
                 group = group+1;
                 clusters{group} = [];
             end
-
+                   
             count=count+1;
 
             if and(count >= safeCount,~isempty(currList))

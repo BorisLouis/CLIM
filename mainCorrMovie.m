@@ -9,27 +9,27 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2022-Data\07 - July\22 - Device data\OD 0.3';
+file.path = 'D:\Documents\Unif\PhD\2022-Data\09 - September\Code improvement';
 file.ext  = '';
 
-info.runMethod = 'run';%load % load will try to load existing data from previous run
-info.driftCorr = true;
-info.ROI = false;%this is to use ROI for the whole analysis
+info.runMethod = 'load';%load % load will try to load existing data from previous run
+info.driftCorr = true; % true to correct for drift, false to not
+info.useThreshold = false;%
+info.doPlot = false;% default-false, do plot will generate a movie of the clustering
+%procedure as it goes.
+info.ROI = false; %this is to use ROI for the whole analysis
 %      [x y  w h]
 ROI = [];
 % For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
-testROIRadius = 32;
-frame2Process = 1:1000;
-
+testROIRadius = 32; %radius of the ROI to find optimal threshold
+frame2Process = 1:6000; %number of frame to used for correlation analysis.
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
-deconvolve = true;
+deconvolve = true; %to deconvolve the correlated signal
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
-
 myMovie.correctDrift;
-
     
 %% Loading frames  
 data1 = myMovie.loadFrames(frame2Process,ROI);
@@ -43,29 +43,33 @@ else
     correctedData = data1;
 end
 %% Scanning threshold
-center = [round(size(correctedData,1)/2), round(size(correctedData,2)/2)];
-if info.ROI ==false
-    myMovie.info.ROIUsed = [];    
-else
-    ROICorrData = correctedData;
-    myMovie.info.ROIUsed = ROI;
-end
-try
-        
-    ROICorrData = correctedData(center(1)-testROIRadius:center(1)+testROIRadius-1,center(2)-testROIRadius:center(2)+testROIRadius-1,:);
-catch except
-    if strcmp(except.identifier, 'MATLAB:badsubscript')
+if info.useThreshold
+    center = [round(size(correctedData,1)/2), round(size(correctedData,2)/2)];
+    if info.ROI ==false
+        myMovie.info.ROIUsed = [];    
+    else
         ROICorrData = correctedData;
+        myMovie.info.ROIUsed = ROI;
     end
+    try
+
+        ROICorrData = correctedData(center(1)-testROIRadius:center(1)+testROIRadius-1,center(2)-testROIRadius:center(2)+testROIRadius-1,:);
+    catch except
+        if strcmp(except.identifier, 'MATLAB:badsubscript')
+            ROICorrData = correctedData;
+        end
+    end
+
+    thresh = minCorr:stepCorr:maxCorr;
+
+    [allCorrMask,threshold2Use] = myMovie.findOptimalThreshold(ROICorrData,thresh);
 end
-
-thresh = minCorr:stepCorr:maxCorr;
-
-[allCorrMask,threshold2Use] = myMovie.findOptimalThreshold(ROICorrData,thresh);
-
 %% Calculate final corrMask
-
-corrInfo.thresh = threshold2Use;
+if info.useThreshold
+    corrInfo.thresh = threshold2Use;
+else
+    corrInfo.thresh = minCorr;
+end
 %get px correlation
 [corrRelation] = myMovie.getPxCorrelation(correctedData);
 %get the mask using the optimal threshold

@@ -66,14 +66,6 @@ classdef CorrClusterMovie < Core.Movie
                     
                     disp(['Loading Frames ...'])
                     allFrames = obj.getFrame;
-%                     for i = 1:nFrame
-% 
-%                         allFrames(:,:,i) = uint16(obj.getFrame(i));
-%                         waitbar(i/(nFrame),h,...
-%                             ['Loading Frames ' num2str(i) '/' num2str(nFrame)]);
-% 
-%                     end
-%                     close(h);
 
                     disp('====>DONE<=====')
                     disp('Correcting drift...')
@@ -290,13 +282,18 @@ classdef CorrClusterMovie < Core.Movie
                 %[distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
 
                 disp('========> Performing Pseudo-clustering <==========')
-                %perform pseudo-clustering
-                [corrMask] = corrAnalysis.corrClustering(listPx,listVal,meanPx,inds,data,corrThreshold);                
-                
+                if obj.info.useThreshold
+                    %perform pseudo-clustering
+                    [corrMask] = corrAnalysis.corrClustering(listPx,listVal,meanPx,inds,data,corrThreshold,obj.info.doPlot);                
+                    cMask.method = 'pseudoClust';
+                else
+                   [corrMask] = corrAnalysis.corrClusteringNoThresh(obj.corrRelation,data,corrThreshold,obj.info.doPlot);                
+                   cMask.method = 'noThreshold';
+                end
                 %save Data 
                 cMask.raw = corrMask;
                 cMask.rawNCluster = max(corrMask(:));
-                cMask.method = 'pseudoClust';
+                
                 cMask.corrThresh = corrThreshold;
                 
                 obj.corrMask = cMask;
