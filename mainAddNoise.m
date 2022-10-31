@@ -6,13 +6,13 @@ close all
 
 %% User input
 path2Save = 'D:\Documents\Unif\PhD\2022-Data\01 - Jan\20 - Fluctuation rate';
-simParam.sizeIm = 31;
+simParam.sizeIm = 31;%31
 simParam.nFrames = 6000;
-simParam.nParticles = 6;
+simParam.nParticles = 1;
 
-simParam.baseCounts = 3000;
+simParam.baseCounts = 2000;
 simParam.sdCounts = 0;
-simParam.intMod = 1.25;
+simParam.intMod = 0;
 simParam.sdIntMod  = 0;
 simParam.baseProb = 0.1;
 simParam.sdProb = 0;
@@ -47,9 +47,11 @@ nFrames = simParam.nFrames;
 [X,Y] = meshgrid(1:sizeIm,1:sizeIm);
 data = zeros(sizeIm,sizeIm,nFrames,'uint16');
 
-x = [14,14,18,18,12,20];
-y = [13,19,13,19,16,16];
+% x = [68,68,88,88,58,98]; %before center on 16 with 2 pixel and 4 pixel
+% y = [66,90,66,90,78,78];
 
+x = 16;
+y = 16;
 PSF = Sim.getPSF(X,Y,simParam.sizeIm/2,simParam.sizeIm/2,model);
 
 for j = 1:nFrames

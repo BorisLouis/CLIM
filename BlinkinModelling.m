@@ -71,7 +71,7 @@ for i = 1:min([length(nTrapList),simParam.nSim])
     
     trace = zeros(simParam.nFrames,1);
     for j = 1:simParam.nFrames
-        trace(j) = mean(interactionIntensity((j-1)*10+1:(j-1)*10+1+9));
+        trace(j) = mean(interactionIntensity((j-1)*resolution+1:(j-1)*resolution+resolution));
 
     end
     interactionIntensity = trace;

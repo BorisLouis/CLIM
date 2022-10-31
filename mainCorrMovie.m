@@ -9,12 +9,13 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2022-Data\09 - September\Code improvement';
+file.path = 'D:\Documents\Unif\PhD\2022-Data\02 - February\28 - Blinking Array';
 file.ext  = '';
 
-info.runMethod = 'load';%load % load will try to load existing data from previous run
-info.driftCorr = true; % true to correct for drift, false to not
-info.useThreshold = false;%
+info.runMethod = 'run';%load % load will try to load existing data from previous run
+info.driftCorr = false; % true to correct for drift, false to not
+deconvolve = true; %to deconvolve the correlated signal
+info.useThreshold = true;%false
 info.doPlot = false;% default-false, do plot will generate a movie of the clustering
 %procedure as it goes.
 info.ROI = false; %this is to use ROI for the whole analysis
@@ -22,11 +23,11 @@ info.ROI = false; %this is to use ROI for the whole analysis
 ROI = [];
 % For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 testROIRadius = 32; %radius of the ROI to find optimal threshold
-frame2Process = 1:6000; %number of frame to used for correlation analysis.
+frame2Process = 1:1000; %number of frame to used for correlation analysis.
 minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.9;%maximum correlation to be tested, higher than 0.9 makes little sense
-deconvolve = true; %to deconvolve the correlated signal
+
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
 myMovie.correctDrift;

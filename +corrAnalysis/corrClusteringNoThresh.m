@@ -20,6 +20,7 @@ function [corrMask,frames] = corrClusteringNoThresh(corrRelation,data,thresh,doP
     clusters{group} = [];
     %as long as the list of pixel that are correlated is not empty
     %we keep going
+    tic
     while ~isempty(listCorrPx) 
         
         %get Index of most correlated pixel m
@@ -56,8 +57,8 @@ function [corrMask,frames] = corrClusteringNoThresh(corrRelation,data,thresh,doP
                     %is a better
                     if ~isempty(tmpList)
                        for i = 1:length(tmpList)
-                          corrPx = listCorrPx{inds==tmpList(i)};
-                          currVal = listVal{inds == tmpList(i)};
+%                           corrPx = listCorrPx{inds==tmpList(i)};
+%                           currVal = listVal{inds == tmpList(i)};
                           %need to look  in which cluster are corrPx and check
                           %correlation to see which one the current pixels
                           %(tmpList(i) better belongs too)
@@ -91,8 +92,8 @@ function [corrMask,frames] = corrClusteringNoThresh(corrRelation,data,thresh,doP
 
 
                        end
-                       idx = find(isnan(treatedIdx(:,1)),1);
-                       treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
+                      idx = find(isnan(treatedIdx(:,1)),1);
+                      treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
                     else
                     end
                     
@@ -105,6 +106,9 @@ function [corrMask,frames] = corrClusteringNoThresh(corrRelation,data,thresh,doP
                      %keep track of the added pixels
                     tmpList(ismember(tmpList,treatedIdx,'row'),:) =[];
                     tmpList(~ismember(tmpList,indsCopy,'row'),:) = [];
+        
+                    tmpList = corrAnalysis.enforceClusterConsistency(tmpList,clusters{group},data,thresh);
+                 
                     clusters{group} = [clusters{group}; tmpList];
                     idx = find(isnan(treatedIdx(:,1)),1);
                     treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
@@ -115,6 +119,7 @@ function [corrMask,frames] = corrClusteringNoThresh(corrRelation,data,thresh,doP
 
                     tmpList(ismember(tmpList,treatedIdx,'row'),:) =[];
                     tmpList(~ismember(tmpList,indsCopy,'row'),:) = [];
+                    
                     clusters{group} = tmpList;
 
                     idx = find(isnan(treatedIdx(:,1)),1);
@@ -131,16 +136,11 @@ function [corrMask,frames] = corrClusteringNoThresh(corrRelation,data,thresh,doP
                 treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
             end
         end
-        
         listCorrPx(inds==currIndex) = [];
         
         meanPx(inds==currIndex) =[];
         listVal(inds==currIndex) = [];
-        inds(inds==currIndex) = [];
-        
-
-        
-          
+        inds(inds==currIndex) = [];          
         count=count+1;
 
         if and(count >= safeCount,~isempty(currList))
@@ -153,5 +153,5 @@ function [corrMask,frames] = corrClusteringNoThresh(corrRelation,data,thresh,doP
         corrMask(clusters{i}(:,1)) = i;
     
     end
-    
+    toc
     

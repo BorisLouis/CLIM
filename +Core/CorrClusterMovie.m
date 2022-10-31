@@ -565,12 +565,14 @@ classdef CorrClusterMovie < Core.Movie
             trace = zeros(length(row),size(data,3));
             figure 
             hold on
-            for i = 1:length(row)
+            for i = 1:10:length(row)
 
                 trace(i,:) = data(row(i),col(i),:);
+                normTrace = (trace(i,:) - min(trace(i,:)))./(max(trace(i,:)) - min(trace(i,:)));
                 plot(trace(i,:));
+               
             end
-            
+            disp('stop');
         end
         
         function [clustEval1,relNum,corrClustMap] = evalCluster(obj,corrMask,data)

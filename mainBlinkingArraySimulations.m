@@ -14,7 +14,7 @@ simParam.baseCounts = 3000;
 simParam.sdCounts = 0;
 simParam.intMod = 1.25;
 simParam.sdIntMod  = 0;
-simParam.baseProb = 0.1;
+simParam.baseProb = 0.05;
 simParam.sdProb = 0.05;
 simParam.bkgCounts = 500;
 simParam.enhancement = 0.5; %in %
@@ -26,17 +26,22 @@ model.name = 'gaussian';
 model.sigma_x = 3;
 model.sigma_y = 3;
 
-
+resolution = 10;
 
 
 %% Simulated intensity profile depending on requested type
 %generate two intensity level for each particles with some distribution
 %we generate 3 times more frames and then resample to simulate exposure
 %time
-simParam.nFrames = simParam.nFrames*3;
-intensity = Sim.simIntensity(simParam,simType);
-simParam.nFrames = simParam.nFrames/3;
-intensity = imresize(intensity,[simParam.nParticles, simParam.nFrames]);
+simParam.nFrames = simParam.nFrames*resolution;
+simParam.baseProb = 0.05/resolution;
+int = Sim.simIntensity(simParam,simType);
+simParam.nFrames = simParam.nFrames/resolution;
+intensity = zeros(simParam.nParticles,simParam.nFrames);
+for j = 1:simParam.nFrames
+    intensity(:,j) = mean(int(:,(j-1)*resolution+1:(j-1)*resolution+resolution),2);
+
+end
 
 % intensity(intensity<simParam.baseCounts) = simParam.baseCounts;
 % intensity(intensity>simParam.baseCounts*simParam.intMod) = simParam.baseCounts*simParam.intMod;
