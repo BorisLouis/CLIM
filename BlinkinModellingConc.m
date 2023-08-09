@@ -8,15 +8,16 @@ close all
 %% User input
 path2Save = 'D:\Documents\Unif\PhD\2022-Data\04 - April\26 Blinking Models';
 simParam.baseCounts = 10000;
-simParam.trapCapacity = 300;
-simParam.nSim = 20;
+simParam.trapCapacity = 2000;
+simParam.nSim = 50;
 simParam.nTraps = 0; %0 is for getting 1 simulation per number of traps, otherwise it is a fix number
 simParam.sdCapacity  = 0.1;
 
 %0.05 probability is the standard (=1switch every 20 frames = 1 sec)
-simParam.onProb = 0.05; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
-simParam.offProb = 0.95;
-simParam.sdProb = 0.5;
+simParam.onProb = 0.07; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
+simParam.offProb = 0.07;
+simParam.sdProb = 0;% % of fluctuation of on/off prob around their nomitive value
+%put to 0 to obtain constant on/prob value
 
 
 simParam.nFrames = 6000;
@@ -26,13 +27,15 @@ simParam.onProb = simParam.onProb /resolution;
 simParam.offProb = simParam.offProb /resolution;
 
 nTrapList = [1:simParam.nSim];
-nTrapList = [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 50, 100, 150, 200, 250, 500, 1000, 1500, 2000];
+% nTrapList = [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 50, 100, 150, 200, 250, 500, 1000, 1500, 2000];
+% nTrapList = [5, 5, 5, 5, 10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30, 50, 50, 50, 50];
+
 
 %%
 
 statsTS = table(zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),...
-    zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),'VariableNames',...
-    {'width','med','absAmp','relAmp','widthNN','medNN','absAmpNN','relAmpNN'});
+    zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),zeros(simParam.nSim,1),'VariableNames',...
+    {'width','med','absAmp','relAmp','widthNN','medNN','absAmpNN','relAmpNN','nTraps'});
 statsInt = statsTS;
 allData = zeros(simParam.nSim,simParam.nFrames,4);
 corrOutput = struct();
@@ -119,28 +122,34 @@ for i = 1:min([length(nTrapList),simParam.nSim])
     
     tsIntensity2Save = double(tsIntensity2Save);     
     statsTS(i,:).width = std(tsIntensity2Save);
-    statsTS(i,:).med = median(tsIntensity2Save);
-    statsTS(i,:).absAmp = (max(tsIntensity2Save)-min(tsIntensity2Save));
-    statsTS(i,:).relAmp = (max(tsIntensity2Save)-min(tsIntensity2Save))/max(tsIntensity2Save);
+    statsTS(i,:).med = mean(tsIntensity2Save);
+    statsTS(i,:).absAmp = (mean(tsIntensity2Save(tsIntensity2Save>prctile(tsIntensity2Save,90)))...
+        -mean(tsIntensity2Save(tsIntensity2Save<prctile(tsIntensity2Save,10))));
+    statsTS(i,:).relAmp = statsTS(i,:).absAmp/mean(tsIntensity2Save(tsIntensity2Save>prctile(tsIntensity2Save,90)));
     
     trapSatIntensity = double(trapSatIntensity);     
     statsTS(i,:).widthNN = std(trapSatIntensity);
-    statsTS(i,:).medNN = median(trapSatIntensity);
-    statsTS(i,:).absAmpNN = (max(trapSatIntensity)-min(trapSatIntensity));
-    statsTS(i,:).relAmpNN = (max(trapSatIntensity)-min(trapSatIntensity))/max(trapSatIntensity);
+    statsTS(i,:).medNN = mean(trapSatIntensity);
+    statsTS(i,:).absAmpNN = (mean(trapSatIntensity(trapSatIntensity>prctile(trapSatIntensity,90)))...
+        -mean(trapSatIntensity(trapSatIntensity<prctile(trapSatIntensity,10))));
+    statsTS(i,:).relAmpNN = statsTS(i,:).absAmpNN*(mean(trapSatIntensity(trapSatIntensity>prctile(trapSatIntensity,90))));
+    statsTS(i,:).nTraps = simParam.nTraps;
     
     intIntensity2Save = double(intIntensity2Save);
     statsInt(i,:).width = std(double(intIntensity2Save));
-    statsInt(i,:).med = median(intIntensity2Save);
-    statsInt(i,:).absAmp = (max(intIntensity2Save)-min(intIntensity2Save));
-    statsInt(i,:).relAmp = (max(intIntensity2Save)-min(intIntensity2Save))/max(intIntensity2Save);
+    statsInt(i,:).med = mean(intIntensity2Save);
+    statsInt(i,:).absAmp = (mean(intIntensity2Save(intIntensity2Save>prctile(intIntensity2Save,90)))...
+        -mean(intIntensity2Save(intIntensity2Save<prctile(intIntensity2Save,10))));
+    statsInt(i,:).relAmp = statsInt(i,:).absAmp/(mean(intIntensity2Save(intIntensity2Save>prctile(intIntensity2Save,90))));
     
     interactionIntensity = double(interactionIntensity);
     statsInt(i,:).widthNN = std(double(interactionIntensity));
-    statsInt(i,:).medNN = median(interactionIntensity);
-    statsInt(i,:).absAmpNN = (max(interactionIntensity)-min(interactionIntensity));
-    statsInt(i,:).relAmpNN = (max(interactionIntensity)-min(interactionIntensity))/max(interactionIntensity);
-    
+    statsInt(i,:).medNN = mean(interactionIntensity);
+   
+    statsInt(i,:).absAmpNN = (mean(interactionIntensity(interactionIntensity>prctile(interactionIntensity,90)))...
+        -mean(interactionIntensity(interactionIntensity<prctile(interactionIntensity,10))));
+    statsInt(i,:).relAmpNN = statsInt(i,:).absAmpNN/(mean(interactionIntensity(interactionIntensity>prctile(interactionIntensity,90))));
+    statsInt(i,:).nTraps = simParam.nTraps;
     corrOutput.statsTS = statsTS;
     corrOutput.statsInt = statsInt;
    

@@ -9,13 +9,13 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2022-Data\02 - February\28 - Blinking Array';
+file.path = 'D:\Documents\Unif\PhD\2022-Data\12 - December\Defense preparation\Film Blinking';
 file.ext  = '';
 
 info.runMethod = 'run';%load % load will try to load existing data from previous run
 info.driftCorr = false; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
-info.useThreshold = true;%false
+info.useThreshold = false;%false
 info.doPlot = false;% default-false, do plot will generate a movie of the clustering
 %procedure as it goes.
 info.ROI = false; %this is to use ROI for the whole analysis

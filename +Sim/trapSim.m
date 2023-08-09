@@ -6,14 +6,17 @@ baseCounts = simParam.baseCounts;
 trapCapacity = simParam.trapCapacity;
 nFrames = simParam.nFrames;
 
-onProb = simParam.onProb;
-offProb = simParam.offProb;
-
 %generate traps
 trapList = cell(nTraps,1);
-initialState = round(rand(1,nTraps));
+initialDice = rand(1,nTraps);
+probOn = simParam.onProb/(simParam.onProb+simParam.offProb);
+initialState = initialDice<probOn;
+
 capacityList = zeros(1,nTraps);
 for i = 1:nTraps
+    onProb = simParam.onProb + (-1 + 2*rand(1))*simParam.sdProb*simParam.onProb;
+    offProb = simParam.offProb + (-1 + 2*rand(1))*simParam.sdProb*simParam.offProb;
+    
     newTrap = Sim.Trap(trapCapacity,onProb,offProb,initialState(i));
     capacityList(i) = newTrap.capacity;
     trapList{i} = newTrap;
@@ -41,11 +44,13 @@ for i=2:nFrames
    currentState = prevState;
    for j = 1:nTraps
       currentTrap = trapList{j};
-      currentTrap.doSwitch(dice(i,randi(nTraps)));
+      currentTrap.doSwitch(dice(i,j));%randi(nTraps)));
       currentState(j) = currentTrap.getState; 
       
    end  
-   
+%    if all(currentState == 0)
+%        disp('stop')
+%    end
    satTrapIntensity(:,i) = I0 - sum(currentState(:).*capacityList(:));
    interactionIntensity(:,i) = I0 * (I0/(I0+sum(currentState(:).*capacityList2(:))));
    

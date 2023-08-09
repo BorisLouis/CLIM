@@ -29,7 +29,7 @@ subplot(1,3,2)
 imagesc(corrOutput.corrMap)
 axis image
 title('Correlation map');
-colormap(gca,'parula')
+colormap(gca,'gray')
 cb = colorbar;
 cb.Position = [0.63 0.355 0.012 0.325];
 subplot(1,3,3)
