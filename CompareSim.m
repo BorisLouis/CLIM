@@ -5,37 +5,39 @@ interactionInt = allData(:,:,4);
 
 %% low trap number
 idx = [1 5 10];
+yl = [0 35000];
+xl = [0 1000];
 
 figure
 subplot(3,2,1)
 plot(trapSatData(idx(1),:),'r')
-ylim([0 12000])
-xlim([0 1000])
+ylim(yl)
+xlim(xl)
 
 subplot(3,2,2)
 plot(interactionInt(idx(1),:),'b')
-ylim([0 12000])
-xlim([0 1000])
+ylim(yl)
+xlim(xl)
 
 subplot(3,2,3)
 plot(trapSatData(idx(2),:),'r')
-ylim([0 12000])
-xlim([0 1000])
+ylim(yl)
+xlim(xl)
 
 subplot(3,2,4)
 plot(interactionInt(idx(2),:),'b')
-ylim([0 12000])
-xlim([0 1000])
+ylim(yl)
+xlim(xl)
 
 subplot(3,2,5)
 plot(trapSatData(idx(3),:),'r')
-ylim([0 12000])
-xlim([0 1000])
+ylim(yl)
+xlim(xl)
 
 subplot(3,2,6)
 plot(interactionInt(idx(3),:),'b')
-ylim([0 12000])
-xlim([0 1000])
+ylim(yl)
+xlim(xl)
 %% high trap number
 idx = [9 13 17];
 
