@@ -10,6 +10,7 @@ movInfo.Length = tObj.getTag(257);
 movInfo.Path   = fileparts(path2File);
 
 tfl = 0; % Total frame length
+
 while true
     tfl = tfl + 1; % Increase frame count
     if tObj.lastDirectory(), break; end;

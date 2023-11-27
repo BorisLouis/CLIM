@@ -268,22 +268,15 @@ classdef Movie < handle
                 
                 case '.ome.tif'
                     
-                    [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
-
-                    if iscell(frameInfo)
-                        disp('Those tiff are multi-Images, we combine the info...')
-                        [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo);
-                        movInfo.indivFrame = movInfo.maxFrame;
-                        movInfo.maxFrame = totFrame;
-
-                    end
+                    [frameInfo, movInfo] = Load.Movie.ome.getInfo(fullPath);
+                    
                 otherwise
                     extName = strrep(ext,'.','');  
                     [frameInfo,movInfo] = Load.Movie.(extName).getInfo(fullPath);
                                   
             end
             movInfo.ext = ext;
-            movInfo.indivFrame = movInfo.maxFrame;
+            
             
         end
         function [data] = getFrame(obj,idx)
@@ -303,21 +296,8 @@ classdef Movie < handle
             switch ext
                 case '.ome.tif'
                     %LoadCam
-                    [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
-                    movC2 = fliplr(movC2);
-                if isfield(obj.info,'ROI')
-
-                    ROI = round(obj.info.ROI);
-                    data.Cam1 = movC1(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3),:);
-
-                else
-
-                    data.Cam1 = movC1;
-                    data.Cam2 = movC2;
-
-                end
-                case ''
-                    
+                    [data] = Load.Movie.ome.getFrame(obj.raw.frameInfo,obj.raw.movInfo,idx);
+                   
                 
                 otherwise
                     

@@ -169,7 +169,7 @@ classdef CorrClusterMovie < Core.Movie
        
         end
         
-        function [correctedData] = deconvolve(obj,data)
+        function [correctedData] = deconvolve(obj,data,decThresh)
             
             disp('Detecting background based on autocorrelation')
             %remove background
@@ -184,7 +184,7 @@ classdef CorrClusterMovie < Core.Movie
                 end
             end
             
-            deleteMask = medAutoCorr>0.1;
+            deleteMask = abs(medAutoCorr)>decThresh;
             %clean up the binary image mask
             SE = strel('disk',4);
             deleteMask = imopen(deleteMask,SE);
@@ -436,60 +436,63 @@ classdef CorrClusterMovie < Core.Movie
             %px2Move = table(zeros(size(label)),zeros(size(label)),zeros(size(label)),'VariableNames',{'currClust','Sil','bestClust'});
             lab = unique(label);
             secondBestPerCluster = zeros(size(lab));
-            for i = 1:length(lab)
-                %gather current cluster
-                idx = lab(i);
-                currClust = idx;
-                [row,col] = find(corrM==currClust);
-                
-                %get the index of top 10 closest cluster
-                currCenter = stats(idx).Centroid;
-                dist = cellfun(@(x) abs(x-currCenter),{stats.Centroid},'UniformOutput',false);
-                euclDist = cellfun(@(x) sqrt(sum(x.^2)),dist);
-                [~,idx2Clust] = mink(euclDist,10); 
-                %previously getting top 10 correlated
-                %[corr,idx2Clust] = maxk(clusterCorr(currClust,:),10);
-                corr = clusterCorr(currClust,idx2Clust);
-                traces2Comp = traces(:,idx2Clust);
-                secondBestPerPixel = zeros(size(row));
-                for j = 1:length(row)
-                    currentTrace   = squeeze(data(row(j),col(j),:));
-                    tmpTraces = [traces2Comp currentTrace];
-                    corrData = corrcoef(double(tmpTraces));
+            if length(lab) >1
+                for i = 1:length(lab)
+                    %gather current cluster
+                    idx = lab(i);
+                    currClust = idx;
+                    [row,col] = find(corrM==currClust);
 
-                    currentCorrData = corrData(end,:);
-                    currentCorrData(currentCorrData==1) = -inf;
-                    
-                    
-                    [maxCorr,idx2MaxCorr] = maxk(currentCorrData,2);
-                    %get correlation to its own cluster (where correlated
-                    %cluster gave 1 in correlation)
-                    correlation2Cluster = currentCorrData(corr==1);
-                    
-                    
-                    [secondBestCorr,id] = max(maxCorr(maxCorr ~= correlation2Cluster));
-                   % secondBestClust = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
-                    silMap(row(j),col(j)) = (correlation2Cluster - secondBestCorr)/max([correlation2Cluster,secondBestCorr]);
-                    
-                    secondBestPerPixel(j) = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
+                    %get the index of top 10 closest cluster
+                    currCenter = stats(idx).Centroid;
+                    dist = cellfun(@(x) abs(x-currCenter),{stats.Centroid},'UniformOutput',false);
+                    euclDist = cellfun(@(x) sqrt(sum(x.^2)),dist);
+                    [~,idx2Clust] = mink(euclDist,10); 
+                    %previously getting top 10 correlated
+                    %[corr,idx2Clust] = maxk(clusterCorr(currClust,:),10);
+                    corr = clusterCorr(currClust,idx2Clust);
+                    traces2Comp = traces(:,idx2Clust);
+                    secondBestPerPixel = zeros(size(row));
+                    for j = 1:length(row)
+                        currentTrace   = squeeze(data(row(j),col(j),:));
+                        tmpTraces = [traces2Comp currentTrace];
+                        corrData = corrcoef(double(tmpTraces));
 
-%                     px2Move(i,:).currClust = currClust;
-%                     px2Move(i,:).Sil  = silMap(row(i),col(i));
-%                     if silMap<-0.2
-%                         px2Move(i,:).bestClust = secondBestClust;
-%                     else
-%                         px2Move(i,:).bestClust = currClust;
-%                     end
+                        currentCorrData = corrData(end,:);
+                        correlation2Cluster = currentCorrData(corr==1);
+                        currentCorrData(currentCorrData==1) = -inf;
+
+
+                        [maxCorr,idx2MaxCorr] = maxk(currentCorrData,2);
+                        %get correlation to its own cluster (where correlated
+                        %cluster gave 1 in correlation)
+
+
+
+                        [secondBestCorr,id] = max(maxCorr(maxCorr ~= correlation2Cluster));
+                       % secondBestClust = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
+                        silMap(row(j),col(j)) = (correlation2Cluster - secondBestCorr)/max([correlation2Cluster,secondBestCorr]);
+
+                        secondBestPerPixel(j) = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
+
+    %                     px2Move(i,:).currClust = currClust;
+    %                     px2Move(i,:).Sil  = silMap(row(i),col(i));
+    %                     if silMap<-0.2
+    %                         px2Move(i,:).bestClust = secondBestClust;
+    %                     else
+    %                         px2Move(i,:).bestClust = currClust;
+    %                     end
+
+                    end
+
+                    x = unique(secondBestPerPixel);
+                    bestMatchCount = groupcounts(secondBestPerPixel);
+                    [~,ii] = max(bestMatchCount);
+                    secondBestPerCluster(i) = x(ii);
 
                 end
-                
-                x = unique(secondBestPerPixel);
-                bestMatchCount = groupcounts(secondBestPerPixel);
-                [~,ii] = max(bestMatchCount);
-                secondBestPerCluster(i) = x(ii);
-
             end
-           
+
             
             cleanMask = corrM;
             cleanMask(silMap<0.2) = 0;
@@ -611,48 +614,50 @@ classdef CorrClusterMovie < Core.Movie
             pos    = zeros(max(corrM(:)),2);
             nClust = max(corrM(:));
             traceD = struct('trace',0,'clustPos',0,...
-                'nPx',0,'clustIdx',0,'method',0);
-            traceD(nClust).trace = 0;
-            
-            for i = 1 : nClust
-                % get indices of traces 
-                [row,col] = find(corrM==i);
-                id = find(corrM==i);
-                r = repmat(row,1,size(data,3));
-                r = reshape(r',size(data,3)*length(row),1);
-                c = repmat(col,1,size(data,3));
-                c = reshape(c',size(data,3)*length(col),1);
+                    'nPx',0,'clustIdx',0,'method',0);
+            if nClust ~= 0
                 
-                f = repmat((1:size(data,3))',length(col),1);
-                idx = sub2ind(size(data),r,c,f);
-                
-                tmpTrace = data(idx);
-                tmpTrace = reshape(tmpTrace,size(data,3),length(row));
-                
-                
-                pos(i,:)    = [mean(row), mean(col)];
-                
-                switch lower(method)
-                    case 'mean'
-                         traceD(i).trace = mean(tmpTrace,2);
-                    case 'silweigth'
-                         silWeight = silVal(id);
-                         tmpTrace(:,silWeight<0.05) = [];
-                         silWeight(silWeight<0.05) = [];
-                         silWeight = repmat(silWeight',size(tmpTrace,1),1);
-                         traceD(i).trace = sum(double(tmpTrace).*silWeight,2)./(sum(silWeight(1,:)));
-                    case 'silthresh'
-                        silWeight = silVal(id);
-                        traceD(i).trace = mean(tmpTrace(:,silWeight>0.2),2);
+                traceD(nClust).trace = 0;
+
+                for i = 1 : nClust
+                    % get indices of traces 
+                    [row,col] = find(corrM==i);
+                    id = find(corrM==i);
+                    r = repmat(row,1,size(data,3));
+                    r = reshape(r',size(data,3)*length(row),1);
+                    c = repmat(col,1,size(data,3));
+                    c = reshape(c',size(data,3)*length(col),1);
+
+                    f = repmat((1:size(data,3))',length(col),1);
+                    idx = sub2ind(size(data),r,c,f);
+
+                    tmpTrace = data(idx);
+                    tmpTrace = reshape(tmpTrace,size(data,3),length(row));
+
+
+                    pos(i,:)    = [mean(row), mean(col)];
+
+                    switch lower(method)
+                        case 'mean'
+                             traceD(i).trace = mean(tmpTrace,2);
+                        case 'silweigth'
+                             silWeight = silVal(id);
+                             tmpTrace(:,silWeight<0.05) = [];
+                             silWeight(silWeight<0.05) = [];
+                             silWeight = repmat(silWeight',size(tmpTrace,1),1);
+                             traceD(i).trace = sum(double(tmpTrace).*silWeight,2)./(sum(silWeight(1,:)));
+                        case 'silthresh'
+                            silWeight = silVal(id);
+                            traceD(i).trace = mean(tmpTrace(:,silWeight>0.2),2);
+                    end
+
+                    traceD(i).clustPos = id;
+                    traceD(i).nPx = numel(id);
+                    traceD(i).clustIdx = i;
+                    traceD(i).method = method;
+
                 end
-               
-                traceD(i).clustPos = id;
-                traceD(i).nPx = numel(id);
-                traceD(i).clustIdx = i;
-                traceD(i).method = method;
-                                            
             end
-            
             obj.traceData = traceD;
             %save output
             fileName = [obj.pathRes filesep 'traceData' num2str(obj.corrMask.corrThresh) '.mat'];

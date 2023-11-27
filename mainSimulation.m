@@ -11,8 +11,8 @@ camNoise   = camNoise.bkgData;
 
 %% Simulation input
 simParam.sizeIm = 128;
-simParam.nFrames = 100;
-simParam.nParticles = 15;
+simParam.nFrames = 200;
+simParam.nParticles = 2;
 delta = 5;
 model.name = 'gaussian';
 model.sigma_x = 1.5;
@@ -35,19 +35,20 @@ intensity = Sim.simIntensity(simParam,simType);
 simParam.nFrames = simParam.nFrames/3;
 intensity = imresize(intensity,[simParam.nParticles, simParam.nFrames]);
 %% add laser noise
-lasNoise = laserFluct.center/ laserFluct.Avg;
-
-sampled = datasample(lasNoise,simParam.nFrames,'weight',laserFluct.weight);
-
-sampled = repmat(sampled,simParam.nParticles,1);
-
-intensity = intensity.*sampled;
+% lasNoise = laserFluct.center/ laserFluct.Avg;
+% 
+% sampled = datasample(lasNoise,simParam.nFrames,'weight',laserFluct.weight);
+% 
+% sampled = repmat(sampled,simParam.nParticles,1);
+% 
+% intensity = intensity.*sampled;
 
 %% Simulation
 sizeIm = simParam.sizeIm;
 nFrames = simParam.nFrames;
 [X,Y] = meshgrid(1:sizeIm,1:sizeIm);
 data = zeros(sizeIm,sizeIm,nFrames,'uint16');
+
 for i = 1:simParam.nParticles
     x0 = randperm(sizeIm-2*delta,1)+delta;
     y0 = randperm(sizeIm-2*delta,1)+delta;

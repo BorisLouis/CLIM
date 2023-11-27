@@ -12,9 +12,9 @@ function Intensity = simIntensity(simParam,simType)
         
         case 'blinking'
             
-            I0 = baseCounts-sdCounts*baseCounts + rand(nParticles,1)*2*sdCounts*baseCounts;
+            I0 = baseCounts;
             
-            blinkingF = intMod-sdIntMod+rand(nParticles,1)*2*sdIntMod;
+            blinkingF = intMod;
             I1 = I0.*blinkingF;
             %give a switching probability to each particles with some distribution
             switchProb = baseProb;
@@ -23,27 +23,26 @@ function Intensity = simIntensity(simParam,simType)
             Intensity = rand(nParticles,nFrames);
             idx = Intensity(:,1)<=switchProb(:);
             Intensity(idx,1) = I0(1);
-            Intensity(~idx,1) = 0;
+            Intensity(~idx,1) = I1;
             
-            %prevIntensity = Intensity(:,1);
+            prevIntensity = Intensity(:,1);
             for i=2:nFrames
                idxToSwitch = Intensity(:,i)<=switchProb(:);
 
                %The one that do not switch get same intensity as before
-               %Intensity(~idxToSwitch,i) = prevIntensity(~idxToSwitch);
-               Intensity(~idxToSwitch,i) = 0;
+               Intensity(~idxToSwitch,i) = prevIntensity(~idxToSwitch);
+               %Intensity(~idxToSwitch,i) = 0;
                Intensity(idxToSwitch,i) = I0(1);
                %The one that switch, we need to check what was the previous level
-%               idxI0 = prevIntensity == I0(:);
-
-%                idxI0ToSwitch = logical(idxToSwitch.*idxI0);
-%                idxI1ToSwitch = logical(idxToSwitch.*~idxI0);
+               idxI0 = prevIntensity == I0(:);
+               idxI0ToSwitch = logical(idxToSwitch.*idxI0);
+               idxI1ToSwitch = logical(idxToSwitch.*~idxI0);
 % 
 %                %switch the intensity level that needs switch
-%                Intensity(idxI0ToSwitch,i) = I1(idxI0ToSwitch);
-%                Intensity(idxI1ToSwitch,i) = I0(idxI1ToSwitch);  
+               Intensity(idxI0ToSwitch,i) = I1;
+               Intensity(idxI1ToSwitch,i) = I0;  
 % 
-%                prevIntensity = Intensity(:,i);
+               prevIntensity = Intensity(:,i);
             end
             
         case 'enhancement'
