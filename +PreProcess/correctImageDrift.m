@@ -10,23 +10,23 @@ DriftCorrx = round(Drift(:,2));
 DriftCorry = round(Drift(:,1));
 
 
-%correctedImage = circshift(im_In,[DriftCorry DriftCorrx]);
+correctedImage = circshift(im_In,[DriftCorry DriftCorrx]);
 
 
-% %add padding for shifting images
-correctedImage=randn(size(im_In,1)+2*abs(DriftCorry),size(im_In,2)+...
-    2*abs(DriftCorrx))*20+min(min(im_In));
-
-% Shift the image according to the drift
-correctedImage(abs(DriftCorry)+DriftCorry+1:abs(DriftCorry)+DriftCorry+size(im_In,1),...
-    abs(DriftCorrx)+DriftCorrx+1:abs(DriftCorrx)+DriftCorrx+size(im_In,2))...
-    = im_In;
-
-% Remove the paddings to obtain the same size as the input image
-correctedImage(1:abs(DriftCorry),:,:)=[];
-correctedImage(size(im_In,1)+1:size(im_In,1)+abs(DriftCorry),:,:)=[];
-correctedImage(:,1:abs(DriftCorrx),:)=[];
-correctedImage(:,size(im_In,2)+1:size(im_In,2)+abs(DriftCorrx),:)=[];
+% % %add padding for shifting images
+% correctedImage=randn(size(im_In,1)+2*abs(DriftCorry),size(im_In,2)+...
+%     2*abs(DriftCorrx))*20+min(min(im_In));
+% 
+% % Shift the image according to the drift
+% correctedImage(abs(DriftCorry)+DriftCorry+1:abs(DriftCorry)+DriftCorry+size(im_In,1),...
+%     abs(DriftCorrx)+DriftCorrx+1:abs(DriftCorrx)+DriftCorrx+size(im_In,2))...
+%     = im_In;
+% 
+% % Remove the paddings to obtain the same size as the input image
+% correctedImage(1:abs(DriftCorry),:,:)=[];
+% correctedImage(size(im_In,1)+1:size(im_In,1)+abs(DriftCorry),:,:)=[];
+% correctedImage(:,1:abs(DriftCorrx),:)=[];
+% correctedImage(:,size(im_In,2)+1:size(im_In,2)+abs(DriftCorrx),:)=[];
 
 
 end

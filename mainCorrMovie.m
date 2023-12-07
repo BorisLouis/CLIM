@@ -9,28 +9,28 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PostDoc\2023 - data\11 - November\22 - Second day Vacha\perovskite with PEDOT2\Power 2 33ms';
+file.path = 'D:\Documents\Unif\PostDoc\2023 - data\12 - December 23\5 - Vacha Lab - Dry Objective - Marked Samples contact layers\Oil obj old sample\mov17 - low pow no enhancement';
 file.ext  = '';
 
-info.runMethod = 'load';%load % load will try to load existing data from previous run
+info.runMethod = 'run';%load % load will try to load existing data from previous run
 info.driftCorr = true; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
-backgroundThresh = 0; %0.1 is default, 0 is for no background removal
-info.useThreshold = false;%false
+backgroundThresh = 0.01; %0.1 is default, 0 is for no background removal
+info.useThreshold = true;%false
 info.doPlot = false;% default-false, do plot will generate a movie of the clustering
 %procedure as it goes.
 info.ROI = false; %this is to use ROI for the whole analysis
-%      [x y  w h]
+%[x y  w h]
 ROI = [];
 %ROI = [5 71 230 120];
 %for intensity extraction
 method = 'SilWeigth'; %'Mean'
 % For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 testROIRadius = 64; %radius of the ROI to find optimal threshold
-frame2Process = 500:1500; %number of frame to used for correlation analysis.
-minCorr = 0.4;%Minimum correlation we want to have
+frame2Process = 1:2000; %number of frame to used for correlation analysis.
+minCorr = 0.3;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
-maxCorr = 0.8;%maximum correlation to be tested, higher than 0.9 makes little sense
+maxCorr = 0.7;%maximum correlation to be tested, higher than 0.9 makes little sense
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -39,8 +39,10 @@ myMovie.correctDrift;
 %% Loading frames  
 data1 = myMovie.loadFrames(frame2Process,ROI);
 
-%% 
+%% save data 
 %myMovie.saveMovie(data1,50);
+dataStorage.nBTiff('driftCorrected',data1,16);
+
 %% Deconvolution
 if deconvolve
     [correctedData] =  myMovie.deconvolve(data1,backgroundThresh);
@@ -104,9 +106,9 @@ color= 'colorcube';
 [corrMaskIM] = myMovie.getImageFromMask(corrMask,color);
 
 %% Extract intensity traces 
-data = myMovie.loadFrames(1:1000,ROI);
+data = myMovie.loadFrames(1:myMovie.raw.maxFrame,ROI);
 
-[traces] = myMovie.getAllTraces(correctedData,method);
+[traces] = myMovie.getAllTraces(data,method);
 
 
 

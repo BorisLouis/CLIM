@@ -172,6 +172,20 @@ classdef CorrClusterMovie < Core.Movie
         function [correctedData] = deconvolve(obj,data,decThresh)
             
             disp('Detecting background based on autocorrelation')
+            %basic segmentation
+            d = mean(data,3);
+            bw = imbinarize(d./max(d(:)),0.2);
+            area = regionprops(bw,'area','pixelidxlist');
+            %get largest area
+            [~,id] = max([area.Area]);
+            
+            pixels = area(id).PixelIdxList;
+            mask = zeros(size(d));
+            mask(pixels) = 1;
+            
+            data = data.*uint16(mask);
+            
+            
             %remove background
             medAutoCorr = zeros(size(data,1),size(data,2));
             for i = 1:size(data,1)
@@ -354,9 +368,10 @@ classdef CorrClusterMovie < Core.Movie
                     tmpRearrangeData = rearrangeData;
                     tmpRearrangeData(label==0,:) =[];
                     label(label==0) = [];
-                    silDist = silhouette(double(tmpRearrangeData),label,'Correlation');
-       
-                    Sil(i) = mean(silDist);
+                    %old silhouette calculation
+%                     silDist = silhouette(double(tmpRearrangeData),label,'Correlation');
+%        
+%                     Sil(i) = mean(silDist);
                     
                     % get silhouette from clusters
                     [~,silMap] = obj.cleanCorrMask(data);
@@ -448,8 +463,7 @@ classdef CorrClusterMovie < Core.Movie
                     dist = cellfun(@(x) abs(x-currCenter),{stats.Centroid},'UniformOutput',false);
                     euclDist = cellfun(@(x) sqrt(sum(x.^2)),dist);
                     [~,idx2Clust] = mink(euclDist,10); 
-                    %previously getting top 10 correlated
-                    %[corr,idx2Clust] = maxk(clusterCorr(currClust,:),10);
+               
                     corr = clusterCorr(currClust,idx2Clust);
                     traces2Comp = traces(:,idx2Clust);
                     secondBestPerPixel = zeros(size(row));
@@ -471,18 +485,15 @@ classdef CorrClusterMovie < Core.Movie
 
                         [secondBestCorr,id] = max(maxCorr(maxCorr ~= correlation2Cluster));
                        % secondBestClust = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
+                       if all(isnan(currentCorrData))
+                           silMap(row(j),col(j)) = 0;
+                           secondBestPerPixel(j) = NaN;
+                       else
                         silMap(row(j),col(j)) = (correlation2Cluster - secondBestCorr)/max([correlation2Cluster,secondBestCorr]);
 
                         secondBestPerPixel(j) = idx2Clust(idx2MaxCorr(maxCorr==secondBestCorr));
-
-    %                     px2Move(i,:).currClust = currClust;
-    %                     px2Move(i,:).Sil  = silMap(row(i),col(i));
-    %                     if silMap<-0.2
-    %                         px2Move(i,:).bestClust = secondBestClust;
-    %                     else
-    %                         px2Move(i,:).bestClust = currClust;
-    %                     end
-
+                       end
+  
                     end
 
                     x = unique(secondBestPerPixel);

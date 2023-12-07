@@ -27,12 +27,19 @@ function [corrMask,frames] = corrClustering(listCorrPx,listVal,meanPx,inds,data,
         currList = listCorrPx{idx};
         currVal  = listVal{idx};
         
+        %remove value that have been treated:
+        currVal(ismember(currList,treatedIdx,'row'),:) =[];
+        currVal(~ismember(currList,indsCopy,'row'),:)   =[];
+       
+        currList(ismember(currList,treatedIdx,'row'),:) =[];
+        currList(~ismember(currList,indsCopy,'row'),:) = [];
+
+        
         currList(currVal<thresh) = [];
         %check that the list does not contain already treated
         %pixels
-        %currVal(ismember(currList,treatedIdx,'row'),:) =[];
-        currList(ismember(currList,treatedIdx,'row'),:) =[];
-        currList(~ismember(currList,indsCopy,'row'),:) = [];
+       
+        
         tmpList = [currIndex; currList];
         
         %add the pixel to the cluster
@@ -42,8 +49,8 @@ function [corrMask,frames] = corrClustering(listCorrPx,listVal,meanPx,inds,data,
         %keep track of the added pixels
         idx = find(isnan(treatedIdx(:,1)),1);
         treatedIdx(idx:idx+length(tmpList)-1) = tmpList;
-        currList = tmpList;
         
+        currList = tmpList;
         %if the list is empty then the pixel is "dead" and we
         %remove it from the list
         if isempty(currList)
@@ -80,12 +87,14 @@ function [corrMask,frames] = corrClustering(listCorrPx,listVal,meanPx,inds,data,
                 list2Add = unique(currList);
                 
                 %remove already treated pixels from the list:
-                list2Add(ismember(list2Add,treatedIdx,'row')) = []; 
+                if ~isempty(list2Add)
+                    list2Add(ismember(list2Add,treatedIdx,'row')) = []; 
+                    
+                end
                 %% STOPPPED HERE
                 if isempty(list2Add)
                                      
                 else
-                    
                     list2Add(~ismember(list2Add,indsCopy,'row'),:) = [];
                     if ~isempty(list2Add)
                         %find pixel that are already inside the cluster to check
