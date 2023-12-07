@@ -9,7 +9,7 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PostDoc\2023 - data\12 - December 23\5 - Vacha Lab - Dry Objective - Marked Samples contact layers\Oil obj old sample\mov17 - low pow no enhancement';
+file.path = 'D:\Documents\Unif\PostDoc\2023 - data\12 - December 23\5 - Vacha Lab - Dry Objective - Marked Samples contact layers\on PCBM1_made on 1204\Mov11 - Marked 30%';
 file.ext  = '';
 
 info.runMethod = 'run';%load % load will try to load existing data from previous run
@@ -24,7 +24,7 @@ info.ROI = false; %this is to use ROI for the whole analysis
 ROI = [];
 %ROI = [5 71 230 120];
 %for intensity extraction
-method = 'SilWeigth'; %'Mean'
+method = 'Mean'; %'Mean'
 % For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 testROIRadius = 64; %radius of the ROI to find optimal threshold
 frame2Process = 1:2000; %number of frame to used for correlation analysis.
@@ -111,7 +111,7 @@ data = myMovie.loadFrames(1:myMovie.raw.maxFrame,ROI);
 [traces] = myMovie.getAllTraces(data,method);
 
 
-
+corr
 
 
 %% Generate final Output
