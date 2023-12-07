@@ -37,11 +37,11 @@ myMovie = Core.CorrClusterMovie(file,info);
 myMovie.correctDrift;
     
 %% Loading frames  
-data1 = myMovie.loadFrames(frame2Process,ROI);
+data1 = myMovie.loadFrames(1:myMovie.raw.movInfo.maxFrame,ROI);
 
 %% save data 
 %myMovie.saveMovie(data1,50);
-dataStorage.nBTiff('driftCorrected',data1,16);
+%dataStorage.nBTiff('driftCorrected.tif',data1,16);
 
 %% Deconvolution
 if deconvolve
@@ -49,21 +49,23 @@ if deconvolve
 else
     correctedData = data1;
 end
+
+data2Use = correctedData(:,:,frame2Process);
 %% Scanning threshold
 if info.useThreshold
-    center = [round(size(correctedData,1)/2), round(size(correctedData,2)/2)];
+    center = [round(size(data2Use,1)/2), round(size(data2Use,2)/2)];
     if info.ROI ==false
         myMovie.info.ROIUsed = [];    
     else
-        ROICorrData = correctedData;
+        ROICorrData = data2Use;
         myMovie.info.ROIUsed = ROI;
     end
     try
 
-        ROICorrData = correctedData(center(1)-testROIRadius:center(1)+testROIRadius-1,center(2)-testROIRadius:center(2)+testROIRadius-1,:);
+        ROICorrData = data2Use(center(1)-testROIRadius:center(1)+testROIRadius-1,center(2)-testROIRadius:center(2)+testROIRadius-1,:);
     catch except
         if strcmp(except.identifier, 'MATLAB:badsubscript')
-            ROICorrData = correctedData;
+            ROICorrData = data2Use;
         end
     end
 
@@ -78,17 +80,17 @@ else
     corrInfo.thresh = minCorr;
 end
 %get px correlation
-[corrRelation] = myMovie.getPxCorrelation(correctedData);
+[corrRelation] = myMovie.getPxCorrelation(data2Use);
 %get the mask using the optimal threshold
-[corrMask] = myMovie.getCorrelationMask(correctedData,corrInfo);
+[corrMask] = myMovie.getCorrelationMask(data2Use,corrInfo);
 
 
 %% clean up mask (+ Silhouette map)
 
-[cleanMask,silMap] = myMovie.cleanCorrMask(correctedData);
+[cleanMask,silMap] = myMovie.cleanCorrMask(data2Use);
 
 %% Old correlation metrics (histogram)
-[bestClustEval1,bestRelNum] = myMovie.evalCluster(corrMask,correctedData);
+[bestClustEval1,bestRelNum] = myMovie.evalCluster(corrMask,data2Use);
 
 
 %% Plotting

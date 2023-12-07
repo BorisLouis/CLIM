@@ -174,7 +174,8 @@ classdef CorrClusterMovie < Core.Movie
             disp('Detecting background based on autocorrelation')
             %basic segmentation
             d = mean(data,3);
-            bw = imbinarize(d./max(d(:)),0.2);
+            bw = imbinarize(d./max(d(:)),0.1);
+            
             area = regionprops(bw,'area','pixelidxlist');
             %get largest area
             [~,id] = max([area.Area]);
@@ -183,43 +184,49 @@ classdef CorrClusterMovie < Core.Movie
             mask = zeros(size(d));
             mask(pixels) = 1;
             
-            data = data.*uint16(mask);
+            bkg  = double(data.*uint16(~bw));
+            bkg(bkg==0) = NaN;
+            background = squeeze(nanmedian(nanmedian(bkg,1),2));
+            signal = data.*uint16(mask);
             
             
-            %remove background
-            medAutoCorr = zeros(size(data,1),size(data,2));
-            for i = 1:size(data,1)
-                for j = 1:size(data,2)
-                
-                    currData = double(squeeze(data(i,j,:)));
-                    AC = autocorr(currData);
-                    medAutoCorr(i,j) = AC(2);
-                    
-                end
-            end
-            
-            deleteMask = abs(medAutoCorr)>decThresh;
-            %clean up the binary image mask
-            SE = strel('disk',4);
-            deleteMask = imopen(deleteMask,SE);
-            deleteMask = imfill(deleteMask,'holes');
-            %keep only the largest area
-            d = regionprops(deleteMask,'Area','PixelIdxList');
-            [~,idx] = max([d.Area]);
-            delMask = zeros(size(deleteMask));
-            delMask(d(idx).PixelIdxList) = 1;
-            %store the mask            
-            obj.deconvFunction.Mask = delMask;
-            %repeeat it in z and multiply it
-            delMask = repmat(delMask,1,1,size(data,3));
-            
-            bkgCorrData = double(delMask).*double(data);
-                     
+%             %remove background
+%             medAutoCorr = zeros(size(signal,1),size(signal,2));
+%             for i = 1:size(signal,1)
+%                 for j = 1:size(signal,2)
+%                 
+%                     currData = double(squeeze(signal(i,j,:)));
+%                     AC = autocorr(currData);
+%                     medAutoCorr(i,j) = AC(2);
+%                     
+%                 end
+%             end
+%             
+%             deleteMask = abs(medAutoCorr)>decThresh;
+%             %clean up the binary image mask
+%             SE = strel('disk',4);
+%             deleteMask = imopen(deleteMask,SE);
+%             deleteMask = imfill(deleteMask,'holes');
+%             %keep only the largest area
+%             d = regionprops(deleteMask,'Area','PixelIdxList');
+%             [~,idx] = max([d.Area]);
+%             delMask = zeros(size(deleteMask));
+%             delMask(d(idx).PixelIdxList) = 1;
+%             
+%             %repeeat it in z and multiply it
+%             delMask = repmat(delMask,1,1,size(signal,3));
+%             
+%             bkgCorrData = double(delMask).*double(signal);
+%                      
             %deconvolve data
-            [correctedData,deconvFunc] = Core.CorrClusterMovie.deconvolveFromMean(bkgCorrData);
+            [correctedData,deconvFunc] = Core.CorrClusterMovie.deconvolveFromMean(signal);
             
+            %store the mask            
+            obj.deconvFunction.Mask = mask;
             obj.deconvFunction.Curve = deconvFunc.Data;
             obj.deconvFunction.Smoothed = deconvFunc.smoothed;
+            obj.deconvFunction.background = background;
+            obj.deconvFunction.background2Sub = mean(background);
             
             figure
             subplot(1,2,1)
