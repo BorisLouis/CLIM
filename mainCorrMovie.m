@@ -44,11 +44,9 @@ data1 = myMovie.loadFrames(1:myMovie.raw.movInfo.maxFrame,ROI);
 %dataStorage.nBTiff('driftCorrected.tif',data1,16);
 
 %% Deconvolution
-if deconvolve
-    [correctedData] =  myMovie.deconvolve(data1,backgroundThresh);
-else
-    correctedData = data1;
-end
+
+[correctedData] =  myMovie.deconvolve(data1,backgroundThresh,deconvolve);
+
 
 data2Use = correctedData(:,:,frame2Process);
 %% Scanning threshold
@@ -110,10 +108,10 @@ color= 'colorcube';
 %% Extract intensity traces 
 data = myMovie.loadFrames(1:myMovie.raw.maxFrame,ROI);
 
-[traces] = myMovie.getAllTraces(data,method);
+[traces] = myMovie.getAllTraces(data,correctedData,method);
 
 
-corr
+
 
 
 %% Generate final Output

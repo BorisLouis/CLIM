@@ -169,7 +169,7 @@ classdef CorrClusterMovie < Core.Movie
        
         end
         
-        function [correctedData] = deconvolve(obj,data,decThresh)
+        function [correctedData] = deconvolve(obj,data,decThresh,doDeconvolve)
             
             disp('Detecting background based on autocorrelation')
             %basic segmentation
@@ -183,7 +183,7 @@ classdef CorrClusterMovie < Core.Movie
             pixels = area(id).PixelIdxList;
             mask = zeros(size(d));
             mask(pixels) = 1;
-            
+            mask = imfill(mask,'holes');
             bkg  = double(data.*uint16(~bw));
             bkg(bkg==0) = NaN;
             background = squeeze(nanmedian(nanmedian(bkg,1),2));
@@ -219,9 +219,16 @@ classdef CorrClusterMovie < Core.Movie
 %             bkgCorrData = double(delMask).*double(signal);
 %                      
             %deconvolve data
-            [correctedData,deconvFunc] = Core.CorrClusterMovie.deconvolveFromMean(signal);
+            if doDeconvolve
+                [correctedData,deconvFunc] = Core.CorrClusterMovie.deconvolveFromMean(signal);
+            else
+                deconvFunc.Data = ones(1:size(data,3));
+                deconvFunc.smoothed = deconvFunc.Data;
+                correctedData = signal;
+            end
             
-            %store the mask            
+            %store the mask
+            obj.deconvFunction.deconv = doDeconvolve;
             obj.deconvFunction.Mask = mask;
             obj.deconvFunction.Curve = deconvFunc.Data;
             obj.deconvFunction.Smoothed = deconvFunc.smoothed;
@@ -230,7 +237,7 @@ classdef CorrClusterMovie < Core.Movie
             
             figure
             subplot(1,2,1)
-            imagesc(delMask(:,:,1))
+            imagesc(mask(:,:,1))
             title('Background removal mask')
             axis image
             subplot(1,2,2)
@@ -608,12 +615,15 @@ classdef CorrClusterMovie < Core.Movie
                  
         end
         
-        function [traceD] = getAllTraces(obj,data,method)
+        function [traceD] = getAllTraces(obj,data,corrData,method)
             
             switch nargin
                 case 2
                     method = 'mean';
+                    corrData = 0;
                 case 3
+                    method = 'mean';
+                case 4 
                 otherwise
                     error('Too many input argument')
             end
@@ -631,8 +641,9 @@ classdef CorrClusterMovie < Core.Movie
             traces = zeros(max(corrM(:)),size(data,3));
             pos    = zeros(max(corrM(:)),2);
             nClust = max(corrM(:));
-            traceD = struct('trace',0,'clustPos',0,...
+            traceD = struct('trace',0,'corrTrace',0,'clustPos',0,...
                     'nPx',0,'clustIdx',0,'method',0);
+                
             if nClust ~= 0
                 
                 traceD(nClust).trace = 0;
@@ -651,6 +662,13 @@ classdef CorrClusterMovie < Core.Movie
 
                     tmpTrace = data(idx);
                     tmpTrace = reshape(tmpTrace,size(data,3),length(row));
+                    
+                    if length(corrData)~=1
+                        tmpCorrTrace = corrData(idx);
+                        tmpCorrTrace = reshape(tmpCorrTrace,size(data,3),length(row));
+                    else
+                        tmpCorrTrace = 0;
+                    end
 
 
                     pos(i,:)    = [mean(row), mean(col)];
@@ -658,15 +676,25 @@ classdef CorrClusterMovie < Core.Movie
                     switch lower(method)
                         case 'mean'
                              traceD(i).trace = mean(tmpTrace,2);
+                             traceD(i).corrTrace = mean(tmpCorrTrace,2);
                         case 'silweigth'
                              silWeight = silVal(id);
                              tmpTrace(:,silWeight<0.05) = [];
+                             if length(corrData)~=1
+                                tmpCorrTrace(:,silWeight<0.05) = [];
+                             end
                              silWeight(silWeight<0.05) = [];
                              silWeight = repmat(silWeight',size(tmpTrace,1),1);
                              traceD(i).trace = sum(double(tmpTrace).*silWeight,2)./(sum(silWeight(1,:)));
+                             if length(corrData)~=1
+                                traceD(i).corrTrace = sum(double(tmpCorrTrace).*silWeight,2)./(sum(silWeight(1,:)));
+                             end
                         case 'silthresh'
                             silWeight = silVal(id);
                             traceD(i).trace = mean(tmpTrace(:,silWeight>0.2),2);
+                            if length(corrData)~=1
+                                traceD(i).corrTrace= mean(tmpCorrTrace(:,silWeight>0.2),2);
+                            end
                     end
 
                     traceD(i).clustPos = id;
@@ -846,15 +874,23 @@ classdef CorrClusterMovie < Core.Movie
             
             %calculate the mean intensity trace, ignoring zeros from
             %background deletion step
-            meanData = squeeze(sum(sum(data,1),2)./sum(sum(data(:,:,1)~=0,1),2));
+            %sum in 2D across time (spatial averaged time trace) and divide
+            %by nnz (number of nonzero element) in one of the slice to
+            %avoid weighing in the zeros from backgound
+            meanData = squeeze(sum(sum(data,1),2)./nnz(data(:,:,1)));
             deconvolveFunc = smooth(meanData,0.05,'rloess');
             correctedData = data;
             for i =1:size(data,1)
                 for j=1:size(data,2)
                      currentData = squeeze(data(i,j,:));
-                     [~,r] = deconv(currentData,meanData);
-                     cleanData = r+mean(currentData);
-                     correctedData(i,j,:) = cleanData; 
+                     if ~all(currentData==0)
+                         [~,r] = deconv(currentData,meanData);
+                         cleanData = r+mean(currentData);
+                         correctedData(i,j,:) = cleanData;
+                     else
+                         correctedData(i,j,:) = currentData;
+                     end
+                         
                 end
             end
             
