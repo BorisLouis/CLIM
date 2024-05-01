@@ -9,9 +9,9 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PostDoc\2023 - data\11 - November\29 - Vacha\perovskite on glass\Long WL low pow good';
+file.path = 'D:\Documents\Unif\PostDoc\2023 - data\12 - December 23\5 - Vacha Lab - Dry Objective - Marked Samples contact layers\on PCBM1_made on 1204\Mov11 - Marked 30%';
 file.ext  = '';
-
+corrInfo.thresh = 0.7;
 info.runMethod = 'run';%load % load will try to load existing data from previous run
 info.driftCorr = true; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
@@ -37,28 +37,53 @@ myMovie = Core.CorrClusterMovie(file,info);
 myMovie.correctDrift;
     
 %% Loading frames  
-data1 = myMovie.loadFrames(frame2Process,ROI);
+data1 = myMovie.loadFrames(1:myMovie.raw.movInfo.maxFrame,ROI);
 
 %% save data 
 %myMovie.saveMovie(data1,50);
-dataStorage.nBTiff('driftCorrected',data1,16);
+%dataStorage.nBTiff('driftCorrected.tif',data1,16);
 
 %% Deconvolution
-if deconvolve
-    [correctedData] =  myMovie.deconvolve(data1,backgroundThresh);
-else
-    correctedData = data1;
-end
+
+[correctedData] =  myMovie.deconvolve(data1,backgroundThresh,deconvolve);
+
+
+data2Use = correctedData(:,:,frame2Process);
 
 
 
 %% plot correlation map
 
 %get px correlation
-[corrRelation] = myMovie.getPxCorrelation(correctedData);
+[corrRelation] = myMovie.getPxCorrelation(data2Use);
 
 figure
 imagesc(corrRelation.corrMap)
 colormap('jet')
 caxis([0 1])
 axis image
+
+%get the mask using the optimal threshold
+[corrMask] = myMovie.getCorrelationMask(data2Use,corrInfo);
+
+
+%% clean up mask (+ Silhouette map)
+
+[cleanMask,silMap] = myMovie.cleanCorrMask(data2Use);
+
+%% Old correlation metrics (histogram)
+[bestClustEval1,bestRelNum] = myMovie.evalCluster(corrMask,data2Use);
+
+
+color= 'colorcube';
+[corrMaskIM] = myMovie.getImageFromMask(corrMask,color);
+
+%% Extract intensity traces 
+data = myMovie.loadFrames(1:myMovie.raw.maxFrame,ROI);
+
+[traces] = myMovie.getAllTraces(data,correctedData,method);
+
+
+%% Generate final Output
+
+[corrOutput] = myMovie.generateResults;
