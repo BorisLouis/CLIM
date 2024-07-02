@@ -119,6 +119,28 @@ data = myMovie.loadFrames(1:myMovie.raw.maxFrame,ROI);
 [corrOutput] = myMovie.generateResults;
 
 
+
+
+%% 
+RGBIM = label2rgb(corrOutput.corrMask,color,'k','shuffle');
+
+figure
+imagesc(RGBIM)
+axis image
+
+hold on
+
+centers = regionprops(corrOutput.corrMask,'Centroid');
+
+for i = 1:length(unique(corrOutput.corrMask(corrOutput.corrMask>0)))
+     x = centers(i).Centroid(1);
+     y = centers(i).Centroid(2);
+     
+     text(x,y,['.',num2str(i)],'FontSize',8,'Color','white');
+end
+
+
+
 %% Get interCluster traces
 % allTraces = zeros(size(traces,2),length(traces(1,1).trace));
 % for i = 1:size(traces,2)

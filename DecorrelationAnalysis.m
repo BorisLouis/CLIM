@@ -1,7 +1,10 @@
 clearvars -except corrOutput
 
 %% User input
-idx2Plot = 10;
+close all
+
+tic
+idx2Plot = 35;
 
 
 %% Get distance and correlation between clusters
@@ -28,14 +31,14 @@ corrMat = corrcoef(traces);
 distMat = squareform(pdist(pos));
 
 %% Plot decay example
-idx2Plot = 10;
+
 figure
 scatter(distMat(idx2Plot,:),corrMat(idx2Plot,:),10,'filled')
 axis square
 box on
 
 %% Image of the decay for single cluster
-idx2Plot = 2;
+
 bwimage = zeros(size(corrOutput.corrMap));
 for i = 1:size(corrMat,1)
    bwimage(corrOutput.results(i).clustPos) = corrMat(idx2Plot,i);
@@ -129,7 +132,7 @@ colorbar
 title('Correlation decay amplitude')
 
 
-
+toc
 
 
 
