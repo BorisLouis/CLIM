@@ -41,26 +41,19 @@ for i=1:floor(size(imCropped,3)/driftPeriod)
     maxRow = output(3);
     maxCol = output(4);
     
-%     corrMatCenter=corrMatrix(...
-%     ceil(size(corrMatrix,1)/2)-10:ceil(size(corrMatrix,1)/2)+10,...
-%     ceil(size(corrMatrix,2)/2)-10:ceil(size(corrMatrix,2)/2)+10);
+     if i > 1
+        if abs(maxRow)>2-Drift((i-1),1)
+            maxRow = Drift((i-1),1);
+        end
+    
+        if abs(maxCol)>2-Drift((i-1),2)
+            maxCol = Drift((i-1),2);
+        end
+     end
 
-    %[row,col,~,~,~] = Gauss.phasor(corrMatCenter);
-%     
-%     [X,Y] = meshgrid(1:size(corrMatCenter,2),1:size(corrMatCenter,1));
-%     x0 = size(corrMatCenter,2)/2;
-%     y0 = size(corrMatCenter,1)/2;
-%     domain(:,:,1) = X;
-%     domain(:,:,2) = Y;
-%     % Gaussian fit
-%     [gPar] = Gauss.MultipleFitting(corrMatCenter,x0,y0,domain,1,0);    
-% 
-%     DriftA((i-1)*driftPeriod+1:i*driftPeriod,1) = -(size(corrMatCenter,1)+1)/2+gPar(6);
-%     DriftA((i-1)*driftPeriod+1:i*driftPeriod,2) = -(size(corrMatCenter,2)+1)/2+gPar(5);
     Drift((i-1)*driftPeriod+1:i*driftPeriod,1) = maxRow;
     Drift((i-1)*driftPeriod+1:i*driftPeriod,2) = maxCol;
-%     Drift((i-1)*driftPeriod+1:i*driftPeriod,1) = maxRow-round(size(currentFrame,1)/2);
-%     Drift((i-1)*driftPeriod+1:i*driftPeriod,2) = maxCol-round(size(currentFrame,2)/2);
+
 %     
     
     waitbar(i/floor(size(imCropped,3)/driftPeriod),h,['Calculating drift ' num2str(i) '/' num2str(floor(size(imCropped,3)/driftPeriod))])
@@ -81,8 +74,8 @@ for i=1:size(imCropped,3)
     waitbar(i/size(imCropped,3),h,['Drift correction ' num2str(i) '/' num2str(size(imCropped,3))])
 end
 %remove circ Drift.
-minDrift = min(corrDrift);
-maxDrift = max(corrDrift);
+minDrift = round(min(Drift));
+maxDrift = round(max(Drift));
 
 correctedStack([1:minDrift(1),end+minDrift(1)+1:end],:,:) = 0;
 correctedStack(:,[1:minDrift(2),end+minDrift(2)+1:end],:) = 0;
