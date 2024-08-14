@@ -9,14 +9,15 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PostDoc\2023 - data\12 - December 23\5 - Vacha Lab - Dry Objective - Marked Samples contact layers\on PCBM1_made on 1204\Mov11 - Marked 30%';
+file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\Spot1_dryObj glass side';
 file.ext  = '';
 
-info.runMethod = 'run';%load % load will try to load existing data from previous run
+info.runMethod = 'load';%load % load will try to load existing data from previous run
 info.driftCorr = true; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
 backgroundThresh = 0.01; %0.1 is default, 0 is for no background removal
-info.useThreshold = true;%false
+info.thresholdMode = 'auto'; %'auto', 'fixed' or 'None'
+threshold = 0.5; %only used if info.thresholdMode is "fixed"
 info.doPlot = false;% default-false, do plot will generate a movie of the clustering
 %procedure as it goes.
 info.ROI = false; %this is to use ROI for the whole analysis
@@ -28,7 +29,7 @@ method = 'Mean'; %'Mean'
 % For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
 testROIRadius = 64; %radius of the ROI to find optimal threshold
 frame2Process = 1:2000; %number of frame to used for correlation analysis.
-minCorr = 0.3;%Minimum correlation we want to have
+minCorr = 0.4;%Minimum correlation we want to have
 stepCorr = 0.05; %Correlation difference between different tested threshold
 maxCorr = 0.7;%maximum correlation to be tested, higher than 0.9 makes little sense
 
@@ -50,7 +51,7 @@ data1 = myMovie.loadFrames(1:myMovie.raw.movInfo.maxFrame,ROI);
 
 data2Use = correctedData(:,:,frame2Process);
 %% Scanning threshold
-if info.useThreshold
+if strcmpi(info.thresholdMode,'auto')
     center = [round(size(data2Use,1)/2), round(size(data2Use,2)/2)];
     if info.ROI ==false
         myMovie.info.ROIUsed = [];    
@@ -72,16 +73,18 @@ if info.useThreshold
     [allCorrMask,threshold2Use] = myMovie.findOptimalThreshold(ROICorrData,thresh);
 end
 %% Calculate final corrMask
-if info.useThreshold
-    corrInfo.thresh = threshold2Use;
-else
+switch lower(info.thresholdMode)
+    case 'auto'
+        corrInfo.thresh = threshold2Use;
+    case 'fixed'
+        corrInfo.thresh = threshold;
+    case 'none'
     corrInfo.thresh = minCorr;
 end
 %get px correlation
 [corrRelation] = myMovie.getPxCorrelation(data2Use);
 %get the mask using the optimal threshold
 [corrMask] = myMovie.getCorrelationMask(data2Use,corrInfo);
-
 
 %% clean up mask (+ Silhouette map)
 
@@ -124,7 +127,7 @@ data = myMovie.loadFrames(1:myMovie.raw.maxFrame,ROI);
 %% 
 RGBIM = label2rgb(corrOutput.corrMask,color,'k','shuffle');
 
-figure
+f1 = figure;
 imagesc(RGBIM)
 axis image
 
@@ -139,6 +142,13 @@ for i = 1:length(unique(corrOutput.corrMask(corrOutput.corrMask>0)))
      text(x,y,['.',num2str(i)],'FontSize',8,'Color','white');
 end
 
+[folder,file,ext] = fileparts(corrOutput.path);
+
+fileName = [folder filesep 'clusterID.fig'];
+saveas(f1,fileName)
+
+fileName = [folder filesep 'ClusterID.svg'];
+saveas(f1,fileName,'svg')
 
 
 %% Get interCluster traces

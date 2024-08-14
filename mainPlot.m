@@ -75,13 +75,14 @@ f3 = figure('Position',[250 100 1200 800]);
 subplot(1,3,1)
 hold on
 imagesc(corrOutput.corrMap)
-colormap(gca,'parula')
+colormap(gca,'jet')
+
 cb = colorbar;
 cb.Position = [0.35 0.355 0.012 0.325];
 title('Correlation Map')
 axis image
 axis ij
-caxis([0,1]);
+caxis([0.5 1])
 subplot(1,3,2)
 hold on
 imagesc(corrOutput.corrClustMap)

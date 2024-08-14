@@ -310,14 +310,16 @@ classdef CorrClusterMovie < Core.Movie
                 %[distanceMap] = corrAnalysis.getDistanceMapFromPxList(inds,data);
 
                 disp('========> Performing Pseudo-clustering <==========')
-                if obj.info.useThreshold
+                switch lower(obj.info.thresholdMode)
+                    case 'none'
+                        [corrMask] = corrAnalysis.corrClusteringNoThresh(obj.corrRelation,data,corrThreshold,obj.info.doPlot);                
+                        cMask.method = 'noThreshold';
+                    otherwise
                     %perform pseudo-clustering
                     [corrMask] = corrAnalysis.corrClustering(listPx,listVal,meanPx,inds,data,corrThreshold,obj.info.doPlot);                
-                    cMask.method = 'pseudoClust';
-                else
-                   [corrMask] = corrAnalysis.corrClusteringNoThresh(obj.corrRelation,data,corrThreshold,obj.info.doPlot);                
-                   cMask.method = 'noThreshold';
+                    cMask.method = 'pseudoClust';                 
                 end
+                
                 %save Data 
                 cMask.raw = corrMask;
                 cMask.rawNCluster = max(corrMask(:));
