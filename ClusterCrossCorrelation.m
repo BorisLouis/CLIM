@@ -64,6 +64,49 @@ imagesc(tmpIm)
 
 
 
+%% 
+%% Get interCluster traces
+% allTraces = zeros(size(traces,2),length(traces(1,1).trace));
+% for i = 1:size(traces,2)
+%     allTraces(i,:) = traces(1,i).trace;
+%     
+% end
+% allTraces = allTraces';
+% corrCoeff = corrcoef(allTraces);
+% 
+% figure
+% imagesc(corrCoeff)
+% colormap('jet')
+% 
+% U = triu(corrCoeff);
+% U = nonzeros(U);
+% tmpData = U(U<1);
+% figure
+% histogram(tmpData);
+% 
+% 
+% % Let us try to get anti-correlated Crystal
+% [val,idx] = mink(corrCoeff(:),20);
+% %remove duplicate
+% val = val(1:2:end);
+% 
+% 
+% for i=1:length(val)
+%     currVal = val(i);
+%     idx = find(corrCoeff==currVal);
+%     [row,col] = ind2sub(size(corrCoeff),idx(2));
+% 
+%     figure
+%     hold on
+%     plot(allTraces(:,row))
+%     plot(allTraces(:,col))
+%     test = corrcoef(allTraces(:,row),allTraces(:,col));
+%     disp(test);
+% end
+
+
+
+
 
 
 

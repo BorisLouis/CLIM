@@ -9,9 +9,10 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PhD\2021-Data\11 - November\22-23 - All Measurement\22.11.21\Big grain batch1_2\place1\N2';
+file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\2024-08-07 - nonCS';
 file.ext  = '';
 
+pxSize = 0.2;%in um
 info.runMethod = 'load';%load % load will try to load existing data from previous run
 info.driftCorr = true; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
@@ -22,48 +23,60 @@ info.doPlot = false;% default-false, do plot will generate a movie of the cluste
 info.ROI = true; %this is to use ROI for the whole analysis
 %[x y  w h]
 %ROI = [];
-ROI = [5 71 230 120];
+ROI = [125 75 150 150];
 %for intensity extraction
 method = 'Mean'; %'Mean'
-% For all Data:[5 71 230 120]; %this will be use for scanning threshold and/or the whole analysis based on info.ROI
-testROIRadius = 64; %radius of the ROI to find optimal threshold
 frame2Process = 1:2000; %number of frame to used for correlation analysis.
-minCorr = 0.4;%Minimum correlation we want to have
-stepCorr = 0.05; %Correlation difference between different tested threshold
-maxCorr = 0.7;%maximum correlation to be tested, higher than 0.9 makes little sense
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
 myMovie.correctDrift;
     
+filename = dir(file.path);
+idx = contains({filename.name},'.mat');
+
+load([filename(idx).folder filesep filename(idx).name]);
 %% Loading frames  
 data1 = myMovie.loadFrames(1:myMovie.raw.movInfo.maxFrame,ROI);
-
-%% save data 
-%myMovie.saveMovie(data1,50);
-%dataStorage.nBTiff('driftCorrected.tif',data1,16);
-
 %% Deconvolution
-
 [correctedData] =  myMovie.deconvolve(data1,backgroundThresh,deconvolve);
 
-%%
+%% show the data
+figure(1)
+clf
+subplot(1,2,1)
+imagesc(squeeze(mean(correctedData,3)));
+caxis([400 6000])
+axis image
+subplot(1,2,2)
+imagesc(corrOutput.corrMap(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3)));
+caxis([0.5,1])
+colormap('jet')
+
+axis image
+
+
+%% Look at pixel decorrelation
 %CHANGE UNIT TO MICROMETER INSTEAD OF PIXEL
+plotROI = [41 10 60 60];
 data2Use = correctedData;
-pxSize = 200;
 
-radius = 27; %px
+%radius = 30; %px
 
-idx    =  [58,202];%[59,88];
+idx    =  [30,85];
+%TCP: (X,Y)  High Corr 1) (61,35),(93,42), (84,22), (91 27)
+%TCP: (X,Y)  low Corr 1) (85,35), (85,30)
+
+
 %Big: [58,202] R2 [59,88] R3[38,110]
 %Porous: R1[52,139]R2[30,93]  R3[80,87]
 %Bigger grain [111 135];%[157,45];%[157 45];%[116,146];% [111 135]
 
-[x,y] = meshgrid(idx(2)-radius:idx(2)+radius,idx(1)-radius:idx(1)+radius);
+[x,y] = meshgrid(1:size(data2Use(:,:,1)),1:size(data2Use(:,:,2)));
 linIdx = sub2ind(size(data2Use(:,:,1)),y,x);
 mainIdx = sub2ind(size(data2Use(:,:,1)),idx(1),idx(2));
 
-data2Process = data2Use(idx(1)-radius:idx(1)+radius,idx(2)-radius:idx(2)+radius,:);
+data2Process = data2Use;
 
 rd2Proc = reshape(data2Process,size(data2Process,1)*size(data2Process,2),size(data2Process,3));
 rlinIdx = reshape(linIdx,size(data2Process,1)*size(data2Process,2),1);
@@ -78,22 +91,42 @@ rCorrData = reshape(corrData,size(data2Process,1),size(data2Process,2));
 tmpIm = zeros(size(data2Use,1),size(data2Use,2));
 tmpIm(linIdx) = rCorrData;
 
-
+% plots
 figure
-imagesc(1:size(rCorrData,1)*pxSize/1000,1:size(rCorrData,2)*pxSize/1000,rCorrData);
+imagesc(1:size(rCorrData,1)*pxSize,1:size(rCorrData,2)*pxSize,rCorrData);
 colormap('jet')
 caxis([0 1])
 xlabel('Position in \mum')
 ylabel('Position in \mum')
 colorbar
 axis image
+xlim([plotROI(1)*pxSize plotROI(1)*pxSize+plotROI(3)*pxSize])
+ylim([plotROI(2)*pxSize plotROI(2)*pxSize+plotROI(4)*pxSize])
+
+figure
+imagesc(1:size(rCorrData,1)*pxSize,1:size(rCorrData,2)*pxSize,rCorrData);
+colormap('jet')
+caxis([-1 1])
+xlabel('Position in \mum')
+ylabel('Position in \mum')
+colorbar
+xlim([plotROI(1)*pxSize plotROI(1)*pxSize+plotROI(3)*pxSize])
+ylim([plotROI(2)*pxSize plotROI(2)*pxSize+plotROI(4)*pxSize])
 
 
 figure
 surf(rCorrData)
 
 figure 
-imagesc(imfuse(data2Use(:,:,1),tmpIm))
+imagesc(imfuse(squeeze(mean(data2Process,3)),rCorrData))
+xlim([plotROI(1) plotROI(1)+plotROI(3)])
+ylim([plotROI(2) plotROI(2)+plotROI(4)])
+
+
+figure 
+imagesc(imfuse(corrOutput.corrMap(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3)),rCorrData))
+xlim([plotROI(1) plotROI(1)+plotROI(3)])
+ylim([plotROI(2) plotROI(2)+plotROI(4)])
 
 
 %% Posiion without micrometer

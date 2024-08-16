@@ -2,7 +2,6 @@ clearvars -except corrOutput
 
 %% User input
 close all
-
 tic
 idx2Plot = 35;
 

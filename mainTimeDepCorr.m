@@ -123,7 +123,7 @@ scaleBar = 10;
 for i = 1:length(idx)
  	imagesc(data(:,:,i))
     colormap('jet');
-    caxis([0 0.2])
+    caxis([-0.2 0.2])
     %caxis([0 0.1])
     colorbar
     axis image;
