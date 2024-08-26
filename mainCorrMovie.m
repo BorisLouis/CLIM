@@ -9,7 +9,7 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\2024-08-07 - nonCS';
+file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\2024-08-07 - nonMAI';
 file.ext  = '';
 
 info.runMethod = 'load';%load % load will try to load existing data from previous run

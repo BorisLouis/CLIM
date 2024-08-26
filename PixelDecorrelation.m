@@ -9,7 +9,7 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\2024-08-07 - nonCS';
+file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\2024-08-07 - nonMAI';
 file.ext  = '';
 
 pxSize = 0.2;%in um
@@ -24,6 +24,7 @@ info.ROI = true; %this is to use ROI for the whole analysis
 %[x y  w h]
 %ROI = [];
 ROI = [125 75 150 150];
+%TCP AND MAPI ROI: [125 75 150 150]
 %for intensity extraction
 method = 'Mean'; %'Mean'
 frame2Process = 1:2000; %number of frame to used for correlation analysis.
@@ -52,18 +53,22 @@ subplot(1,2,2)
 imagesc(corrOutput.corrMap(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3)));
 caxis([0.5,1])
 colormap('jet')
-
 axis image
 
 
 %% Look at pixel decorrelation
 %CHANGE UNIT TO MICROMETER INSTEAD OF PIXEL
-plotROI = [41 10 60 60];
+plotROI = [55 55 60 60];
 data2Use = correctedData;
-
+%TCP PlotROI [? ? 60 60]
+%MAPI ROI:plotROI = [55 55 60 60];
 %radius = 30; %px
 
-idx    =  [30,85];
+idx    =  [59,91]; %[Y,X]
+
+%MAPI: (X,Y) High Corr: (28:41), (41,25),(34 12), (25 20)==> (83,96),...
+%(96, 80), (89, 67), (80 75)
+%MAPI: (X,Y) Low Corr : (34,21), (30,25),(36,4)==> (89 76), (85 80), (91 59)
 %TCP: (X,Y)  High Corr 1) (61,35),(93,42), (84,22), (91 27)
 %TCP: (X,Y)  low Corr 1) (85,35), (85,30)
 
@@ -102,6 +107,7 @@ colorbar
 axis image
 xlim([plotROI(1)*pxSize plotROI(1)*pxSize+plotROI(3)*pxSize])
 ylim([plotROI(2)*pxSize plotROI(2)*pxSize+plotROI(4)*pxSize])
+set(gcf,'color','w')
 
 figure
 imagesc(1:size(rCorrData,1)*pxSize,1:size(rCorrData,2)*pxSize,rCorrData);
@@ -112,22 +118,22 @@ ylabel('Position in \mum')
 colorbar
 xlim([plotROI(1)*pxSize plotROI(1)*pxSize+plotROI(3)*pxSize])
 ylim([plotROI(2)*pxSize plotROI(2)*pxSize+plotROI(4)*pxSize])
-
+set(gcf,'color','w')
 
 figure
 surf(rCorrData)
-
+set(gcf,'color','w')
 figure 
 imagesc(imfuse(squeeze(mean(data2Process,3)),rCorrData))
 xlim([plotROI(1) plotROI(1)+plotROI(3)])
 ylim([plotROI(2) plotROI(2)+plotROI(4)])
-
+set(gcf,'color','w')
 
 figure 
 imagesc(imfuse(corrOutput.corrMap(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3)),rCorrData))
 xlim([plotROI(1) plotROI(1)+plotROI(3)])
 ylim([plotROI(2) plotROI(2)+plotROI(4)])
-
+set(gcf,'color','w')
 
 %% Posiion without micrometer
 figure

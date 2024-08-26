@@ -26,7 +26,7 @@ info.ROI = false; %this is to use ROI for the whole analysis
 ROI = [125 75 150 150];
 %for intensity extraction
 method = 'Mean'; %'Mean'
-frame2Process = 1:2000; %number of frame to used for correlation analysis.
+frame2Process = 1:5000; %number of frame to used for correlation analysis.
 
 %% Loading data
 myMovie = Core.CorrClusterMovie(file,info);
@@ -56,7 +56,7 @@ open([file.path filesep 'clusterID.fig'])
 
 
 %% Calculate localization on a specific cluster
-idxToCluster = 12;
+idxToCluster = 1104;
 [Loc,contour] = Localization.getClusterLocalization(correctedData,corrOutput.corrMask,idxToCluster);
 
 
@@ -72,7 +72,7 @@ box on
 subplot(1,2,2)
 scatter(Loc.x,Loc.y,10,'filled')
 title('Zoom on the Localization ')
-axis square
+axis image
 box on
 axis ij
 
