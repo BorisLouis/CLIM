@@ -16,7 +16,7 @@ info.runMethod = 'load';%load % load will try to load existing data from previou
 info.driftCorr = true; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
 backgroundThresh = 0.01; %0.1 is default, 0 is for no background removal
-info.thresholdMode = 'fixed'; %'auto', 'fixed' or 'None'
+info.thresholdMode = 'auto'; %'auto', 'fixed' or 'None'
 threshold = 0.5; %only used if info.thresholdMode is "fixed"
 info.doPlot = false;% default-false, do plot will generate a movie of the clustering
 %procedure as it goes.
