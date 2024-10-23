@@ -9,9 +9,9 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\Spot1_dryObj glass side';
+file.path = 'D:\Documents\Unif\PostDoc\2024 - Data\08 - August\Blinking Perovskite\test\Spot1_dryObj glass side';
 file.ext  = '';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.driftCorr = true; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
 backgroundThresh = 0.01; %0.1 is default, 0 is for no background removal

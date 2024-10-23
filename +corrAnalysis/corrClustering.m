@@ -28,11 +28,10 @@ function [corrMask,frames] = corrClustering(listCorrPx,listVal,meanPx,inds,data,
         currVal  = listVal{idx};
         
         %remove value that have been treated:
-        currVal(ismember(currList,treatedIdx,'row'),:) =[];
-        currVal(~ismember(currList,indsCopy,'row'),:)   =[];
-       
-        currList(ismember(currList,treatedIdx,'row'),:) =[];
-        currList(~ismember(currList,indsCopy,'row'),:) = [];
+        currVal(or(ismember(currList,treatedIdx,'row'),~ismember(currList,indsCopy,'row')),:) =[];
+     
+        currList(or(ismember(currList,treatedIdx,'row'),~ismember(currList,indsCopy,'row')),:) =[];
+        
 
         
         currList(currVal<thresh) = [];

@@ -25,8 +25,7 @@ classdef correlationExperiment < handle
             end
             
             if ~isfield(info,'corrInfo')
-                info.corrInfo.r = 2;
-                info.corrInfo.thresh = 0.3;
+                info.corrInfo.thresh = 0.5;
                 warning('No correlation information provided, set r=2 and thresh= 0.3 as default value');
                 
             end
@@ -35,8 +34,7 @@ classdef correlationExperiment < handle
                 info.frame2Process = 1:1000;
                 warning('No frame2Process information provided, set 1:1000 as default')
             end
-            
-            
+          
             obj.info = info;
         end
         
@@ -51,7 +49,7 @@ classdef correlationExperiment < handle
         
         
         function retrieveMovies(obj)
-            %we get the zCalibration directory
+            
             folder2Mov = dir(obj.path);
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
             %loop through the content of the directory
@@ -83,6 +81,7 @@ classdef correlationExperiment < handle
                 end
 
             end
+            
 
             if isempty(obj.corrMovies)              
                error(['No %s was found. Please check:\n',...
@@ -101,6 +100,7 @@ classdef correlationExperiment < handle
             nfields = numel(fieldsN);
             corrInfo = obj.info.corrInfo;
             f2Process = obj.info.frame2Process;
+            threshold = obj.info.threshold;
             for i = 1: nfields
                 
                 disp(['Retrieving data from fluctuating file ' num2str(i) ' / ' num2str(nfields) ' ...']);
@@ -108,13 +108,50 @@ classdef correlationExperiment < handle
                 
                 currentCorrMov.correctDrift;
                 frames = Core.Movie.checkFrame(f2Process, currentCorrMov.raw.movInfo.maxFrame);
-                data = currentCorrMov.loadFrames(frames);
+                data2Use = currentCorrMov.loadFrames(frames);
                 
-                [corrMask] = currentCorrMov.getCorrelationMask(data,corrInfo);
-                
-                obj.corrMasks{i} = corrMask;
-                obj.nClusters{i} = max(corrMask(:));
-                
+                %% Scanning threshold
+                if strcmpi(obj.info.thresholdMode,'auto')
+                    testROIRadius = 64;
+                    center = [round(size(data2Use,1)/2), round(size(data2Use,2)/2)];
+                    if obj.info.ROI ==false
+                        currentCorrMov.info.ROIUsed = [];    
+                    else
+                        ROICorrData = data2Use;
+                        currentCorrMov.info.ROIUsed = ROI;
+                    end
+                    
+                    try
+
+                        ROICorrData = data2Use(center(1)-testROIRadius:center(1)+testROIRadius-1,center(2)-testROIRadius:center(2)+testROIRadius-1,:);
+                    catch except
+                        if strcmp(except.identifier, 'MATLAB:badsubscript')
+                            ROICorrData = data2Use;
+                        end
+                    end
+
+                    thresh = obj.info.minCorr:obj.info.stepCorr:obj.info.maxCorr;
+
+                    [allCorrMask,threshold2Use] = currentCorrMov.findOptimalThreshold(ROICorrData,thresh);
+                end
+                %% Calculate final corrMask
+                switch lower(obj.info.thresholdMode)
+                    case 'auto'
+                        corrInfo.thresh = threshold2Use;
+                    case 'fixed'
+                        corrInfo.thresh = threshold;
+                    case 'none'
+                    corrInfo.thresh = obj.info.minCorr;
+                end
+                %get px correlation
+                [corrRelation] = currentCorrMov.getPxCorrelation(data2Use);
+                %get the mask using the optimal threshold
+                [corrMask] = currentCorrMov.getCorrelationMask(data2Use,corrInfo);
+
+                obj.corrMasks(i).map = corrRelation.corrMap;
+                obj.corrMasks(i).mask= corrMask;
+                obj.corrMasks(i).data = mean(data2Use,3);
+                obj.nClusters(i) = max(corrMask(:));
 
             end
         end
@@ -125,7 +162,7 @@ classdef correlationExperiment < handle
             s.corrMovies = obj.corrMovies;
             s.info = obj.info;
             s.corrMasks = obj.corrMasks;
-            s.nClusters = obh.nClusters;
+            s.nClusters = obj.nClusters;
             
         end
              
