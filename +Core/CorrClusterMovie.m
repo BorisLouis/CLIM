@@ -193,7 +193,7 @@ classdef CorrClusterMovie < Core.Movie
             if doDeconvolve
                 [correctedData,deconvFunc] = Core.CorrClusterMovie.deconvolveFromMean(signal);
             else
-                deconvFunc.Data = ones(1:size(data,3));
+                deconvFunc.Data = ones(1,size(data,3));
                 deconvFunc.smoothed = deconvFunc.Data;
                 correctedData = signal;
             end

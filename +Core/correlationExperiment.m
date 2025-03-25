@@ -24,9 +24,8 @@ classdef correlationExperiment < handle
                 warning('No driftcorr info provided, correcting drift by default');
             end
             
-            if ~isfield(info,'corrInfo')
-                info.corrInfo.thresh = 0.5;
-                warning('No correlation information provided, set r=2 and thresh= 0.3 as default value');
+            if ~isfield(info,'thresholdMode')
+                info.thresholdMode = 'auto';
                 
             end
             
@@ -98,7 +97,6 @@ classdef correlationExperiment < handle
             fieldsN = fieldnames(obj.corrMovies);
             %Extraction of Data
             nfields = numel(fieldsN);
-            corrInfo = obj.info.corrInfo;
             f2Process = obj.info.frame2Process;
             threshold = obj.info.threshold;
             for i = 1: nfields

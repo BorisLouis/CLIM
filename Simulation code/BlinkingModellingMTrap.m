@@ -7,20 +7,26 @@
 clear
 clc 
 close all
+addpath('E:\Users\Boris\Documents\MATLAB\CLIM');
 %% User input
-path2Save = 'D:\Documents\Unif\PhD\2022-Data\04 - April\26 Blinking Models';
+path2Save = 'C:\Users\Boris\OneDrive - KU Leuven\Documents\Unif\Postdoc\Paper\01 - Film vs individual grains\March 2025\Figure\Simulation - trapN2';
 
-initCount = 30000;
+initCount = 4500;
 initialVolume = 0.25*0.25; %um^2 assuming constant thickness
 
-nTraps = 3;
+nTraps = 10;
 %0.05 probability is the standard (=1switch every 20 frames = 1 sec)
-simParam.trapCapacity = [5000, 5000, 5000];
-simParam.onProb = [0.05 0.5 0.005]; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
-simParam.offProb =[0.05 0.5 0.005];
+trapType = 20;
+simParam.trapCapacity = [linspace(3500,500,trapType)];% [ones(trapType,1)*26400];%[linspace(4000,1000,trapType)];%[ones(trapType,1)*1500]; %Oxygen: 4000;4000;4000;4000];%, 1000 ];%5000];%] 5000];
+% simParam.onProb = [0.001 0.01 0.05 0.1 0.3 ];%0.3 0.005]; %here on/off time refers to the trap being active or not, so it is reverse on the blinking
+% simParam.offProb =[0.003 0.01 0.05 0.1 0.3 ];% 0.3 0.005];
+
+simParam.onProb = [logspace(-6,-0.8,trapType)];% Oxygen0.1 0.1 0.1 0.1];
+simParam.offProb = simParam.onProb;
+
 simParam.sdProb = 0;
 trapList = [1, 1, 1];
-simParam.nSim = 10;
+simParam.nSim = 100;
 simParam.nFrames = 6000;
 simParam.bkgCounts = 500; %without noise, no background
 resolution = 10;
@@ -34,6 +40,17 @@ statsInt = statsTS;
 allData = zeros(simParam.nSim,simParam.nFrames,2);
 currentVolume = initialVolume;
 simParam.baseCounts = initCount;
+
+%% Distribute onOff efficiencies
+randIdx = randi(length(simParam.trapCapacity),nTraps);
+
+trapCapacity = simParam.trapCapacity(randIdx(1,1:end));
+onProb = simParam.onProb(randIdx(1,1:end));
+offProb = simParam.offProb(randIdx(1,1:end));
+
+simParam.trapCapacity = trapCapacity;
+simParam.onProb = onProb;
+simParam.offProb = offProb;
 
 corrOutput = struct();
 corrOutput.results = struct();
@@ -75,7 +92,7 @@ for i = 1:simParam.nSim
     end
     trapSatIntensity = trace;
     noise = true;
-    noiseAmp = [50];
+    noiseAmp = [10];
 
     for j = 1:length(noiseAmp)
         tmpTs = trapSatIntensity;
