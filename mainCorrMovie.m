@@ -9,18 +9,18 @@ clc
 close all
 
 %% User input
-file.path = 'D:\Documents\2025 - Data\03 - March\Fulya';
-file.ext  = '.tif';
+file.path = 'D:\Documents\2024 - Data\08 - August\SOFI\medium grain';
+file.ext  = '.spe';
 
 info.runMethod = 'load';%load % load will try to load existing data from previous run
 info.driftCorr = true; % true to correct for drift, false to not
 deconvolve = true; %to deconvolve the correlated signal
 backgroundThresh = 0.01; %0.1 is default, 0 is for no background removal
 info.thresholdMode = 'fixed'; %'auto', 'fixed' or 'None'
-threshold = 0.2; %only used if info.thresholdMode is "fixed"
+threshold = 0.6; %only used if info.thresholdMode is "fixed"
 info.doPlot = false;% default-false, do plot will generate a movie of the clustering
 %procedure as it goes.
-info.ROI = true; %this is to use ROI for the whole analysis
+info.ROI = false; %this is to use ROI for the whole analysis
 %[x y  w h]
 ROI = [425 250 200 200];
 %ROI = [5 71 230 120];

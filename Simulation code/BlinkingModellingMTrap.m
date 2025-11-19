@@ -11,10 +11,10 @@ addpath('E:\Users\Boris\Documents\MATLAB\CLIM');
 %% User input
 path2Save = 'C:\Users\Boris\OneDrive - KU Leuven\Documents\Unif\Postdoc\Paper\01 - Film vs individual grains\March 2025\Figure\Simulation - trapN2';
 
-initCount = 4500;
+initCount = 4500;%30000
 initialVolume = 0.25*0.25; %um^2 assuming constant thickness
 
-nTraps = 10;
+nTraps = 10;% 75
 %0.05 probability is the standard (=1switch every 20 frames = 1 sec)
 trapType = 20;
 simParam.trapCapacity = [linspace(3500,500,trapType)];% [ones(trapType,1)*26400];%[linspace(4000,1000,trapType)];%[ones(trapType,1)*1500]; %Oxygen: 4000;4000;4000;4000];%, 1000 ];%5000];%] 5000];

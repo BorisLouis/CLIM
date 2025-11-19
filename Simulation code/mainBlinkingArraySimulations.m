@@ -26,20 +26,20 @@ model.name = 'gaussian';
 model.sigma_x = 3;
 model.sigma_y = 3;
 
-resolution = 10;
+timeResolution = 10;%make trace with higher time resolution
 
 
 %% Simulated intensity profile depending on requested type
 %generate two intensity level for each particles with some distribution
 %we generate 3 times more frames and then resample to simulate exposure
 %time
-simParam.nFrames = simParam.nFrames*resolution;
-simParam.baseProb = 0.05/resolution;
+simParam.nFrames = simParam.nFrames*timeResolution;
+simParam.baseProb = 0.05/timeResolution;
 int = Sim.simIntensity(simParam,simType);
-simParam.nFrames = simParam.nFrames/resolution;
+simParam.nFrames = simParam.nFrames/timeResolution;
 intensity = zeros(simParam.nParticles,simParam.nFrames);
 for j = 1:simParam.nFrames
-    intensity(:,j) = mean(int(:,(j-1)*resolution+1:(j-1)*resolution+resolution),2);
+    intensity(:,j) = mean(int(:,(j-1)*timeResolution+1:(j-1)*timeResolution+timeResolution),2);
 
 end
 

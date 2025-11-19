@@ -39,7 +39,7 @@ data1 = myMovie.loadFrames(1:myMovie.raw.movInfo.maxFrame,ROI);
 %% time window correlation map analysis
 
 nFrames = 100;%number of frame to used for correlation analysis.
-lagTime  = 20; %this means that startign points will be 500 frames appart
+lagTime  = 20; %this means that startign points will be x frames appart
 
 procFrame = length(correctedData) - nFrames;
 idx = 1:lagTime:procFrame+1;
