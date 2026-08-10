@@ -26,6 +26,9 @@ Commercial organizations interested in using CLIM should contact:
 **Boris Louis**  
 boris.louis@kuleuven.be
 
+** Sudipta Seth**
+sudipta.seth@kuleuven.be
+
 for information regarding separate permission or commercial licensing.
 
 If CLIM contributes to scientific work, publications, presentations, reports, or other publicly disseminated research, please cite the original CLIM paper:
@@ -438,3 +441,7 @@ For scientific questions, technical support, collaborations, or licensing:
 **Boris Louis**  
 KU Leuven  
 boris.louis@kuleuven.be
+
+** Sudipta Seth**
+KU Leuven
+sudipta.seth@kuleuven.be
