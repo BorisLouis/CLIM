@@ -1,0 +1,57 @@
+cff-version: 1.2.0
+
+message: >-
+  If you use CLIM in research, please cite the Advanced Materials
+  publication listed under preferred-citation.
+
+title: "Correlation Clustering Imaging (CLIM)"
+
+type: software
+
+authors:
+  - family-names: "Louis"
+    given-names: "Boris"
+    email: "boris.louis@kuleuven.be"
+
+version: "1.0"
+
+repository-code: "https://github.com/BorisLouis/CLIM"
+
+url: "https://github.com/BorisLouis/CLIM"
+
+preferred-citation:
+  type: article
+
+  authors:
+    - family-names: "Louis"
+      given-names: "Boris"
+
+    - family-names: "Seth"
+      given-names: "Sudipta"
+
+    - family-names: "An"
+      given-names: "Qingzhi"
+
+    - family-names: "Ji"
+      given-names: "Ran"
+
+    - family-names: "Vaynzof"
+      given-names: "Yana"
+
+    - family-names: "Hofkens"
+      given-names: "Johan"
+
+    - family-names: "Scheblykin"
+      given-names: "Ivan G."
+
+  title: >-
+    In Operando Locally-Resolved Photophysics in Perovskite
+    Solar Cells by Correlation Clustering Imaging
+
+  journal: "Advanced Materials"
+
+  volume: "37"
+
+  year: 2025
+
+  doi: "10.1002/adma.202413126"
