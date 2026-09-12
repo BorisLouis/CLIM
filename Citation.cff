@@ -14,7 +14,7 @@ authors:
     email: "boris.louis@kuleuven.be"
 
 version: "1.0"
-
+doi: "https://doi.org/10.5281/zenodo.22730149"
 repository-code: "https://github.com/BorisLouis/CLIM"
 
 url: "https://github.com/BorisLouis/CLIM"
